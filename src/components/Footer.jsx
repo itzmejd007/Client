@@ -64,9 +64,6 @@ export default function Footer() {
               <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
                 <h1 className="">Anime</h1>
               </div>
-              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
-                <h1 className="">K-Drama</h1>
-              </div>
             </div>
           </div>
           {/* RIGHT */}
