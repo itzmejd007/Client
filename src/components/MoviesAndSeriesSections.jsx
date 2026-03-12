@@ -13,29 +13,92 @@ export default function HomeSection(props) {
           </p>
         </div>
 
-        <div className="flex items-center flex-wrap gap-8 text-secondaryTextColor">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center flex-wrap gap-6 text-secondaryTextColor w-full sm:w-auto mt-2 sm:mt-0">
+          {/* Sorting Dropdown */}
           {(props.dataType === "movies" || props.dataType === "series") && (
-            <div className="flex items-center gap-2 flex-wrap justify-start">
-              {[
-                { name: "Latest", value: "updated_on" },
-                { name: "Top Rated", value: "rating" },
-                { name: "New", value: "release_year" },
-              ].map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    props.setMovieFilterVal(item.value);
-                    props.setMovieFilter(item.value);
-                  }}
-                  className={
-                    item.value === props.movieFilterVal
-                      ? "py-2 px-4 bg-otherColor rounded-full text-white text-xs flex-grow transition-all duration-300 ease-in-out shadow-md sm:text-sm"
-                      : "py-2 px-4 bg-btnColor rounded-full text-primaryTextColor text-xs transition-all duration-300 ease-in-out hover:bg-otherColor hover:text-white flex-grow sm:text-sm"
-                  }
-                >
-                  {item.name}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">Sort By:</span>
+              <select
+                value={props.movieFilterVal}
+                onChange={(e) => {
+                  props.setMovieFilterVal(e.target.value);
+                  props.setMovieFilter(e.target.value);
+                }}
+                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
+                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+              >
+                <option value="updated_on">Latest</option>
+                <option value="rating">Top Rated</option>
+                <option value="release_year">New</option>
+              </select>
+            </div>
+          )}
+
+          {/* Filtering Dropdowns */}
+          {(props.dataType === "movies" || props.dataType === "series") && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">Filters:</span>
+
+              {/* Genre Filter */}
+              <select
+                value={props.genre}
+                onChange={(e) => props.setGenre(e.target.value)}
+                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
+                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+              >
+                <option value="all">All Genres</option>
+                <option value="action">Action</option>
+                <option value="adventure">Adventure</option>
+                <option value="comedy">Comedy</option>
+                <option value="drama">Drama</option>
+                <option value="fantasy">Fantasy</option>
+                <option value="horror">Horror</option>
+                <option value="mystery">Mystery</option>
+                <option value="romance">Romance</option>
+                <option value="sci-fi">Sci-Fi</option>
+                <option value="thriller">Thriller</option>
+                <option value="animation">Animation</option>
+                <option value="crime">Crime</option>
+                <option value="family">Family</option>
+              </select>
+
+              {/* Year Filter */}
+              <select
+                value={props.year}
+                onChange={(e) => props.setYear(e.target.value)}
+                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
+                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+              >
+                <option value="all">Any Year</option>
+                {Array.from(new Array(40), (val, index) => new Date().getFullYear() - index).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+
+              {/* Audio Filter */}
+              <select
+                value={props.audio}
+                onChange={(e) => props.setAudio(e.target.value)}
+                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
+                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+              >
+                <option value="all">Any Audio</option>
+                <option value="hi">Hindi</option>
+                <option value="en">English</option>
+                <option value="ta">Tamil</option>
+                <option value="te">Telugu</option>
+                <option value="ml">Malayalam</option>
+                <option value="kn">Kannada</option>
+                <option value="bn">Bengali</option>
+                <option value="mr">Marathi</option>
+                <option value="gu">Gujarati</option>
+                <option value="pa">Punjabi</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+              </select>
             </div>
           )}
         </div>

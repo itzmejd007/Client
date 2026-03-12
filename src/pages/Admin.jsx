@@ -120,6 +120,40 @@ const Admin = () => {
         return localStorage.getItem("showThemeToggle") !== "false"; // Default to true
     });
 
+    const [showAds, setShowAds] = useState(() => {
+        return localStorage.getItem("showAds") === "true";
+    });
+    const [adHeader, setAdHeader] = useState(() => {
+        return localStorage.getItem("adHeader") || "";
+    });
+    const [adFooter, setAdFooter] = useState(() => {
+        return localStorage.getItem("adFooter") || "";
+    });
+    const [adSidebar, setAdSidebar] = useState(() => {
+        return localStorage.getItem("adSidebar") || "";
+    });
+    const [adPopup, setAdPopup] = useState(() => {
+        return localStorage.getItem("adPopup") || "";
+    });
+    const [adBanner, setAdBanner] = useState(() => {
+        return localStorage.getItem("adBanner") || "";
+    });
+    const [adInFeed, setAdInFeed] = useState(() => {
+        return localStorage.getItem("adInFeed") || "";
+    });
+    const [adPlayerBottom, setAdPlayerBottom] = useState(() => {
+        return localStorage.getItem("adPlayerBottom") || "";
+    });
+    const [adTop, setAdTop] = useState(() => {
+        return localStorage.getItem("adTop") || "";
+    });
+    const [siteName, setSiteName] = useState(() => {
+        return localStorage.getItem("siteName") || "";
+    });
+    const [telegramUrl, setTelegramUrl] = useState(() => {
+        return localStorage.getItem("telegramUrl") || "";
+    });
+
     const handleLogin = (e) => {
         e.preventDefault();
         const envUser = import.meta.env.VITE_ADMIN_USER;
@@ -140,6 +174,18 @@ const Admin = () => {
         localStorage.setItem("defaultTheme", defaultTheme);
         localStorage.setItem("structuralTheme", structuralTheme);
         localStorage.setItem("showThemeToggle", showThemeToggle);
+
+        localStorage.setItem("showAds", showAds);
+        localStorage.setItem("adHeader", adHeader);
+        localStorage.setItem("adFooter", adFooter);
+        localStorage.setItem("adSidebar", adSidebar);
+        localStorage.setItem("adPopup", adPopup);
+        localStorage.setItem("adBanner", adBanner);
+        localStorage.setItem("adInFeed", adInFeed);
+        localStorage.setItem("adPlayerBottom", adPlayerBottom);
+        localStorage.setItem("adTop", adTop);
+        localStorage.setItem("siteName", siteName);
+        localStorage.setItem("telegramUrl", telegramUrl);
 
         document.documentElement.style.setProperty('--color-primary', buttonColor);
         document.documentElement.style.setProperty('--color-primary-hover', hoverColor);
@@ -174,7 +220,18 @@ const Admin = () => {
                     buttonHoverColor: hoverColor,
                     defaultTheme,
                     structuralTheme,
-                    showThemeToggle
+                    showThemeToggle,
+                    showAds,
+                    adHeader,
+                    adFooter,
+                    adSidebar,
+                    adPopup,
+                    adBanner,
+                    adInFeed,
+                    adPlayerBottom,
+                    adTop,
+                    siteName,
+                    telegramUrl
                 })
             });
 
@@ -343,6 +400,97 @@ const Admin = () => {
                                     <span className="ml-3 text-sm font-medium text-primaryTextColor">Show Toggle Button</span>
                                 </label>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-10 flex flex-col gap-2 bg-btnColor/30 p-6 rounded-xl border border-secondaryTextColor/10">
+                    <label className="text-primaryTextColor font-semibold text-lg">General Settings</label>
+                    <p className="text-sm text-secondaryTextColor mb-2">Configure basic information for the site.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Site Name</label>
+                            <input
+                                type="text"
+                                value={siteName}
+                                onChange={(e) => setSiteName(e.target.value)}
+                                placeholder="FilmStream"
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Telegram Group URL</label>
+                            <input
+                                type="text"
+                                value={telegramUrl}
+                                onChange={(e) => setTelegramUrl(e.target.value)}
+                                placeholder="https://t.me/yourgroup"
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-10 flex flex-col gap-2 bg-btnColor/30 p-6 rounded-xl border border-secondaryTextColor/10">
+                    <label className="text-primaryTextColor font-semibold text-lg">Monetization & Ads Control</label>
+                    <p className="text-sm text-secondaryTextColor mb-2">Configure advertisement snippets and toggle global visibility.</p>
+
+                    <div className="mb-4">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={showAds}
+                                onChange={(e) => setShowAds(e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-secondaryTextColor/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            <span className="ml-3 text-sm font-bold text-primaryTextColor">Enable Global Ads</span>
+                        </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Header Ad Snippet</label>
+                            <textarea
+                                value={adHeader}
+                                onChange={(e) => setAdHeader(e.target.value)}
+                                placeholder="<!-- Header Ad HTML/JS -->"
+                                rows={3}
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors text-xs font-mono"
+                            ></textarea>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Footer Ad Snippet</label>
+                            <textarea
+                                value={adFooter}
+                                onChange={(e) => setAdFooter(e.target.value)}
+                                placeholder="<!-- Footer Ad HTML/JS -->"
+                                rows={3}
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors text-xs font-mono"
+                            ></textarea>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Sidebar Ad Snippet</label>
+                            <textarea
+                                value={adSidebar}
+                                onChange={(e) => setAdSidebar(e.target.value)}
+                                placeholder="<!-- Sidebar Ad HTML/JS -->"
+                                rows={3}
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors text-xs font-mono"
+                            ></textarea>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-secondaryTextColor text-sm">Popup / Interstitial Ad</label>
+                            <textarea
+                                value={adPopup}
+                                onChange={(e) => setAdPopup(e.target.value)}
+                                placeholder="<!-- Popup Ad HTML/JS -->"
+                                rows={3}
+                                className="p-3 rounded-lg bg-btnColor text-primaryTextColor border border-secondaryTextColor/30 outline-none focus:border-primaryBtn transition-colors text-xs font-mono"
+                            ></textarea>
                         </div>
                     </div>
                 </div>

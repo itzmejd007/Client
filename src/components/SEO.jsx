@@ -7,6 +7,7 @@ export default function SEO({
   type,
   keywords,
   link,
+  image,
 }) {
   return (
     <Helmet>
@@ -20,12 +21,14 @@ export default function SEO({
       <meta property="og:type" content={type} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
+      {image && <meta property="og:image" content={image} />}
       {/* End Facebook tags */}
       {/* Twitter tags */}
       <meta name="twitter:creator" content={name} />
-      <meta name="twitter:card" content={type} />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      {image && <meta name="twitter:image" content={image} />}
       {/* End Twitter tags */}
     </Helmet>
   );

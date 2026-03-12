@@ -64,6 +64,21 @@ function App() {
         if (data.structuralTheme) localStorage.setItem("structuralTheme", data.structuralTheme);
         if (data.showThemeToggle !== undefined) localStorage.setItem("showThemeToggle", data.showThemeToggle);
 
+        // Ads specific caching
+        if (data.showAds !== undefined) localStorage.setItem("showAds", data.showAds);
+        if (data.adHeader) localStorage.setItem("adHeader", data.adHeader);
+        if (data.adFooter) localStorage.setItem("adFooter", data.adFooter);
+        if (data.adSidebar) localStorage.setItem("adSidebar", data.adSidebar);
+        if (data.adPopup) localStorage.setItem("adPopup", data.adPopup);
+        if (data.adBanner) localStorage.setItem("adBanner", data.adBanner);
+        if (data.adInFeed) localStorage.setItem("adInFeed", data.adInFeed);
+        if (data.adPlayerBottom) localStorage.setItem("adPlayerBottom", data.adPlayerBottom);
+        if (data.adTop) localStorage.setItem("adTop", data.adTop);
+
+        // General Variables
+        if (data.siteName) localStorage.setItem("siteName", data.siteName);
+        if (data.telegramUrl) localStorage.setItem("telegramUrl", data.telegramUrl);
+
         // Dispatch event just in case Nav is already mounted
         window.dispatchEvent(new Event("themeToggleVisibilityChanged"));
 

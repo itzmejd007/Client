@@ -7,7 +7,7 @@ import SEO from "../components/SEO"; // import SEO
 
 export default function SimilarMovies() {
   const BASE = import.meta.env.VITE_BASE_URL; // Base URL for backend
-  const SITENAME = import.meta.env.VITE_SITENAME;
+  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
 
 
   // States
@@ -31,26 +31,26 @@ export default function SimilarMovies() {
         page: currentPage,
       },
     })
-    .then(response => {
-      setMovies(response.data.similar_media);
-      setMoviesDataForPageCount(response.data.total_count);
-      setIsMoviesDataLoading(false);
-    })
-    .catch(error => {
-      console.error("Error fetching similar series:", error);
-      setIsMoviesDataLoading(false);
-    });
+      .then(response => {
+        setMovies(response.data.similar_media);
+        setMoviesDataForPageCount(response.data.total_count);
+        setIsMoviesDataLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching similar series:", error);
+        setIsMoviesDataLoading(false);
+      });
   }, [currentPage, seriesID, BASE]);
 
   // FETCH SERIES DATA FOR TITLE
   useEffect(() => {
     axios.get(`${BASE}/api/id/${seriesID}`)
-    .then(response => {
-      setName(response.data.title);
-    })
-    .catch(error => {
-      console.error("Error fetching series title:", error);
-    });
+      .then(response => {
+        setName(response.data.title);
+      })
+      .catch(error => {
+        console.error("Error fetching series title:", error);
+      });
   }, [seriesID, BASE]);
 
   return (
@@ -74,10 +74,10 @@ export default function SimilarMovies() {
       {/* Call Pagination Component */}
       <Pagination
         currentPage={currentPage}
-        total={moviesDataForPageCount} 
-        pagesNum={Math.ceil(moviesDataForPageCount / 20)} 
+        total={moviesDataForPageCount}
+        pagesNum={Math.ceil(moviesDataForPageCount / 20)}
         onPageChange={(p) => {
-          setCurrentPage(p); 
+          setCurrentPage(p);
         }}
         limit={20}
       />

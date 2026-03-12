@@ -18,7 +18,7 @@
 //   const [tokenCreationStatus, setTokenCreationStatus] = useState(null);
 //   const [countdown, setCountdown] = useState(10);
 //   const SHORTNER_TIME = import.meta.env.VITE_SHORTNER_TIME;
-//   const SITENAME = import.meta.env.VITE_SITENAME;
+//   const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
 
 
 //   const { tokenID } = useParams();

@@ -1,15 +1,17 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import GlobalAd from "./GlobalAd";
 
 export default function Footer() {
-  const TG_URL = import.meta.env.VITE_TG_URL;
-  const SITENAME = import.meta.env.VITE_SITENAME;
-
+  const TG_URL = localStorage.getItem("telegramUrl") || import.meta.env.VITE_TG_URL;
+  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
 
   const location = useLocation();
 
   return (
     <>
+      {/* Footer Ad Placement */}
+      <GlobalAd placement="footer" />
 
       <section className="relative pt-10 border-t-2 border-btnColor xxl:container m-auto">
         {/* TOP OF FOOTER */}
@@ -63,6 +65,9 @@ export default function Footer() {
               </div>
               <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
                 <h1 className="">Anime</h1>
+              </div>
+              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
+                <h1 className="">K-Drama</h1>
               </div>
             </div>
           </div>

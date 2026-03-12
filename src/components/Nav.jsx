@@ -12,11 +12,12 @@ import { BiHomeAlt2, BiSolidMovie, BiStar } from "react-icons/bi";
 import { BsTv } from "react-icons/bs";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
 import ThemeToggle from "./ThemeToggle";
+import GlobalAd from "./GlobalAd";
 // import UserInfoBtn from "./Logout";
 
 export default function Nav() {
   const BASE = import.meta.env.VITE_BASE_URL; // Base Url for backend
-  const SITENAME = import.meta.env.VITE_SITENAME;
+  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
 
   // Query State
   const [query, setQuery] = React.useState("");
@@ -127,6 +128,8 @@ export default function Nav() {
 
   return (
     <>
+      {/* Header Ad Placement */}
+      <GlobalAd placement="header" />
 
       <div className="fixed flex items-center justify-between gap-3 z-20 bg-bgColor/60 backdrop-blur-md top-0 left-0 right-0 py-4 px-5 md:px-10 text-primaryTextColor">
 

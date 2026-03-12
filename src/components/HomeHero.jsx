@@ -94,7 +94,7 @@ export default function HeroSlider({ movieData, isMovieDataLoading }) {
                       <div className="flex items-center gap-3 flex-wrap ">
                         <Link
                           className="flex items-center gap-2 bg-primaryBtn text-bgColor text-sm py-1 px-5 rounded-full sm:text-base transition-all duration-300 ease-in-out hover:bg-primaryBtnHower hover:text-primaryTextColor"
-                          to={`/mov/${movie.tmdb_id}`}
+                          to={movie.media_type === "tvshow" ? `/ser/${movie.tmdb_id}` : `/mov/${movie.tmdb_id}`}
                           style={{ textDecoration: "none" }}
                         >
                           <FaPlay />
