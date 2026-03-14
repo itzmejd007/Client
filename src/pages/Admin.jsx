@@ -31,6 +31,52 @@ const structuralThemes = [
     { id: "theme-brutalist-flat", name: "Brutalist Flat" }
 ];
 
+const ViewsGraph = ({ data, period }) => {
+    if (!data || data.length === 0) return <div className="h-48 flex items-center justify-center text-secondaryTextColor/40 italic">No historical data available</div>;
+
+    const maxViews = Math.max(...data.map(d => d.views), 1);
+    const chartHeight = 150;
+    const chartWidth = 800;
+    const padding = 20;
+
+    const points = data.map((d, i) => {
+        const x = (i / (data.length - 1 || 1)) * (chartWidth - padding * 2) + padding;
+        const y = chartHeight - (d.views / maxViews) * (chartHeight - padding * 2) - padding;
+        return `${x},${y}`;
+    }).join(" ");
+
+    return (
+        <div className="w-full overflow-hidden">
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto drop-shadow-lg">
+                <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: "var(--primary-btn-color, #ec4899)", stopOpacity: 0.3 }} />
+                        <stop offset="100%" style={{ stopColor: "var(--primary-btn-color, #ec4899)", stopOpacity: 0 }} />
+                    </linearGradient>
+                </defs>
+                <path d={`M ${padding},${chartHeight} ${points.split(" ").map((p, i) => i === 0 ? `L ${p}` : `L ${p}`).join(" ")} L ${chartWidth - padding},${chartHeight} Z`} fill="url(#grad)" />
+                <polyline fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={points} className="text-primaryBtn" />
+                {data.map((d, i) => {
+                    const x = (i / (data.length - 1 || 1)) * (chartWidth - padding * 2) + padding;
+                    const y = chartHeight - (d.views / maxViews) * (chartHeight - padding * 2) - padding;
+                    return (
+                        <g key={i} className="group/dot">
+                            <circle cx={x} cy={y} r="4" fill="white" className="stroke-primaryBtn stroke-2" />
+                            <rect x={x - 20} y={y - 25} width="40" height="15" rx="4" className="fill-bgColorSecondary opacity-0 group-hover/dot:opacity-100 transition-opacity" />
+                            <text x={x} y={y - 14} fontSize="8" fontWeight="bold" textAnchor="middle" className="fill-primaryTextColor opacity-0 group-hover/dot:opacity-100 transition-opacity">{d.views}</text>
+                        </g>
+                    );
+                })}
+            </svg>
+            <div className="flex justify-between mt-2 px-2">
+                <span className="text-[10px] font-bold text-secondaryTextColor/50 uppercase tracking-tighter">{data[0].date}</span>
+                <span className="text-[10px] font-bold text-secondaryTextColor/50 uppercase tracking-tighter font-mono">{period.toUpperCase()} PERFORMANCE</span>
+                <span className="text-[10px] font-bold text-secondaryTextColor/50 uppercase tracking-tighter">{data[data.length - 1].date}</span>
+            </div>
+        </div>
+    );
+};
+
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Admin = () => {
@@ -76,6 +122,7 @@ const Admin = () => {
     // --- Analytics State ---
     const [stats, setStats] = useState(null);
     const [isFetchingStats, setIsFetchingStats] = useState(false);
+    const [analyticsPeriod, setAnalyticsPeriod] = useState("week");
 
     // --- Add/Edit Flow Flag ---
     const [isNewAddition, setIsNewAddition] = useState(false);
@@ -85,13 +132,15 @@ const Admin = () => {
     const fetchAnalytics = useCallback(async () => {
         setIsFetchingStats(true);
         try {
-            const res = await axios.get(`${BASE}/api/admin/analytics`);
+            const res = await axios.get(`${BASE}/api/admin/analytics`, {
+                params: { period: analyticsPeriod }
+            });
             setStats(res.data);
         } catch (error) {
             console.error("Failed to fetch analytics:", error);
         }
         setIsFetchingStats(false);
-    }, []);
+    }, [analyticsPeriod]);
 
     // Fetch existing content list
     const fetchExistingContent = useCallback(async () => {
@@ -514,13 +563,44 @@ const Admin = () => {
                                 { label: "TV Series", value: stats?.stats?.tv_shows || 0, color: "from-violet-500 to-indigo-500" },
                                 { label: "Unlinked Files", value: stats?.stats?.manual_files || 0, color: "from-amber-500 to-orange-500" },
                                 { label: "Total Library", value: stats?.stats?.total_content || 0, color: "from-emerald-500 to-teal-500" },
+                                { label: "Today Views", value: stats?.stats?.today_views || 0, color: "from-blue-500 to-cyan-500" },
+                                { label: "Yesterday", value: stats?.stats?.yesterday_views || 0, color: "from-slate-500 to-gray-500" },
+                                { label: "Monthly Views", value: stats?.stats?.monthly_views || 0, color: "from-purple-500 to-fuchsia-500" },
+                                { label: "Total Views", value: stats?.stats?.total_views || 0, color: "from-orange-500 to-red-500" },
                             ].map((stat, i) => (
                                 <div key={i} className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden group">
                                     <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
                                     <p className="text-secondaryTextColor font-bold text-xs uppercase tracking-widest">{stat.label}</p>
-                                    <h3 className="text-5xl font-black mt-2 tracking-tighter">{stat.value}</h3>
+                                    <h3 className="text-5xl font-black mt-2 tracking-tighter">{stat.value.toLocaleString()}</h3>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Views Graph Section */}
+                        <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl overflow-hidden relative">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                <div>
+                                    <h3 className="text-xl font-bold flex items-center gap-2">
+                                        <PiGlobeBold className="text-primaryBtn" />
+                                        Traffic & Engagement
+                                    </h3>
+                                    <p className="text-xs text-secondaryTextColor mt-1">Analyzing media consumption patterns over time</p>
+                                </div>
+                                <div className="flex bg-bgColor p-1 rounded-xl border border-secondaryTextColor/10">
+                                    {["yesterday", "week", "month", "year", "max"].map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setAnalyticsPeriod(p)}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${analyticsPeriod === p ? "bg-primaryBtn text-white shadow-lg" : "text-secondaryTextColor hover:bg-btnColor/10"}`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-bgColor/30 p-6 rounded-2xl border border-secondaryTextColor/5">
+                                <ViewsGraph data={stats?.graph_data} period={analyticsPeriod} />
+                            </div>
                         </div>
 
                         {/* Recent Activity */}
@@ -554,6 +634,58 @@ const Admin = () => {
                                             <div>
                                                 <p className="font-bold text-sm group-hover:text-primaryBtn transition-colors">{t.title}</p>
                                                 <p className="text-[10px] text-secondaryTextColor uppercase font-mono">{t.release_year} • {t.rating} ★</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Top Viewed Content */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-secondaryTextColor/5">
+                            <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 blur-3xl" />
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    <PiGlobeBold className="text-emerald-500" />
+                                    Top Movies
+                                </h3>
+                                <div className="space-y-4">
+                                    {stats?.top_viewed?.movies?.map(m => (
+                                        <div key={m.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(m.tmdb_id, "movie"); }}>
+                                            <div className="flex items-center gap-4">
+                                                <img src={m.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
+                                                <div>
+                                                    <p className="font-bold text-sm group-hover:text-primaryBtn transition-colors">{m.title}</p>
+                                                    <p className="text-[10px] text-secondaryTextColor uppercase font-mono">{m.release_year}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-black text-primaryBtn">{m.views || 0}</p>
+                                                <p className="text-[8px] font-bold text-secondaryTextColor uppercase tracking-widest">Views</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500 opacity-5 blur-3xl" />
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    <PiGlobeBold className="text-cyan-500" />
+                                    Top Series
+                                </h3>
+                                <div className="space-y-4">
+                                    {stats?.top_viewed?.tv_shows?.map(t => (
+                                        <div key={t.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(t.tmdb_id, "tv"); }}>
+                                            <div className="flex items-center gap-4">
+                                                <img src={t.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
+                                                <div>
+                                                    <p className="font-bold text-sm group-hover:text-primaryBtn transition-colors">{t.title}</p>
+                                                    <p className="text-[10px] text-secondaryTextColor uppercase font-mono">{t.release_year}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-black text-primaryBtn">{t.views || 0}</p>
+                                                <p className="text-[8px] font-bold text-secondaryTextColor uppercase tracking-widest">Views</p>
                                             </div>
                                         </div>
                                     ))}
@@ -602,6 +734,18 @@ const Admin = () => {
                                             className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all"
                                             placeholder="SpartanAiBot"
                                         />
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-bgColor rounded-xl border border-secondaryTextColor/10">
+                                        <div>
+                                            <p className="text-sm font-bold">Show View Count</p>
+                                            <p className="text-[10px] text-secondaryTextColor">Display total views on media details pages</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setLocalSettings({ ...localSettings, showViews: !localSettings.showViews })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${localSettings.showViews ? "bg-primaryBtn" : "bg-btnColor/20"}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings.showViews ? "left-7" : "left-1"}`} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -841,13 +985,30 @@ const Admin = () => {
                                             <button onClick={() => setExistingMediaType("tv")} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>TV</button>
                                         </div>
                                     </div>
-                                    <input
-                                        type="text"
-                                        placeholder={`Filter ${existingMediaType}s...`}
-                                        className="w-full p-2 bg-bgColor rounded-lg text-xs border border-secondaryTextColor/10 outline-none focus:border-primaryBtn mb-4"
-                                        value={existingContentQuery}
-                                        onChange={(e) => setExistingContentQuery(e.target.value)}
-                                    />
+                                    <div className="flex gap-2 mb-4">
+                                        <input
+                                            type="text"
+                                            placeholder={`Filter ${existingMediaType}s...`}
+                                            className="flex-1 p-2 bg-bgColor rounded-lg text-xs border border-secondaryTextColor/10 outline-none focus:border-primaryBtn"
+                                            value={existingContentQuery}
+                                            onChange={(e) => setExistingContentQuery(e.target.value)}
+                                        />
+                                        <select
+                                            onChange={(e) => {
+                                                const sorted = [...existingContent].sort((a, b) => {
+                                                    if (e.target.value === "views") return (b.views || 0) - (a.views || 0);
+                                                    if (e.target.value === "rating") return (b.rating || 0) - (a.rating || 0);
+                                                    return new Date(b.updated_on) - new Date(a.updated_on);
+                                                });
+                                                setExistingContent(sorted);
+                                            }}
+                                            className="bg-bgColor text-[10px] font-bold rounded-lg border border-secondaryTextColor/10 px-2 outline-none"
+                                        >
+                                            <option value="recent">Latest</option>
+                                            <option value="views">Top Views</option>
+                                            <option value="rating">Top Rated</option>
+                                        </select>
+                                    </div>
                                     <div className="space-y-2 h-[600px] overflow-y-auto pr-2 scrollbar-thin">
                                         {isFetchingExisting ? <div className="text-center py-20 animate-pulse text-secondaryTextColor">Loading Library...</div> :
                                             existingContent.filter(m => m.title.toLowerCase().includes(existingContentQuery.toLowerCase())).map(item => (

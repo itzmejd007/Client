@@ -50,6 +50,9 @@ export default function MovieDetails() {
         console.error("Error fetching series details:", error);
         setDetailsIsLoading(false);
       });
+
+    // Increment View Count
+    axios.post(`${BASE}/api/view/tv/${seriesID}`).catch(() => { });
   }, [seriesID, BASE]);
 
   // Fetch Similar Series

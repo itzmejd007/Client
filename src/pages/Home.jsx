@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import HeroSlider from "../components/HomeHero";
 import HomeSections from "../components/HomeSections";
+import TrendingSlider from "../components/TrendingSlider";
 import SEO from "../components/SEO";
 import { useSettings } from "../context/SettingsContext";
 import { ToastContainer } from "react-toastify";
@@ -17,9 +18,12 @@ export default function Home() {
   const [heroPopularMovies, setHeroPopularMovies] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingTv, setTrendingTv] = useState([]);
+  const [combinedTrending, setCombinedTrending] = useState([]);
+
   const [isHeroLoading, setIsHeroLoading] = useState(true);
   const [isTrendingMoviesLoading, setIsTrendingMoviesLoading] = useState(true);
   const [isTrendingTvLoading, setIsTrendingTvLoading] = useState(true);
+  const [isCombinedTrendingLoading, setIsCombinedTrendingLoading] = useState(true);
 
   useEffect(() => {
     setIsHeroLoading(true);
@@ -81,6 +85,36 @@ export default function Home() {
       });
   }, [BASE]);
 
+  // Combined Trending (Movies + Series)
+  useEffect(() => {
+    setIsCombinedTrendingLoading(true);
+
+    const fetchTrending = async () => {
+      try {
+        const [movieRes, tvRes] = await Promise.all([
+          axios.get(`${BASE}/api/movies`, { params: { sort_by: "views:desc", page: 1, page_size: 15 } }),
+          axios.get(`${BASE}/api/tvshows`, { params: { sort_by: "views:desc", page: 1, page_size: 15 } })
+        ]);
+
+        const merged = [
+          ...(movieRes.data.movies || []),
+          ...(tvRes.data.tv_shows || [])
+        ];
+
+        // Sort merged by views
+        merged.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+        setCombinedTrending(merged);
+      } catch (error) {
+        console.error("Error fetching combined trending:", error);
+      } finally {
+        setIsCombinedTrendingLoading(false);
+      }
+    };
+
+    fetchTrending();
+  }, [BASE]);
+
   return (
     <div>
       <ToastContainer style={{ fontSize: "0.8rem" }} />
@@ -104,8 +138,16 @@ export default function Home() {
           sliderTypeNext="slideHeroTrendingMovies-next"
         />
       </div>
-      {/* Home Announcements */}
-      {/* Trending Movies Section */}
+
+      {/* Combined Trending Section (Slider) */}
+      <TrendingSlider
+        movieData={combinedTrending}
+        isMovieDataLoading={isCombinedTrendingLoading}
+        sectionTitle="Trending Now"
+        sectionSeeMoreButtonLink="/Movies"
+      />
+
+      {/* Latest Movies Section */}
       <HomeSections
         movieData={trendingMovies}
         isMovieDataLoading={isTrendingMoviesLoading}
@@ -113,7 +155,8 @@ export default function Home() {
         sectionSeeMoreButtonLink="/Movies"
         dataType="latestMovies"
       />
-      {/* Trending TV SHOWS Section */}
+
+      {/* Latest TV SHOWS Section */}
       <HomeSections
         movieData={trendingTv}
         isMovieDataLoading={isTrendingTvLoading}

@@ -36,6 +36,9 @@ export default function MovieDetails() {
         console.error("Error fetching movie details:", error);
         setDetailsIsLoading(false);
       });
+
+    // Increment View Count
+    axios.post(`${BASE}/api/view/movie/${movieID}`).catch(() => { });
   }, [movieID, BASE]);
 
   // Fetch Similar Movies

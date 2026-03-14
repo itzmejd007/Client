@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSettings } from "../context/SettingsContext";
 import Watch from "./Watch";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,7 +11,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/scrollbar";
 
-import { BiListUl, BiPlay, BiTime } from "react-icons/bi";
+import { BiListUl, BiPlay, BiTime, BiShow } from "react-icons/bi";
 import { IoIosArrowDown } from "react-icons/io";
 import { FiCalendar } from "react-icons/fi";
 import { BsListStars } from "react-icons/bs";
@@ -24,6 +25,8 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const [isWatchMoviePopupOpen, setIsWatchMoviePopupOpen] = useState(false);
   const [isWatchEpisodePopupOpen, setIsWatchEpisodePopupOpen] = useState(false);
   const [isSeasonsOpen, setIsSeasonspOpen] = useState(false);
+  const { settings } = useSettings();
+  const showViews = settings?.showViews !== false; // Default to true if not specified
 
   return (
     <div className="relative mt-20 bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
@@ -136,6 +139,16 @@ export default function MoviesAndSeriesDetailsSections(props) {
                       <PiStarFill className="text-yellow-300 text-lg xl:text-xl" />
                       <p className="text-xs xl:text-sm">
                         {props.movieData.rating.toFixed(1)}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Views */}
+                  {showViews && props.movieData.views !== undefined && (
+                    <div className="flex items-center gap-2 border-l border-secondaryTextColor/30 pl-2">
+                      <BiShow className="text-secondaryTextColor text-lg xl:text-xl" />
+                      <p className="text-xs xl:text-sm font-medium">
+                        {props.movieData.views.toLocaleString()} Views
                       </p>
                     </div>
                   )}
