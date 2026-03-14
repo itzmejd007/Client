@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { NextUIProvider } from "@nextui-org/system";
 import { HelmetProvider } from "react-helmet-async";
 
+import { SettingsProvider } from "./context/SettingsContext.jsx";
+
 import App from "./App.jsx";
 import "./index.css";
 
@@ -10,7 +12,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <NextUIProvider>
       <HelmetProvider>
-        <App />
+        <SettingsProvider>
+          <App />
+        </SettingsProvider>
       </HelmetProvider>
     </NextUIProvider>
   </StrictMode>

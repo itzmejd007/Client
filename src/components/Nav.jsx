@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
+import { useSettings } from "../context/SettingsContext";
 
 import { FiSearch } from "react-icons/fi";
 import { VscClose } from "react-icons/vsc";
@@ -16,8 +17,9 @@ import GlobalAd from "./GlobalAd";
 // import UserInfoBtn from "./Logout";
 
 export default function Nav() {
+  const { settings } = useSettings();
+  const SITENAME = settings.siteName;
   const BASE = import.meta.env.VITE_BASE_URL; // Base Url for backend
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
 
   // Query State
   const [query, setQuery] = React.useState("");

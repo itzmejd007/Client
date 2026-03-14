@@ -5,11 +5,13 @@ import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/popover";
 import { Button } from "@nextui-org/button";
 import { FaCloudDownloadAlt, FaPlay } from "react-icons/fa";
 import Spinner from "./svg/Spinner";
+import { useSettings } from "../context/SettingsContext";
 
 const DownloadButton = ({ movieData, btnType }) => {
+  const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL;
-  const API_URL = import.meta.env.VITE_API_URL;
-  const API_KEY = import.meta.env.VITE_API_KEY;
+  const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
+  const API_KEY = settings.shortenerApiKey || import.meta.env.VITE_API_KEY;
 
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [selectedEpisode, setSelectedEpisode] = useState(null);

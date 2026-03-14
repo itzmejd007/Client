@@ -1,10 +1,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalAd from "./GlobalAd";
+import { useSettings } from "../context/SettingsContext";
 
 export default function Footer() {
-  const TG_URL = localStorage.getItem("telegramUrl") || import.meta.env.VITE_TG_URL;
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
+  const { settings } = useSettings();
+  const TG_URL = settings.telegramUrl;
+  const SITENAME = settings.siteName;
 
   const location = useLocation();
 

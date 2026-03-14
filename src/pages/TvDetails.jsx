@@ -6,9 +6,12 @@ import Similars from "../components/Similars";
 import SEO from "../components/SEO"; // import SEO
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSettings } from "../context/SettingsContext";
+
 export default function MovieDetails() {
   const BASE = import.meta.env.VITE_BASE_URL; // Base URL for backend
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
+  const { settings } = useSettings();
+  const SITENAME = settings.siteName || import.meta.env.VITE_SITENAME;
 
   let { seriesID } = useParams();
 
@@ -102,7 +105,7 @@ export default function MovieDetails() {
         name={SITENAME}
         type="video.tv_show"
         keywords={seriesDetail.genres ? seriesDetail.genres.join(", ") : "watch series online, watch hd series"}
-        link={`https://${SITENAME}.com/ser/${seriesID}`}
+        link={window.location.href}
         image={seriesDetail.backdrop || seriesDetail.poster}
       />
       {/* Call MoviesAndSeriesDetailsSections Component */}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
-import { PiStarFill } from "react-icons/pi";
+import { PiStarFill, PiPencilSimpleFill } from "react-icons/pi";
 
 import { BsPlayFill } from "react-icons/bs";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
@@ -65,6 +65,16 @@ const MovieCard = ({ movie }) => {
           <PiStarFill className="text-yellow-400 text-[0.7rem] sm:text-sm" />
           <p className="font-semibold tracking-wide">0.0</p>
         </div>
+      )}
+
+      {sessionStorage.getItem("adminAuth") === "true" && (
+        <Link
+          to={`/admin?tmdb_id=${movie.tmdb_id}&type=${movie.media_type}`}
+          className="absolute top-2 right-2 flex items-center gap-1 bg-primaryBtn text-white text-[0.65rem] sm:text-xs py-2 px-2 rounded-md z-20 backdrop-blur-sm shadow-lg border border-white/20 hover:scale-110 transition-transform"
+          title="Edit Details"
+        >
+          <PiPencilSimpleFill className="text-[0.7rem] sm:text-sm" />
+        </Link>
       )}
 
 

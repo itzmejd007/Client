@@ -4,12 +4,14 @@ import axios from "axios";
 import HeroSlider from "../components/HomeHero";
 import HomeSections from "../components/HomeSections";
 import SEO from "../components/SEO";
+import { useSettings } from "../context/SettingsContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
+  const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL; // Base Url for backend
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
+  const SITENAME = settings.siteName;
 
   // States
   const [heroPopularMovies, setHeroPopularMovies] = useState([]);

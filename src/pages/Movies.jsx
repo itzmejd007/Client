@@ -4,10 +4,12 @@ import axios from "axios";
 import MoviesAndSeriesSections from "../components/MoviesAndSeriesSections";
 import Pagination from "../components/Pagination";
 import SEO from "../components/SEO"; // import SEO
+import { useSettings } from "../context/SettingsContext";
 
 export default function Movies() {
+  const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL; // Base Url for backend
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
+  const SITENAME = settings.siteName;
 
   // States
   const [movies, setMovies] = useState([]);

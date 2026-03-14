@@ -6,9 +6,12 @@ import Similars from "../components/Similars";
 import SEO from "../components/SEO"; // import SEO
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSettings } from "../context/SettingsContext";
+
 export default function MovieDetails() {
   const BASE = import.meta.env.VITE_BASE_URL; // Base URL for backend
-  const SITENAME = localStorage.getItem("siteName") || import.meta.env.VITE_SITENAME;
+  const { settings } = useSettings();
+  const SITENAME = settings.siteName || import.meta.env.VITE_SITENAME;
 
   let { movieID } = useParams();
 
@@ -68,7 +71,7 @@ export default function MovieDetails() {
         name={SITENAME}
         type="video.movie"
         keywords={movieDetail.genres ? movieDetail.genres.join(", ") : "watch movies online, watch hd movies"}
-        link={`https://${SITENAME}.com/mov/${movieID}`}
+        link={window.location.href}
         image={movieDetail.backdrop || movieDetail.poster}
       />
       {/* Call MoviesAndSeriesDetailsSections Component */}

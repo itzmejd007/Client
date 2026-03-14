@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSettings } from "../context/SettingsContext";
 import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/popover";
 import { PiTelegramLogo } from "react-icons/pi";
 import axios from "axios";
@@ -7,34 +8,35 @@ import Spinner from "./svg/Spinner";
 import { useLocation } from "react-router-dom";
 
 const TelegramButton = ({ movieData }) => {
-  const USERNAME = import.meta.env.VITE_TG_USERNAME;
-  const API_URL = import.meta.env.VITE_API_URL;
-  const API_KEY = import.meta.env.VITE_API_KEY;
+  const { settings } = useSettings();
+  const USERNAME = settings.tgUsername || import.meta.env.VITE_TG_USERNAME;
+  const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
+  const API_KEY = settings.shortenerApiKey || import.meta.env.VITE_API_KEY;
 
   const [shortenedUrls, setShortenedUrls] = useState({});
   const [loading, setLoading] = useState({});
   const location = useLocation();
 
   const shortenUrl = async (url) => {
-  try {
-    // Flexible structure for various APIs
-    const response = await axios.get(API_URL, {
-    params: {
-      api: API_KEY,   // ✅ Correct key name
-      url: url,       // ✅ Correct param for URL
-      format: "json", // ✅ Optional but good to include for clarity
-    },
-  });
+    try {
+      // Flexible structure for various APIs
+      const response = await axios.get(API_URL, {
+        params: {
+          api: API_KEY,   // ✅ Correct key name
+          url: url,       // ✅ Correct param for URL
+          format: "json", // ✅ Optional but good to include for clarity
+        },
+      });
 
-    const data = response.data;
+      const data = response.data;
 
-    // Adjust this based on expected field in your API response
-    return data?.shortenedUrl || data?.short || data?.url || url;
-  } catch (error) {
-    console.error("Error shortening URL:", error);
-    return url;
-  }
-};
+      // Adjust this based on expected field in your API response
+      return data?.shortenedUrl || data?.short || data?.url || url;
+    } catch (error) {
+      console.error("Error shortening URL:", error);
+      return url;
+    }
+  };
 
 
   const handleButtonClick = async (originalUrl, quality) => {
