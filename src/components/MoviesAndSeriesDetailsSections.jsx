@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSettings } from "../context/SettingsContext";
 import Watch from "./Watch";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
@@ -27,6 +27,16 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const [isSeasonsOpen, setIsSeasonspOpen] = useState(false);
   const { settings } = useSettings();
   const showViews = settings?.showViews !== false; // Default to true if not specified
+  useEffect(() => {
+  const container = document.getElementById("native-ad-1");
+  if (!container) return;
+
+  const script = document.createElement("script");
+  script.src = "https://pl28927832.effectivegatecpm.com/b0719d7ec8aad9fbf51884fd76e41b88/invoke.js";
+  script.async = true;
+
+  container.appendChild(script);
+}, []);
 
   return (
     <div className="relative mt-20 bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
@@ -72,6 +82,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
               <p className="text-secondaryTextColor  line-clamp-2 mt-2 text-xs xl:text-sm">
                 {props.movieData.description}
               </p>
+              <div id="native-ad-1" className="mt-3"></div>
               <div className="flex gap-2 text-primaryTextColor flex-wrap mt-2">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Media Type Icon and Info */}
