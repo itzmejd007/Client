@@ -28,14 +28,20 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const { settings } = useSettings();
   const showViews = settings?.showViews !== false; // Default to true if not specified
   useEffect(() => {
-  const container = document.getElementById("native-ad-1");
-  if (!container) return;
+  const interval = setInterval(() => {
+    const container = document.getElementById("native-ad-1");
 
-  const script = document.createElement("script");
-  script.src = "https://pl28927832.effectivegatecpm.com/b0719d7ec8aad9fbf51884fd76e41b88/invoke.js";
-  script.async = true;
+    if (container && !container.hasChildNodes()) {
+      const script = document.createElement("script");
+      script.src = "https://pl28927832.effectivegatecpm.com/b0719d7ec8aad9fbf51884fd76e41b88/invoke.js";
+      script.async = true;
 
-  container.appendChild(script);
+      container.appendChild(script);
+      clearInterval(interval);
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
 }, []);
 
   return (
