@@ -27,20 +27,6 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const [isSeasonsOpen, setIsSeasonspOpen] = useState(false);
   const { settings } = useSettings();
   const showViews = settings?.showViews !== false; // Default to true if not specified
-  useEffect(() => {
-  const interval = setInterval(() => {
-    const container = document.getElementById("native-ad-1");
-
-    if (container && !container.hasChildNodes()) {
-      const script = document.createElement("script");
-      script.src = "https://pl28927832.effectivegatecpm.com/b0719d7ec8aad9fbf51884fd76e41b88/invoke.js";
-      script.async = true;
-
-      container.appendChild(script);
-      clearInterval(interval);
-    }
-  }, 1000);
-
   return () => clearInterval(interval);
 }, []);
 
@@ -88,7 +74,6 @@ export default function MoviesAndSeriesDetailsSections(props) {
               <p className="text-secondaryTextColor  line-clamp-2 mt-2 text-xs xl:text-sm">
                 {props.movieData.description}
               </p>
-              <div id="native-ad-1" className="mt-3"></div>
               <div className="flex gap-2 text-primaryTextColor flex-wrap mt-2">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Media Type Icon and Info */}
