@@ -16,6 +16,7 @@ export const SettingsProvider = ({ children }) => {
         showThemeToggle: localStorage.getItem("showThemeToggle") !== "false",
         showAds: localStorage.getItem("showAds") === "true",
         tgUsername: localStorage.getItem("tgUsername") || import.meta.env.VITE_TG_USERNAME || "",
+        showViews: localStorage.getItem("showViews") !== "false",
         shortenerApiUrl: localStorage.getItem("shortenerApiUrl") || import.meta.env.VITE_API_URL || "",
         shortenerApiKey: localStorage.getItem("shortenerApiKey") || import.meta.env.VITE_API_KEY || "",
         // Ad scripts
