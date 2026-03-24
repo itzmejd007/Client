@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import Watch from "./Watch";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
@@ -27,8 +27,6 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const [isSeasonsOpen, setIsSeasonspOpen] = useState(false);
   const { settings } = useSettings();
   const showViews = settings?.showViews !== false; // Default to true if not specified
-  return () => clearInterval(interval);
-}, []);
 
   return (
     <div className="relative mt-20 bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
