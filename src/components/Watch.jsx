@@ -5,6 +5,7 @@ import "plyr-react/plyr.css";
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import AdComponent from "./AdComponent";
 
 export default function WatchTrailer(props) {
   const [sources, setSources] = useState([]);
@@ -125,9 +126,10 @@ export default function WatchTrailer(props) {
             animate={{ scale: 1 }}
             exit={{ scale: 0.9 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg relative"
+            className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg relative bg-black"
           >
             <Plyr ref={playerRef} {...plyrProps} id="player" />
+            <AdComponent type="adPlayerBottom" className="mt-2" />
           </motion.div>
         </motion.div>
       )}

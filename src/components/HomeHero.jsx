@@ -13,7 +13,7 @@ import { PiStarFill } from "react-icons/pi";
 
 export default function HeroSlider({ movieData, isMovieDataLoading }) {
   return (
-    <div className="pt-20">
+    <div className="">
       {!isMovieDataLoading ? (
         <>
           <Swiper

@@ -345,7 +345,7 @@ const Admin = () => {
         console.log("handleSaveMedia called", { isNewAddition, editingMedia });
         try {
             const type = (editingMedia.media_type === "movie" || editingMedia.media_type === "mov") ? "movie" : "tv";
-            
+
             // Handle audio languages string-to-array conversion & filtering
             let mediaToSave = { ...editingMedia };
             if (typeof mediaToSave.languages === 'string') {
@@ -552,6 +552,7 @@ const Admin = () => {
                         {[
                             { id: "dashboard", icon: <PiGearFill />, label: "Dashboard" },
                             { id: "settings", icon: <PiPencilSimpleFill />, label: "Settings" },
+                            { id: "ads", icon: <PiGearFill />, label: "Ads Management" },
                             { id: "content", icon: <PiTrashFill />, label: "Content CMS" },
                             { id: "manual", icon: <PiListFill />, label: "Manual Files" },
                         ].map(tab => (
@@ -858,34 +859,6 @@ const Admin = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="bg-btnColor/5 p-8 rounded-3xl border border-secondaryTextColor/5 flex flex-col gap-6">
-                                <h2 className="text-2xl font-bold flex items-center gap-2">
-                                    <PiGearFill className="text-primaryBtn" />
-                                    Ad Network Logic
-                                </h2>
-                                <div className="flex items-center justify-between p-4 bg-bgColor/40 rounded-2xl border border-secondaryTextColor/10">
-                                    <span className="font-bold">Global Ads Visibility</span>
-                                    <button onClick={() => setLocalSettings({ ...localSettings, showAds: !localSettings.showAds })} className={`w-14 h-8 rounded-full relative transition-all ${localSettings.showAds ? "bg-primaryBtn" : "bg-secondaryTextColor/20"}`}>
-                                        <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all shadow-md ${localSettings.showAds ? "left-7" : "left-1"}`} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[auto] max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                                    {[
-                                        { k: localSettings.adHeader, s: (v) => setLocalSettings({ ...localSettings, adHeader: v }), l: "Header Script" },
-                                        { k: localSettings.adFooter, s: (v) => setLocalSettings({ ...localSettings, adFooter: v }), l: "Footer Script" },
-                                        { k: localSettings.adPopup, s: (v) => setLocalSettings({ ...localSettings, adPopup: v }), l: "Pop/Redirect Script" },
-                                        { k: localSettings.adPlayerBottom, s: (v) => setLocalSettings({ ...localSettings, adPlayerBottom: v }), l: "Player Bottom Script" },
-                                        { k: localSettings.adInFeed, s: (v) => setLocalSettings({ ...localSettings, adInFeed: v }), l: "Grid Ad Script" },
-                                        { k: localSettings.adTop, s: (v) => setLocalSettings({ ...localSettings, adTop: v }), l: "Sticky Top Script" }
-                                    ].map((ad, idx) => (
-                                        <div key={idx} className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] font-bold uppercase text-secondaryTextColor ml-1">{ad.l}</label>
-                                            <textarea value={ad.k} onChange={(e) => ad.s(e.target.value)} placeholder="HTML/JS Here..." className="w-full h-24 p-3 rounded-xl bg-bgColor/50 border border-secondaryTextColor/10 text-[10px] font-mono resize-none focus:border-primaryBtn" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
 
                         {/* Backup & Export */}
@@ -925,6 +898,81 @@ const Admin = () => {
                                 <PiCheckBold className="text-2xl" />
                                 UPDATE GLOBAL SETTINGS
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "ads" && (
+                    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="bg-btnColor/10 p-8 rounded-[2.5rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-primaryBtn shadow-[0_0_20px_rgba(128,90,213,0.3)]"></div>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                                <div>
+                                    <h2 className="text-3xl font-black flex items-center gap-3 tracking-tighter">
+                                        <PiGearFill className="text-primaryBtn" />
+                                        Ads Management
+                                    </h2>
+                                    <p className="text-secondaryTextColor text-sm font-medium mt-1">Configure your ad network scripts and placements</p>
+                                </div>
+                                <div className="flex items-center gap-4 bg-bgColor/50 p-2 rounded-2xl border border-secondaryTextColor/10">
+                                    <span className="text-xs font-black uppercase tracking-widest text-secondaryTextColor ml-2">Show Ads Everywhere</span>
+                                    <button onClick={() => setLocalSettings({ ...localSettings, showAds: !localSettings.showAds })} className={`w-14 h-8 rounded-full relative transition-all ${localSettings.showAds ? "bg-primaryBtn" : "bg-btnColor/20"}`}>
+                                        <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all shadow-md ${localSettings.showAds ? "left-7" : "left-1"}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* Global & Overlay Ads */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primaryBtn bg-primaryBtn/10 w-fit px-4 py-1.5 rounded-full mb-6 italic">Global & Overlay Scripts</h3>
+                                    {[
+                                        { k: localSettings.adPopup, s: (v) => setLocalSettings({ ...localSettings, adPopup: v }), l: "Pop-Under / Interstitial", p: "Best for high revenue Pop-Under scripts" },
+                                        { k: localSettings.adSocialBar, s: (v) => setLocalSettings({ ...localSettings, adSocialBar: v }), l: "Social Bar / In-Page Push", p: "Small floating notification ad" },
+                                        { k: localSettings.adSmartlink, s: (v) => setLocalSettings({ ...localSettings, adSmartlink: v }), l: "Smartlink / Direct Link", p: "Direct ad URL for specialized redirects" },
+                                        { k: localSettings.adFooter, s: (v) => setLocalSettings({ ...localSettings, adFooter: v }), l: "Footer Injection", p: "Scripts to run at the end of the <body>" }
+                                    ].map((ad, idx) => (
+                                        <div key={idx} className="bg-bgColor/30 p-5 rounded-2xl border border-secondaryTextColor/5 space-y-2 group hover:border-primaryBtn/30 transition-all">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-[10px] font-black uppercase text-secondaryTextColor group-hover:text-primaryBtn transition-colors">{ad.l}</label>
+                                                <span className="text-[9px] text-secondaryTextColor/40 font-medium italic">{ad.p}</span>
+                                            </div>
+                                            <textarea value={ad.k} onChange={(e) => ad.s(e.target.value)} placeholder="Paste <script> here..." className="w-full h-28 p-4 rounded-xl bg-bgColor/50 border border-secondaryTextColor/10 text-[11px] font-mono resize-none focus:border-primaryBtn transition-all" />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Layout & Contextual Ads */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400 bg-cyan-400/10 w-fit px-4 py-1.5 rounded-full mb-6 italic">Layout & Contextual Banners</h3>
+                                    {[
+                                        { k: localSettings.adHomeTrending, s: (v) => setLocalSettings({ ...localSettings, adHomeTrending: v }), l: "Below Trending Slider", p: "Injected on Home page below Trending" },
+                                        { k: localSettings.adHomeLatest, s: (v) => setLocalSettings({ ...localSettings, adHomeLatest: v }), l: "Below Latest Movies", p: "Injected on Home page below Latest" },
+                                        { k: localSettings.adBanner, s: (v) => setLocalSettings({ ...localSettings, adBanner: v }), l: "Main Content Banner (468x60)", p: "Standard banner between sections" },
+                                        { k: localSettings.adInFeed, s: (v) => setLocalSettings({ ...localSettings, adInFeed: v }), l: "Native In-Feed Ad", p: "Injected directly into item grids" },
+                                        { k: localSettings.adSidebar, s: (v) => setLocalSettings({ ...localSettings, adSidebar: v }), l: "Sidebar (468x60)", p: "Appears on details pages" },
+                                        { k: localSettings.adPlayerBottom, s: (v) => setLocalSettings({ ...localSettings, adPlayerBottom: v }), l: "Player Bottom Content", p: "Shown below the video player" }
+                                    ].map((ad, idx) => (
+                                        <div key={idx} className="bg-bgColor/30 p-5 rounded-2xl border border-secondaryTextColor/5 space-y-2 group hover:border-cyan-400/30 transition-all">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-[10px] font-black uppercase text-secondaryTextColor group-hover:text-cyan-400 transition-colors">{ad.l}</label>
+                                                <span className="text-[9px] text-secondaryTextColor/40 font-medium italic">{ad.p}</span>
+                                            </div>
+                                            <textarea value={ad.k} onChange={(e) => ad.s(e.target.value)} placeholder="Paste <script> here..." className="w-full h-28 p-4 rounded-xl bg-bgColor/50 border border-secondaryTextColor/10 text-[11px] font-mono resize-none focus:border-cyan-400 transition-all" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-12 flex justify-center">
+                                <button
+                                    onClick={handleSaveSettings}
+                                    className="px-16 py-4 bg-primaryBtn text-white font-black text-lg rounded-2xl shadow-2xl shadow-primaryBtn/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 animate-bounce"
+                                >
+                                    <PiCheckBold className="text-2xl" />
+                                    SAVE & DEPLOY ADS
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

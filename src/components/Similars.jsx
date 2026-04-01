@@ -1,10 +1,12 @@
-import { React, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import MovieCard from "./MovieCard";
 import MovieCardSkeleton from "./MovieCardSkeleton";
 
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
 import { BiArrowFromLeft } from "react-icons/bi";
+
+import AdComponent from "./AdComponent";
 
 export default function HomeSection(props) {
   // States
@@ -48,7 +50,10 @@ export default function HomeSection(props) {
             <div className="grid  gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4  lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
               {props.movieData.map((movie, index) => {
                 return (
-                  <MovieCard key={index} movie={movie} />
+                  <React.Fragment key={index}>
+                    <MovieCard movie={movie} />
+                    {index === 6 && <AdComponent type="adInFeed" className="col-span-2 sm:col-span-1" />}
+                  </React.Fragment>
                 );
               })}
             </div>

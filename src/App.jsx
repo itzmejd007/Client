@@ -24,6 +24,8 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 
+import AdComponent from "./components/AdComponent";
+
 function App() {
   ReactGa.initialize("G-JDFS7KRV40");
   useEffect(() => {
@@ -34,9 +36,12 @@ function App() {
 
     <BrowserRouter>
       <InstallPrompt />
+      <AdComponent type="adPopup" />
+      <AdComponent type="adSocialBar" />
+      <AdComponent type="adSmartlink" />
       <Nav />
-      <div className="p-3 md:p-10">
-
+      <div className="px-3 md:px-10 pt-16 md:pt-20 pb-10">
+        <AdComponent type="adBanner" />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
@@ -75,6 +80,7 @@ function App() {
           />
         </Routes>
       </div>
+      <AdComponent type="adFooter" />
       <Footer />
     </BrowserRouter>
   );

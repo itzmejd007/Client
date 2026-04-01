@@ -5,6 +5,7 @@ import HeroSlider from "../components/HomeHero";
 import HomeSections from "../components/HomeSections";
 import TrendingSlider from "../components/TrendingSlider";
 import SEO from "../components/SEO";
+import AdComponent from "../components/AdComponent";
 import { useSettings } from "../context/SettingsContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -146,6 +147,7 @@ export default function Home() {
         sectionTitle="Trending Now"
         sectionSeeMoreButtonLink="/Movies"
       />
+      <AdComponent type="adHomeTrending" />
 
       {/* Latest Movies Section */}
       <HomeSections
@@ -155,6 +157,7 @@ export default function Home() {
         sectionSeeMoreButtonLink="/Movies"
         dataType="latestMovies"
       />
+      <AdComponent type="adHomeLatest" />
 
       {/* Latest TV SHOWS Section */}
       <HomeSections

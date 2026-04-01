@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useSettings } from "../context/SettingsContext";
+import AdComponent from "./AdComponent";
 import Watch from "./Watch";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +30,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
   const showViews = settings?.showViews !== false; // Default to true if not specified
 
   return (
-    <div className="relative mt-20 bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
+    <div className="relative bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
       {!props.isMovieDataLoading ? (
         <>
           <div className="grid lg:grid-cols-2 content-center items-center gap-5 ">
@@ -168,6 +169,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                   btnType="MX Player"
                 />
               </div>
+              <AdComponent type="adSidebar" className="mt-5" />
             </div>
           </div>
           {/* Epsiodes */}

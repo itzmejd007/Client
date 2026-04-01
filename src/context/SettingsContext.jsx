@@ -20,14 +20,16 @@ export const SettingsProvider = ({ children }) => {
         shortenerApiUrl: localStorage.getItem("shortenerApiUrl") || import.meta.env.VITE_API_URL || "",
         shortenerApiKey: localStorage.getItem("shortenerApiKey") || import.meta.env.VITE_API_KEY || "",
         // Ad scripts
-        adHeader: localStorage.getItem("adHeader") || "",
         adFooter: localStorage.getItem("adFooter") || "",
         adSidebar: localStorage.getItem("adSidebar") || "",
         adPopup: localStorage.getItem("adPopup") || "",
         adBanner: localStorage.getItem("adBanner") || "",
         adInFeed: localStorage.getItem("adInFeed") || "",
         adPlayerBottom: localStorage.getItem("adPlayerBottom") || "",
-        adTop: localStorage.getItem("adTop") || "",
+        adHomeTrending: localStorage.getItem("adHomeTrending") || "",
+        adHomeLatest: localStorage.getItem("adHomeLatest") || "",
+        adSocialBar: localStorage.getItem("adSocialBar") || "",
+        adSmartlink: localStorage.getItem("adSmartlink") || "",
     });
 
     const BASE = import.meta.env.VITE_BASE_URL;
