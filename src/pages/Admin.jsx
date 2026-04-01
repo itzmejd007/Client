@@ -345,13 +345,26 @@ const Admin = () => {
         console.log("handleSaveMedia called", { isNewAddition, editingMedia });
         try {
             const type = (editingMedia.media_type === "movie" || editingMedia.media_type === "mov") ? "movie" : "tv";
+            
+            // Handle audio languages string-to-array conversion & filtering
+            let mediaToSave = { ...editingMedia };
+            if (typeof mediaToSave.languages === 'string') {
+                mediaToSave.languages = mediaToSave.languages.split(',')
+                    .map(l => {
+                        const trimmed = l.trim();
+                        // Strip site prefixes like "site.com - " or "Site - "
+                        return trimmed.includes(' - ') ? trimmed.split(' - ').pop().trim() : trimmed;
+                    })
+                    .filter(l => l);
+            }
+
             if (isNewAddition) {
-                await axios.post(`${BASE}/api/admin/media/add`, editingMedia);
+                await axios.post(`${BASE}/api/admin/media/add`, mediaToSave);
                 alert("Media added to database!");
                 setIsNewAddition(false);
             } else {
                 // Update details
-                await axios.put(`${BASE}/api/admin/media/${type}/${editingMedia.tmdb_id}/details`, { ...editingMedia, originalTitle });
+                await axios.put(`${BASE}/api/admin/media/${type}/${editingMedia.tmdb_id}/details`, { ...mediaToSave, originalTitle });
                 alert("Metadata updated!");
             }
             handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
@@ -1063,9 +1076,9 @@ const Admin = () => {
                                                                     <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Audio Languages (en, hi, ta...)</label>
                                                                     <input
                                                                         type="text"
-                                                                        value={editingMedia.languages?.join(', ') || ''}
+                                                                        value={typeof editingMedia.languages === 'string' ? editingMedia.languages : (editingMedia.languages?.join(', ') || '')}
                                                                         placeholder="e.g. English, Hindi"
-                                                                        onChange={(e) => setEditingMedia({ ...editingMedia, languages: e.target.value.split(',').map(l => l.trim()).filter(l => l) })}
+                                                                        onChange={(e) => setEditingMedia({ ...editingMedia, languages: e.target.value })}
                                                                         className="w-full bg-btnColor/20 px-3 py-1 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
                                                                     />
                                                                 </div>

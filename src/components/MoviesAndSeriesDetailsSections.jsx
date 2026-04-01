@@ -162,7 +162,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                   btnType="Download"
                 />
               </div>
-              <div className="mt-3 flex">
+              <div className="mt-3 flex md:hidden">
                 <DownloadButton
                   movieData={props.movieData}
                   btnType="MX Player"

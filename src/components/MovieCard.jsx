@@ -78,17 +78,17 @@ const MovieCard = ({ movie }) => {
       )}
 
 
-      {movie.languages ? (
-        <div className="flex items-center gap-1 absolute bottom-16 right-3 bg-primaryBtn text-bgColor py-1 px-3 rounded-full font-extrabold text-[0.6rem] sm:text-xs">
+      {movie.languages && movie.languages.length > 0 ? (
+        <div className="flex items-center gap-1 absolute bottom-16 right-3 bg-primaryBtn text-bgColor py-1 px-3 rounded-full font-black text-[0.6rem] sm:text-xs shadow-lg">
           <p>
-            {movie.languages
-              .map((lang) => lang.charAt(0).toUpperCase() + lang.slice(1)) // Capitalize each language code
-              .join("-")}{" "}
+            {movie.languages.length > 3
+              ? movie.languages.slice(0, 2).map(lang => lang.charAt(0).toUpperCase() + lang.slice(1, 3)).join("-") + ` +${movie.languages.length - 2}`
+              : movie.languages.map(lang => lang.charAt(0).toUpperCase() + lang.slice(1, 3)).join("-")}
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-1 absolute bottom-16 right-3 bg-primaryBtn text-bgColor py-1 px-3 rounded-full text-xs font-extrabold">
-          <p>Hi</p>
+        <div className="flex items-center gap-1 absolute bottom-16 right-3 bg-primaryBtn text-bgColor py-1 px-3 rounded-full text-[0.6rem] sm:text-xs font-black shadow-lg">
+          <p>Multi</p>
         </div>
       )}
 

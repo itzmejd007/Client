@@ -13,6 +13,7 @@ import NotFoundPage from "./pages/NotFound";
 
 import Nav from "./components/Nav";
 import Footer from "./components/Footer";
+import InstallPrompt from "./components/InstallPrompt";
 // import PrivateRoute from "./components/PrivateRoute";
 
 // import { AuthProvider } from "./context/AuthContext";
@@ -32,6 +33,7 @@ function App() {
   return (
 
     <BrowserRouter>
+      <InstallPrompt />
       <Nav />
       <div className="p-3 md:p-10">
 
