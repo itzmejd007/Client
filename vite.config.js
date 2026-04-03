@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'FilmRockers',
-        short_name: 'FilmRockers',
+        name: 'Aimetoon',
+        short_name: 'Aimetoon',
         description: 'Stream, Dream, Repeat. Watch your favorite movies and TV shows.',
         theme_color: '#000000',
         icons: [
