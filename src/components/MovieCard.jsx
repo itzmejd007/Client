@@ -58,7 +58,13 @@ const MovieCard = ({ movie }) => {
       {movie.rating ? (
         <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 text-white text-[0.65rem] sm:text-xs py-1 px-2 rounded-md z-10 backdrop-blur-sm shadow-sm border border-white/10">
           <PiStarFill className="text-yellow-400 text-[0.7rem] sm:text-sm" />
-          <p className="font-semibold tracking-wide">{movie.rating.toFixed(1)}</p>
+          <p className="font-semibold tracking-wide">
+            {typeof movie.rating === 'number' 
+              ? movie.rating.toFixed(1) 
+              : !isNaN(parseFloat(movie.rating)) 
+                ? parseFloat(movie.rating).toFixed(1) 
+                : '0.0'}
+          </p>
         </div>
       ) : (
         <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 text-white text-[0.65rem] sm:text-xs py-1 px-2 rounded-md z-10 backdrop-blur-sm shadow-sm border border-white/10">
