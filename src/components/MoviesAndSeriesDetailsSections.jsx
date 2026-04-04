@@ -139,7 +139,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                     <div className="flex items-center gap-2">
                       <PiStarFill className="text-yellow-300 text-lg xl:text-xl" />
                       <p className="text-xs xl:text-sm">
-                        {props.movieData.rating.toFixed(1)}
+                        {(parseFloat(props.movieData.rating) || 0).toFixed(1)}
                       </p>
                     </div>
                   )}

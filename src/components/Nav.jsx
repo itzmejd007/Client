@@ -255,7 +255,7 @@ export default function Nav() {
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full dark:bg-bgColor bg-gray-900 text-otherColor ">
                               <BiStar className="mb-0.25 " />
                               {result.rating && (
-                                <p className="">{result.rating.toFixed(1)}</p>
+                                <p className="">{(parseFloat(result.rating) || 0).toFixed(1)}</p>
                               )}
                             </div>
                             {result.release_year && (

@@ -106,7 +106,7 @@ export default function HeroSlider({ movieData, isMovieDataLoading }) {
                       <div className="flex items-center gap-1 bg-black/60 text-white text-[0.65rem] sm:text-xs py-1 px-2 rounded-md z-10 backdrop-blur-sm shadow-sm border border-white/10 w-fit shrink-0">
                         <PiStarFill className="text-yellow-400 text-[0.7rem] sm:text-sm" />
                         <p className="font-semibold tracking-wide">
-                          {movie.rating.toFixed(1)}
+                          {(parseFloat(movie.rating) || 0).toFixed(1)}
                         </p>
                       </div>
                     </div>
