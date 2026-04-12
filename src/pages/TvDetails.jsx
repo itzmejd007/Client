@@ -8,12 +8,13 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSettings } from "../context/SettingsContext";
 
-export default function MovieDetails() {
+export default function TvDetails() {
   const BASE = import.meta.env.VITE_BASE_URL; // Base URL for backend
   const { settings } = useSettings();
   const SITENAME = settings.siteName || import.meta.env.VITE_SITENAME;
 
-  let { seriesID } = useParams();
+  let { seriesID, slug } = useParams();
+  const titleParam = slug ? decodeURIComponent(slug) : undefined;
 
   // States
   const [seriesDetail, setSeriesDetail] = useState({});
@@ -30,9 +31,11 @@ export default function MovieDetails() {
   useEffect(() => {
     setDetailsIsLoading(true);
     window.scrollTo(0, 0);
-
-    axios
-      .get(`${BASE}/api/id/${seriesID}`)
+ 
+     axios
+       .get(`${BASE}/api/id/${seriesID}`, {
+         params: { title: titleParam }
+       })
       .then((response) => {
         const sortedSeasons = response.data.seasons.sort(
           (a, b) => a.season_number - b.season_number
@@ -52,8 +55,10 @@ export default function MovieDetails() {
       });
 
     // Increment View Count
-    axios.post(`${BASE}/api/view/tv/${seriesID}`).catch(() => { });
-  }, [seriesID, BASE]);
+    axios.post(`${BASE}/api/view/tv/${seriesID}`, null, {
+      params: { title: titleParam }
+    }).catch(() => { });
+  }, [seriesID, slug, BASE]);
 
   // Fetch Similar Series
   useEffect(() => {
@@ -85,7 +90,10 @@ export default function MovieDetails() {
 
     axios
       .get(`${BASE}/api/id/${seriesID}`, {
-        params: { season_number: seasonNumber },
+        params: { 
+          season_number: seasonNumber,
+          title: titleParam
+        },
       })
       .then((response) => {
         setEpisodes(response.data.episodes);
@@ -95,7 +103,7 @@ export default function MovieDetails() {
         console.error("Error fetching episodes:", error);
         setIsEpisodesLoading(false);
       });
-  }, [seasonNumber, seriesID, BASE]);
+  }, [seasonNumber, seriesID, slug, BASE]);
 
   return (
     <div>

@@ -46,11 +46,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
           <Route
-            path="mov/:movieID"
+            path="mov/:movieID/:slug?"
             element={<MovieDetails />}
           />
           <Route
-            path="ser/:seriesID"
+            path="ser/:seriesID/:slug?"
             element={<TvDetails />}
           />
           <Route

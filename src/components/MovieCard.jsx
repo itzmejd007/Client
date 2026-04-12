@@ -27,8 +27,8 @@ const MovieCard = ({ movie }) => {
       <Link
         to={
           movie.media_type === "movie"
-            ? `/mov/${movie.tmdb_id}`
-            : `/ser/${movie.tmdb_id}`
+            ? `/mov/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
+            : `/ser/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
         }
         className="rounded-t-2xl"
       >
@@ -113,8 +113,8 @@ const MovieCard = ({ movie }) => {
           <Link
             to={
               movie.media_type === "movie"
-                ? `/mov/${movie.tmdb_id}`
-                : `/ser/${movie.tmdb_id}`
+                ? `/mov/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
+                : `/ser/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
             }
             onMouseEnter={showPlay}
             onMouseLeave={hidePlay}
