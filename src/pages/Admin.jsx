@@ -142,6 +142,17 @@ const Admin = () => {
         setIsFetchingStats(false);
     }, [analyticsPeriod]);
 
+    const isAllOnPageSelected = manualFiles.length > 0 && manualFiles.every(f => selectedManualFiles.includes(f._id));
+
+    const handleSelectAllOnPage = () => {
+        const currentPageIds = manualFiles.map(f => f._id);
+        if (isAllOnPageSelected) {
+            setSelectedManualFiles(selectedManualFiles.filter(id => !currentPageIds.includes(id)));
+        } else {
+            setSelectedManualFiles([...new Set([...selectedManualFiles, ...currentPageIds])]);
+        }
+    };
+
     // Fetch existing content list
     const fetchExistingContent = useCallback(async () => {
         setIsFetchingExisting(true);
@@ -1336,6 +1347,19 @@ const Admin = () => {
                                         onChange={e => { setManualSearchQuery(e.target.value); setManualPage(1); }}
                                     />
                                     <PiMagnifyingGlassFill className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-secondaryTextColor/50" />
+                                </div>
+
+                                <div className="flex items-center gap-4 mb-6 ml-2">
+                                    <div
+                                        onClick={handleSelectAllOnPage}
+                                        className={`w-6 h-6 rounded-lg border-2 cursor-pointer flex items-center justify-center transition-all ${isAllOnPageSelected ? "bg-primaryBtn border-primaryBtn shadow-[0_0_15px_rgba(236,72,153,0.4)]" : "bg-bgColor border-secondaryTextColor/30 hover:border-primaryBtn/50"}`}
+                                    >
+                                        {isAllOnPageSelected && <PiCheckBold className="text-white text-xs" />}
+                                    </div>
+                                    <span className="text-xs font-black uppercase tracking-widest text-secondaryTextColor cursor-pointer select-none" onClick={handleSelectAllOnPage}>
+                                        Select All on Page
+                                        <span className="ml-2 text-[10px] opacity-50 font-medium">({manualFiles.length} files)</span>
+                                    </span>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
