@@ -75,11 +75,11 @@ export default function MovieDetails() {
       <ToastContainer style={{ fontSize: "0.8rem" }} />
 
       <SEO
-        title={movieDetail.title ? `${movieDetail.title} - ${SITENAME}` : SITENAME}
-        description={movieDetail.description || `Watch ${movieDetail.title || "movies"} online free on ${SITENAME}.`}
+        title={movieDetail.title ? `${movieDetail.title} Tamil Dubbed Anime Watch Online - ${SITENAME}` : SITENAME}
+        description={movieDetail.description || `Watch ${movieDetail.title || "anime movie"} online in Tamil, Hindi, Telugu and English dubbed on ${SITENAME} in HD quality.`}
         name={SITENAME}
         type="video.movie"
-        keywords={movieDetail.genres ? movieDetail.genres.join(", ") : "watch movies online, watch hd movies"}
+        keywords={movieDetail.genres ? `${movieDetail.genres.join(", ")}, Tamil dubbed anime, anime movie, watch anime online` : "Tamil dubbed anime, anime movie, watch anime online"}
         link={window.location.href}
         image={movieDetail.backdrop || movieDetail.poster}
       />
