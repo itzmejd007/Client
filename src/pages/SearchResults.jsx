@@ -46,10 +46,10 @@ export default function SimilarMovies() {
       {/* SEO SECTION */}
       <SEO
         title={`Search results for "${searchResult}" - ${SITENAME}`}
-        description={`Search results for ${searchResult} on ${SITENAME}. Find your favorite movies and tv shows to watch.`}
+        description={`Search results for ${searchResult} on ${SITENAME}. Find Tamil dubbed anime, Hindi dubbed anime, Telugu anime and multi audio anime online.`}
         name={SITENAME}
         type="website"
-        keywords={`search, ${searchResult}, watch hd movies, watch full movies`}
+        keywords={`search anime, ${searchResult}, Tamil dubbed anime, Hindi dubbed anime, Telugu dubbed anime`}
         link={`https://${SITENAME}.com/search/${searchResult}`}
       />
       {/* Movies Component */}
