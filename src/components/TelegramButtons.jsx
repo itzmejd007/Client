@@ -55,7 +55,7 @@ const TelegramButton = ({ movieData }) => {
   };
 
   const renderQualityButtons = (qualityDetails) =>
-    qualityDetails.map(({ quality }, index) => (
+    qualityDetails.map(({ quality, size }, index) => (
       <Button
         key={index}
         onClick={() =>
@@ -69,7 +69,7 @@ const TelegramButton = ({ movieData }) => {
         isLoading={loading[quality]}
         spinner={<Spinner />}
       >
-        {quality}
+        {quality} {size ? `| ${size}` : ""}
       </Button>
     ));
 
@@ -122,8 +122,8 @@ const TelegramButton = ({ movieData }) => {
   return (
     <Popover placement="bottom" showArrow={true}>
       <PopoverTrigger>
-        <button className="uppercase flex items-center justify-center gap-2 bg-otherColor max-w-full grow text-bgColor text-xs rounded-full border-2 border-otherColor py-1 px-3 lg:text-sm sm:px-5 sm:max-w-[15rem] sm:py-2">
-          <PiTelegramLogo className="text-lg" /> Telegram
+        <button className="uppercase flex items-center justify-center gap-2 bg-otherColor w-full h-8 sm:h-9 text-bgColor text-[9px] rounded-full border-2 border-otherColor font-black tracking-wider transition-all">
+          <PiTelegramLogo className="text-base" /> Telegram
         </button>
       </PopoverTrigger>
       <PopoverContent className="bg-btnColor">

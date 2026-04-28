@@ -24,11 +24,19 @@ export default function WatchTrailer(props) {
           let selectedPoster = "";
 
           if (props.popUpType === "movie") {
-            videoSources = props.id.telegram.map((q) => ({
-              src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
-              type: "video/mp4",
-              size: parseInt(q.quality.replace("p", ""), 10),
-            }));
+            videoSources = props.id.telegram.map((q) => {
+              const name = q.name.toLowerCase();
+              const type = name.endsWith(".mp4") ? "video/mp4" : 
+                           name.endsWith(".webm") ? "video/webm" : 
+                           name.endsWith(".mkv") ? "video/webm" : // Some browsers handle MKV as webm/mp4
+                           undefined; // Let browser guess
+
+              return {
+                src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
+                type: type,
+                size: parseInt(q.quality.replace("p", ""), 10),
+              };
+            });
             selectedPoster = props.id.backdrop;
           } else if (props.popUpType === "episode") {
             const season = props.id.seasons.find(
@@ -41,11 +49,19 @@ export default function WatchTrailer(props) {
               );
 
               if (episode) {
-                videoSources = episode.telegram.map((q) => ({
-                  src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
-                  type: "video/mp4",
-                  size: parseInt(q.quality.replace("p", ""), 10),
-                }));
+                videoSources = episode.telegram.map((q) => {
+                  const name = q.name.toLowerCase();
+                  const type = name.endsWith(".mp4") ? "video/mp4" : 
+                               name.endsWith(".webm") ? "video/webm" : 
+                               name.endsWith(".mkv") ? "video/webm" : 
+                               undefined;
+
+                  return {
+                    src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
+                    type: type,
+                    size: parseInt(q.quality.replace("p", ""), 10),
+                  };
+                });
                 selectedPoster = episode.episode_backdrop;
               }
             }
@@ -112,11 +128,11 @@ export default function WatchTrailer(props) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-30 w-full h-screen bg-black/90 backdrop-blur-md flex items-center justify-center"
+          className="fixed inset-0 z-50 w-full h-screen bg-black/95 backdrop-blur-xl flex items-center justify-center"
         >
           <button
             onClick={closeModal}
-            className="absolute top-5 right-5 text-white text-2xl z-50"
+            className="absolute top-8 right-8 text-white/50 hover:text-white text-4xl z-[60] transition-all"
           >
             <AiOutlineClose />
           </button>

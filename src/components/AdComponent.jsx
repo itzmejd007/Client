@@ -17,16 +17,20 @@ const AdComponent = ({ type, className = "" }) => {
         const container = containerRef.current;
         container.innerHTML = "";
 
-        try {
-            const range = document.createRange();
-            range.selectNode(container);
-            const documentFragment = range.createContextualFragment(adCode);
-            container.appendChild(documentFragment);
-        } catch (error) {
-            console.error("Ad injection failed:", error);
-        }
+        // Delay ad injection to prioritize main content
+        const timer = setTimeout(() => {
+            try {
+                const range = document.createRange();
+                range.selectNode(container);
+                const documentFragment = range.createContextualFragment(adCode);
+                container.appendChild(documentFragment);
+            } catch (error) {
+                console.error("Ad injection failed:", error);
+            }
+        }, 1500);
 
         return () => {
+            clearTimeout(timer);
             if (container) container.innerHTML = "";
         };
     }, [adCode, showAds]);

@@ -30,6 +30,7 @@ export const SettingsProvider = ({ children }) => {
         adHomeLatest: localStorage.getItem("adHomeLatest") || "",
         adSocialBar: localStorage.getItem("adSocialBar") || "",
         adSmartlink: localStorage.getItem("adSmartlink") || "",
+        language_priority: localStorage.getItem("language_priority") ? localStorage.getItem("language_priority").split(",") : [],
     });
 
     const BASE = import.meta.env.VITE_BASE_URL;

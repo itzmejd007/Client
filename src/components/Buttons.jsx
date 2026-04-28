@@ -91,7 +91,7 @@ const DownloadButton = ({ movieData, btnType }) => {
         isLoading={loading[q.quality]}
         spinner={<Spinner />}
       >
-        {q.quality}
+        {q.quality} {q.size ? `| ${q.size}` : ""}
       </Button>
     ));
 
@@ -176,8 +176,8 @@ const DownloadButton = ({ movieData, btnType }) => {
         }}
       >
         {qualities?.map((q) => (
-          <SelectItem key={String(q.quality)}>
-            {q.quality}
+          <SelectItem key={String(q.quality)} textValue={`${q.quality} ${q.size ? `| ${q.size}` : ""}`}>
+            {q.quality} {q.size ? `| ${q.size}` : ""}
           </SelectItem>
         ))}
       </Select>
@@ -202,14 +202,14 @@ const DownloadButton = ({ movieData, btnType }) => {
   return (
     <Popover placement="bottom" showArrow={true}>
       <PopoverTrigger>
-        <button className="flex justify-center items-center gap-2 uppercase text-otherColor max-w-full grow text-xs rounded-full border-2 border-otherColor py-1 px-3 lg:text-sm sm:px-5 sm:max-w-[15rem] sm:py-2">
+        <button className="flex justify-center items-center gap-2 uppercase text-otherColor w-full h-8 sm:h-9 text-[9px] rounded-full border-2 border-otherColor font-black tracking-wider transition-all">
           {btnType === "Download" ? (
             <>
-              <FaCloudDownloadAlt className="text-lg" /> Download
+              <FaCloudDownloadAlt className="text-base" /> Download
             </>
           ) : (
             <>
-              <FaPlay className="text-lg" /> Player
+              <FaPlay className="text-base" /> Player
             </>
           )}
         </button>

@@ -54,12 +54,12 @@ export default function Movies() {
     <div>
       {/* SEO SECTION */}
       <SEO
-        title={`Anime Movies - ${SITENAME}`}
-        description={`Browse the latest anime movies in Tamil, Hindi, Telugu and English dubbed on ${SITENAME}. Watch in HD 480p, 720p and 1080p.`}
+        title={`Search results for "${searchResult}" - ${SITENAME}`}
+        description={`Search results for ${searchResult} on ${SITENAME}. Find Tamil dubbed anime, Hindi dubbed anime, Telugu anime and multi audio anime online.`}
         name={SITENAME}
         type="website"
-        keywords="anime movies, Tamil dubbed anime movies, Hindi dubbed anime movies, Telugu anime movies, watch anime movies online"
-        link={`https://${SITENAME}.com/movies`}
+        keywords={`search anime, ${searchResult}, Tamil dubbed anime, Hindi dubbed anime, Telugu dubbed anime`}
+        link={`https://${SITENAME}.com/search/${searchResult}`}
       />
       <MoviesAndSeriesSections
         movieData={movies}

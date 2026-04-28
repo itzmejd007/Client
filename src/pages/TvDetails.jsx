@@ -84,26 +84,25 @@ export default function TvDetails() {
 
   // Fetch Episode List for each season
   useEffect(() => {
-    if (seasonNumber === undefined) return; // Prevent unnecessary API calls if seasonNumber is not set
+    if (!seriesID || seasonNumber === undefined) return;
 
     setIsEpisodesLoading(true);
 
+    const params = { season_number: seasonNumber };
+    if (titleParam) params.title = titleParam;
+
     axios
-      .get(`${BASE}/api/id/${seriesID}`, {
-        params: { 
-          season_number: seasonNumber,
-          title: titleParam
-        },
-      })
+      .get(`${BASE}/api/id/${seriesID}`, { params })
       .then((response) => {
-        setEpisodes(response.data.episodes);
+        setEpisodes(response.data.episodes || []);
         setIsEpisodesLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching episodes:", error);
+        setEpisodes([]);
         setIsEpisodesLoading(false);
       });
-  }, [seasonNumber, seriesID, slug, BASE]);
+  }, [seasonNumber, seriesID, titleParam, BASE]);
 
   return (
     <div>

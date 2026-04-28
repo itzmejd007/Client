@@ -31,6 +31,12 @@ const structuralThemes = [
     { id: "theme-brutalist-flat", name: "Brutalist Flat" }
 ];
 
+const COMMON_LANGUAGES = [
+    "Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada",
+    "Bengali", "Marathi", "Gujarati", "Punjabi", "Japanese", "Korean",
+    "Spanish", "French"
+];
+
 const ViewsGraph = ({ data, period }) => {
     if (!data || data.length === 0) return <div className="h-48 flex items-center justify-center text-secondaryTextColor/40 italic">No historical data available</div>;
 
@@ -119,6 +125,15 @@ const Admin = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [linkingFile, setLinkingFile] = useState(null);
 
+    // --- Collections DB State ---
+    const [collections, setCollections] = useState([]);
+    const [newCollectionTitle, setNewCollectionTitle] = useState("");
+    const [newCollectionThumbnail, setNewCollectionThumbnail] = useState("");
+    const [editingCollection, setEditingCollection] = useState(null);
+    const [collectionItemSearch, setCollectionItemSearch] = useState("");
+    const [collectionItemResults, setCollectionItemResults] = useState([]);
+    const [isSearchingColItems, setIsSearchingColItems] = useState(false);
+
     // --- Analytics State ---
     const [stats, setStats] = useState(null);
     const [isFetchingStats, setIsFetchingStats] = useState(false);
@@ -187,8 +202,79 @@ const Admin = () => {
             fetchExistingContent();
             fetchManualFiles();
             fetchAnalytics();
+            fetchCollections();
         }
     }, [isAuthenticated, fetchExistingContent, fetchManualFiles, fetchAnalytics]);
+
+    const fetchCollections = async () => {
+        try {
+            const res = await axios.get(`${BASE}/api/collections`);
+            setCollections(res.data);
+        } catch (error) {
+            console.error("Failed to fetch collections:", error);
+        }
+    };
+
+    const handleCreateCollection = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post(`${BASE}/api/collections`, { title: newCollectionTitle, thumbnail: newCollectionThumbnail });
+            setNewCollectionTitle("");
+            setNewCollectionThumbnail("");
+            fetchCollections();
+            alert("Collection created successfully!");
+        } catch (error) {
+            alert("Error creating collection: " + error.message);
+        }
+    };
+
+    const handleDeleteCollection = async (id) => {
+        if (!window.confirm("Delete this collection?")) return;
+        try {
+            await axios.delete(`${BASE}/api/collections/${id}`);
+            fetchCollections();
+            if (editingCollection?._id === id) setEditingCollection(null);
+        } catch (error) {
+            alert("Error deleting collection: " + error.message);
+        }
+    };
+
+    const handleSearchColItems = async (e) => {
+        e.preventDefault();
+        if (!collectionItemSearch.trim()) return;
+        setIsSearchingColItems(true);
+        try {
+            const res = await axios.get(`${BASE}/api/search/`, { params: { query: collectionItemSearch, page: 1, page_size: 10 } });
+            setCollectionItemResults(res.data.results);
+        } catch (error) {
+            console.error("Failed to search items:", error);
+        }
+        setIsSearchingColItems(false);
+    };
+
+    const handleAddItemToCollection = async (item) => {
+        if (!editingCollection) return;
+        try {
+            await axios.post(`${BASE}/api/collections/${editingCollection._id}/items`, { tmdb_id: item.tmdb_id, media_type: item.media_type });
+            const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
+            setEditingCollection(res.data);
+            fetchCollections();
+        } catch (error) {
+            alert("Error adding item: " + error.message);
+        }
+    };
+
+    const handleRemoveItemFromCollection = async (tmdb_id, media_type) => {
+        if (!editingCollection) return;
+        try {
+            await axios.delete(`${BASE}/api/collections/${editingCollection._id}/items/${media_type}/${tmdb_id}`);
+            const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
+            setEditingCollection(res.data);
+            fetchCollections();
+        } catch (error) {
+            alert("Error removing item: " + error.message);
+        }
+    };
 
     const handleSyncManual = async () => {
         setIsSyncing(true);
@@ -566,6 +652,7 @@ const Admin = () => {
                             { id: "ads", icon: <PiGearFill />, label: "Ads Management" },
                             { id: "content", icon: <PiTrashFill />, label: "Content CMS" },
                             { id: "manual", icon: <PiListFill />, label: "Manual Files" },
+                            { id: "collections", icon: <PiListFill />, label: "Collections" },
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -720,6 +807,91 @@ const Admin = () => {
                     </div>
                 )}
 
+                {activeTab === "collections" && (
+                    <div className="space-y-8 animate-in fade-in duration-500">
+                        <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                            <h2 className="text-2xl font-bold mb-6">Create Collection</h2>
+                            <form onSubmit={handleCreateCollection} className="flex flex-col md:flex-row gap-4">
+                                <input type="text" placeholder="Collection Title" value={newCollectionTitle} onChange={e => setNewCollectionTitle(e.target.value)} required className="flex-1 bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                <input type="url" placeholder="Landscape Thumbnail URL" value={newCollectionThumbnail} onChange={e => setNewCollectionThumbnail(e.target.value)} required className="flex-1 bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                <button type="submit" className="bg-primaryBtn text-white px-8 py-4 rounded-xl font-bold">Create</button>
+                            </form>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                                <h2 className="text-xl font-bold mb-4">All Collections</h2>
+                                <div className="space-y-4">
+                                    {collections.map(col => (
+                                        <div key={col._id} className={`p-4 rounded-xl border cursor-pointer transition-all ${editingCollection?._id === col._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor"}`} onClick={async () => {
+                                            const res = await axios.get(`${BASE}/api/collections/${col._id}`);
+                                            setEditingCollection(res.data);
+                                        }}>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-bold">{col.title}</p>
+                                                    <p className="text-xs text-secondaryTextColor">{col.items?.length || 0} items</p>
+                                                </div>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col._id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg">
+                                                    <PiTrashFill />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {editingCollection && (
+                                <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                                    <h2 className="text-xl font-bold mb-4">Editing: {editingCollection.title}</h2>
+                                    <img src={editingCollection.thumbnail} alt="" className="w-full h-40 object-cover rounded-xl mb-6" />
+                                    
+                                    <div className="mb-6">
+                                        <h3 className="text-sm font-bold mb-2">Add Items</h3>
+                                        <form onSubmit={handleSearchColItems} className="flex gap-2">
+                                            <input type="text" placeholder="Search media..." value={collectionItemSearch} onChange={e => setCollectionItemSearch(e.target.value)} className="flex-1 bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none" />
+                                            <button type="submit" className="bg-primaryBtn text-white px-4 rounded-lg"><PiMagnifyingGlassBold /></button>
+                                        </form>
+                                        {isSearchingColItems && <p className="text-xs mt-2">Searching...</p>}
+                                        <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                                            {collectionItemResults.map(item => (
+                                                <div key={item.tmdb_id} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={item.poster} className="w-8 h-10 object-cover rounded" />
+                                                        <div>
+                                                            <p className="text-xs font-bold line-clamp-1">{item.title}</p>
+                                                            <p className="text-[10px] text-secondaryTextColor">{item.media_type}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => handleAddItemToCollection(item)} className="text-primaryBtn text-xs font-bold p-2 bg-primaryBtn/10 rounded hover:bg-primaryBtn hover:text-white transition-all"><PiPlusBold /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-sm font-bold mb-2">Current Items ({editingCollection.populated_items?.length || 0})</h3>
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {editingCollection.populated_items?.map(item => (
+                                                <div key={item.tmdb_id} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={item.poster} className="w-8 h-10 object-cover rounded" />
+                                                        <div>
+                                                            <p className="text-xs font-bold line-clamp-1">{item.title}</p>
+                                                            <p className="text-[10px] text-secondaryTextColor">{item.media_type}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => handleRemoveItemFromCollection(item.tmdb_id, item.media_type)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {activeTab === "settings" && (
                     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Global Identity & Theming */}
@@ -759,6 +931,78 @@ const Admin = () => {
                                             className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all"
                                             placeholder="SpartanAiBot"
                                         />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Language Priority Order</label>
+                                            <button 
+                                                onClick={() => setLocalSettings({ ...localSettings, language_priority: [] })}
+                                                className="text-[10px] font-black text-red-500 uppercase hover:underline"
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        
+                                        {/* Active Priority List */}
+                                        <div className="flex flex-wrap gap-2 p-4 bg-bgColor rounded-xl border border-secondaryTextColor/20 min-h-[60px]">
+                                            {localSettings.language_priority && localSettings.language_priority.length > 0 ? (
+                                                localSettings.language_priority.map((lang, i) => (
+                                                    <div key={i} className="flex items-center gap-1.5 bg-primaryBtn text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md animate-in zoom-in-95 duration-200">
+                                                        <span>{lang}</span>
+                                                        <button 
+                                                            onClick={() => {
+                                                                const newList = localSettings.language_priority.filter(l => l !== lang);
+                                                                setLocalSettings({ ...localSettings, language_priority: newList });
+                                                            }}
+                                                            className="hover:bg-white/20 p-0.5 rounded"
+                                                        >
+                                                            <PiXBold className="text-[10px]" />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-secondaryTextColor text-xs italic">Select languages below to set priority...</p>
+                                            )}
+                                        </div>
+
+                                        {/* Suggestions */}
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-bold text-secondaryTextColor/50 uppercase ml-1">Quick Add Suggestions</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {COMMON_LANGUAGES.filter(l => !localSettings.language_priority?.includes(l)).map(lang => (
+                                                    <button
+                                                        key={lang}
+                                                        onClick={() => {
+                                                            const current = localSettings.language_priority || [];
+                                                            if (!current.includes(lang)) {
+                                                                setLocalSettings({ ...localSettings, language_priority: [...current, lang] });
+                                                            }
+                                                        }}
+                                                        className="px-3 py-1.5 rounded-lg bg-btnColor/20 border border-secondaryTextColor/10 text-xs font-bold hover:border-primaryBtn hover:text-primaryBtn transition-all"
+                                                    >
+                                                        + {lang}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="pt-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Or type custom (e.g. Arabic) and press enter"
+                                                className="w-full bg-bgColor/50 p-3 rounded-lg border border-secondaryTextColor/10 text-xs outline-none focus:border-primaryBtn"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const val = e.target.value.trim();
+                                                        if (val && !localSettings.language_priority?.includes(val)) {
+                                                            setLocalSettings({ ...localSettings, language_priority: [...(localSettings.language_priority || []), val] });
+                                                            e.target.value = '';
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-bgColor rounded-xl border border-secondaryTextColor/10">
                                         <div>
@@ -1160,48 +1404,111 @@ const Admin = () => {
 
                                         <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin">
                                             {editingMedia.media_type === "movie" ? (
-                                                <div className="space-y-6">
-                                                    <h4 className="flex items-center justify-between text-sm font-black uppercase tracking-widest text-secondaryTextColor bg-bgColor/50 p-3 rounded-lg border-l-4 border-primaryBtn">
-                                                        Available Streams
-                                                        <span className="text-[10px] font-medium opacity-60">Total {editingMedia.telegram?.length || 0} Links</span>
-                                                    </h4>
-                                                    <div className="grid gap-4">
-                                                        {editingMedia.telegram?.map((link, idx) => (
-                                                            <div key={link.id} className="bg-bgColor/30 p-4 rounded-2xl border border-secondaryTextColor/10 flex flex-col md:flex-row gap-4 items-center">
-                                                                <div className="flex-1 w-full space-y-3">
-                                                                    <div className="flex flex-col">
-                                                                        <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1">Stream Display Title</label>
-                                                                        <input
-                                                                            type="text"
-                                                                            value={link.name}
-                                                                            onChange={(e) => {
-                                                                                const m = { ...editingMedia };
-                                                                                m.telegram[idx].name = e.target.value;
-                                                                                setEditingMedia(m);
-                                                                            }}
-                                                                            className="w-full bg-transparent p-0 border-none font-bold text-sm focus:ring-0"
-                                                                        />
+                                                <>
+                                                    <div className="space-y-6">
+                                                        <h4 className="flex items-center justify-between text-sm font-black uppercase tracking-widest text-secondaryTextColor bg-bgColor/50 p-3 rounded-lg border-l-4 border-primaryBtn">
+                                                            Available Streams
+                                                            <span className="text-[10px] font-medium opacity-60">Total {editingMedia.telegram?.length || 0} Links</span>
+                                                        </h4>
+                                                        <div className="grid gap-4">
+                                                            {editingMedia.telegram?.map((link, idx) => (
+                                                                <div key={link.id} className="bg-bgColor/30 p-4 rounded-2xl border border-secondaryTextColor/10 flex flex-col md:flex-row gap-4 items-center">
+                                                                    <div className="flex-1 w-full space-y-3">
+                                                                        <div className="flex flex-col">
+                                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1">Stream Display Title</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={link.name}
+                                                                                onChange={(e) => {
+                                                                                    const m = { ...editingMedia };
+                                                                                    m.telegram[idx].name = e.target.value;
+                                                                                    setEditingMedia(m);
+                                                                                }}
+                                                                                className="w-full bg-transparent p-0 border-none font-bold text-sm focus:ring-0"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex flex-col sm:flex-row gap-4">
+                                                                            <div className="flex-1 sm:w-24">
+                                                                                <label className="text-[8px] font-black text-secondaryTextColor/50 uppercase ml-1">Quality</label>
+                                                                                <input type="text" value={link.quality} onChange={(e) => { const m = { ...editingMedia }; m.telegram[idx].quality = e.target.value; setEditingMedia(m); }} className="w-full bg-btnColor/30 p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]" />
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <label className="text-[8px] font-black text-secondaryTextColor/50 uppercase ml-1">Size</label>
+                                                                                <input type="text" value={link.size} onChange={(e) => { const m = { ...editingMedia }; m.telegram[idx].size = e.target.value; setEditingMedia(m); }} className="w-full bg-btnColor/30 p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]" />
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex flex-col sm:flex-row gap-4">
-                                                                        <div className="flex-1 sm:w-24">
-                                                                            <label className="text-[8px] font-black text-secondaryTextColor/50 uppercase ml-1">Quality</label>
-                                                                            <input type="text" value={link.quality} onChange={(e) => { const m = { ...editingMedia }; m.telegram[idx].quality = e.target.value; setEditingMedia(m); }} className="w-full bg-btnColor/30 p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <label className="text-[8px] font-black text-secondaryTextColor/50 uppercase ml-1">Size</label>
-                                                                            <input type="text" value={link.size} onChange={(e) => { const m = { ...editingMedia }; m.telegram[idx].size = e.target.value; setEditingMedia(m); }} className="w-full bg-btnColor/30 p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]" />
-                                                                        </div>
+                                                                    <div className="flex gap-2">
+                                                                        <button onClick={() => handleUpdateQuality(link.id, { quality: link.quality, name: link.name, size: link.size })} className="p-3 bg-primaryBtn/20 text-primaryBtn rounded-xl hover:bg-primaryBtn hover:text-white transition-all shadow-lg"><PiCheckBold /></button>
+                                                                        <button onClick={() => handleDeleteQuality(link.id)} className="p-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"><PiTrashFill /></button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex gap-2">
-                                                                    <button onClick={() => handleUpdateQuality(link.id, { quality: link.quality, name: link.name, size: link.size })} className="p-3 bg-primaryBtn/20 text-primaryBtn rounded-xl hover:bg-primaryBtn hover:text-white transition-all shadow-lg"><PiCheckBold /></button>
-                                                                    <button onClick={() => handleDeleteQuality(link.id)} className="p-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"><PiTrashFill /></button>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        {(!editingMedia.telegram || editingMedia.telegram.length === 0) && <div className="text-center py-20 text-secondaryTextColor italic border-2 border-dashed border-secondaryTextColor/10 rounded-3xl">No streams available for this movie. Use Manual Database to link files.</div>}
+                                                            ))}
+                                                            {(!editingMedia.telegram || editingMedia.telegram.length === 0) && <div className="text-center py-20 text-secondaryTextColor italic border-2 border-dashed border-secondaryTextColor/10 rounded-3xl">No streams available for this movie. Use Manual Database to link files.</div>}
+                                                        </div>
                                                     </div>
-                                                </div>
+
+                                                    <div className="space-y-6 mt-8 pt-8 border-t border-secondaryTextColor/10">
+                                                        <div className="flex justify-between items-center bg-cyan-400/5 p-3 rounded-lg border-l-4 border-cyan-400">
+                                                            <div className="flex flex-col">
+                                                                <p className="text-xs uppercase font-black tracking-widest text-cyan-400">External Links</p>
+                                                                <p className="text-[9px] text-cyan-400/50 font-bold uppercase tracking-tighter">GDrive, Mega, Terabox, etc.</p>
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const m = { ...editingMedia };
+                                                                    if (!m.external_links) m.external_links = [];
+                                                                    m.external_links.push({ name: "", url: "" });
+                                                                    setEditingMedia(m);
+                                                                }}
+                                                                className="flex items-center gap-2 px-4 py-1.5 bg-cyan-400 text-bgColor rounded-lg text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-cyan-400/20"
+                                                            >
+                                                                <PiPlusBold /> Add Link
+                                                            </button>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            {editingMedia.external_links?.map((link, idx) => (
+                                                                <div key={idx} className="flex gap-2 items-center bg-bgColor/30 p-3 rounded-xl border border-secondaryTextColor/10">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Name (e.g. GDrive)" 
+                                                                        value={link.name} 
+                                                                        onChange={(e) => {
+                                                                            const m = { ...editingMedia };
+                                                                            m.external_links[idx].name = e.target.value;
+                                                                            setEditingMedia(m);
+                                                                        }} 
+                                                                        className="w-1/3 bg-bgColor p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]"
+                                                                    />
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Direct URL" 
+                                                                        value={link.url} 
+                                                                        onChange={(e) => {
+                                                                            const m = { ...editingMedia };
+                                                                            m.external_links[idx].url = e.target.value;
+                                                                            setEditingMedia(m);
+                                                                        }} 
+                                                                        className="flex-1 bg-bgColor p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]"
+                                                                    />
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            const m = { ...editingMedia };
+                                                                            m.external_links.splice(idx, 1);
+                                                                            setEditingMedia(m);
+                                                                        }}
+                                                                        className="text-red-500/50 hover:text-red-500"
+                                                                    >
+                                                                        <PiTrashFill />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                            {(!editingMedia.external_links || editingMedia.external_links.length === 0) && (
+                                                                <p className="text-[10px] text-secondaryTextColor/50 italic text-center py-4">No external links added.</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </>
                                             ) : (
                                                 <div className="space-y-6">
                                                     {editingMedia.seasons?.map((season) => (
@@ -1258,6 +1565,72 @@ const Admin = () => {
                                                                                         </div>
                                                                                         <div className="md:col-span-2 flex justify-end">
                                                                                             <button onClick={() => handleUpdateEpisode(season.season_number, episode.episode_number, { title: episode.title, episode_backdrop: episode.episode_backdrop })} className="px-4 py-2 bg-primaryBtn text-white text-[10px] font-black rounded-lg hover:shadow-lg transition-all">SAVE METADATA</button>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    <div className="space-y-4 mt-6 pt-6 border-t border-secondaryTextColor/10">
+                                                                                        <div className="flex justify-between items-center bg-cyan-400/5 p-3 rounded-lg border-l-4 border-cyan-400">
+                                                                                            <div className="flex flex-col">
+                                                                                                <p className="text-[10px] uppercase font-black tracking-widest text-cyan-400">External Links</p>
+                                                                                                <p className="text-[8px] text-cyan-400/50 font-bold uppercase tracking-tighter">GDrive, Mega, etc.</p>
+                                                                                            </div>
+                                                                                            <button 
+                                                                                                onClick={() => {
+                                                                                                    const m = { ...editingMedia };
+                                                                                                    const sIdx = m.seasons.findIndex(s => s.season_number === season.season_number);
+                                                                                                    const eIdx = m.seasons[sIdx].episodes.findIndex(ep => ep.episode_number === episode.episode_number);
+                                                                                                    if (!m.seasons[sIdx].episodes[eIdx].external_links) m.seasons[sIdx].episodes[eIdx].external_links = [];
+                                                                                                    m.seasons[sIdx].episodes[eIdx].external_links.push({ name: "", url: "" });
+                                                                                                    setEditingMedia(m);
+                                                                                                }}
+                                                                                                className="flex items-center gap-2 px-3 py-1 bg-cyan-400 text-bgColor rounded-lg text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-cyan-400/20"
+                                                                                                >
+                                                                                                <PiPlusBold /> Add Link
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div className="space-y-2">
+                                                                                            {episode.external_links?.map((link, lIdx) => (
+                                                                                                <div key={lIdx} className="flex gap-2 items-center bg-bgColor/30 p-2 rounded-xl border border-secondaryTextColor/10">
+                                                                                                    <input 
+                                                                                                        type="text" 
+                                                                                                        placeholder="Name" 
+                                                                                                        value={link.name} 
+                                                                                                        onChange={(e) => {
+                                                                                                            const m = { ...editingMedia };
+                                                                                                            const sIdx = m.seasons.findIndex(s => s.season_number === season.season_number);
+                                                                                                            const eIdx = m.seasons[sIdx].episodes.findIndex(ep => ep.episode_number === episode.episode_number);
+                                                                                                            m.seasons[sIdx].episodes[eIdx].external_links[lIdx].name = e.target.value;
+                                                                                                            setEditingMedia(m);
+                                                                                                        }} 
+                                                                                                        className="w-1/3 bg-bgColor p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]"
+                                                                                                    />
+                                                                                                    <input 
+                                                                                                        type="text" 
+                                                                                                        placeholder="Direct URL" 
+                                                                                                        value={link.url} 
+                                                                                                        onChange={(e) => {
+                                                                                                            const m = { ...editingMedia };
+                                                                                                            const sIdx = m.seasons.findIndex(s => s.season_number === season.season_number);
+                                                                                                            const eIdx = m.seasons[sIdx].episodes.findIndex(ep => ep.episode_number === episode.episode_number);
+                                                                                                            m.seasons[sIdx].episodes[eIdx].external_links[lIdx].url = e.target.value;
+                                                                                                            setEditingMedia(m);
+                                                                                                        }} 
+                                                                                                        className="flex-1 bg-bgColor p-2 rounded-lg border border-secondaryTextColor/10 text-[10px]"
+                                                                                                    />
+                                                                                                    <button 
+                                                                                                        onClick={() => {
+                                                                                                            const m = { ...editingMedia };
+                                                                                                            const sIdx = m.seasons.findIndex(s => s.season_number === season.season_number);
+                                                                                                            const eIdx = m.seasons[sIdx].episodes.findIndex(ep => ep.episode_number === episode.episode_number);
+                                                                                                            m.seasons[sIdx].episodes[eIdx].external_links.splice(lIdx, 1);
+                                                                                                            setEditingMedia(m);
+                                                                                                        }}
+                                                                                                        className="text-red-500/50 hover:text-red-500"
+                                                                                                    >
+                                                                                                        <PiTrashFill />
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            ))}
                                                                                         </div>
                                                                                     </div>
 

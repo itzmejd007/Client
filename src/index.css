@@ -289,3 +289,147 @@ body {
       100% calc(100% + 2px);
   }
 }
+
+/* --- PREMIUM VIDEO.JS STYLING --- */
+.video-js {
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  color: #fff;
+}
+
+/* Big Play Button - Centered & Glassmorphism */
+.vjs-big-play-centered .vjs-big-play-button {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.video-js .vjs-big-play-button {
+  width: 80px !important;
+  height: 80px !important;
+  line-height: 80px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-size: 3em !important;
+}
+
+.video-js:hover .vjs-big-play-button {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--color-primary) 40%, transparent) !important;
+  transform: translate(-50%, -50%) scale(1.1) !important;
+}
+
+/* Control Bar */
+.video-js .vjs-control-bar {
+  background: linear-gradient(transparent, rgba(0,0,0,0.8)) !important;
+  height: 4.5em !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Progress Bar */
+.video-js .vjs-progress-control {
+  position: absolute !important;
+  width: calc(100% - 40px) !important;
+  top: -10px !important;
+  height: 5px !important;
+  left: 20px !important;
+}
+
+.video-js .vjs-progress-holder {
+  height: 4px !important;
+  border-radius: 2px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.video-js .vjs-play-progress {
+  background-color: var(--color-primary) !important;
+  border-radius: 2px !important;
+}
+
+.video-js .vjs-play-progress:before {
+  font-size: 1.2em !important;
+  top: -0.3em !important;
+  color: var(--color-primary) !important;
+  text-shadow: 0 0 10px var(--color-primary) !important;
+}
+
+.video-js .vjs-load-progress {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 2px !important;
+}
+
+/* Icons and Controls */
+.video-js .vjs-control:before {
+  font-size: 2em !important;
+  line-height: 2.2 !important;
+}
+
+.video-js .vjs-playback-rate .vjs-playback-rate-value {
+  font-size: 1.2em !important;
+  line-height: 3.5 !important;
+  font-weight: 700 !important;
+}
+
+.video-js .vjs-menu-button-popup .vjs-menu {
+  bottom: 1.5em !important;
+}
+
+.video-js .vjs-menu-content {
+  background: rgba(15, 15, 15, 0.9) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+
+.video-js .vjs-menu-item {
+  border-radius: 6px !important;
+  margin-bottom: 2px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+.video-js .vjs-menu-item.vjs-selected, 
+.video-js .vjs-menu-item:hover {
+  background-color: var(--color-primary) !important;
+  color: #000 !important;
+}
+
+/* Volume Bar */
+.video-js .vjs-volume-bar {
+  margin: 1.5em 0.45em !important;
+}
+
+.video-js .vjs-volume-level {
+  background-color: var(--color-primary) !important;
+}
+
+/* Time Display */
+.video-js .vjs-current-time, 
+.video-js .vjs-duration, 
+.video-js .vjs-time-divider {
+  display: block !important;
+  font-weight: 600 !important;
+  font-size: 1.1em !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .video-js .vjs-big-play-button {
+    width: 60px !important;
+    height: 60px !important;
+    line-height: 60px !important;
+    font-size: 2em !important;
+  }
+}

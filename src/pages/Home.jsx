@@ -20,101 +20,35 @@ export default function Home() {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingTv, setTrendingTv] = useState([]);
   const [combinedTrending, setCombinedTrending] = useState([]);
-
-  const [isHeroLoading, setIsHeroLoading] = useState(true);
-  const [isTrendingMoviesLoading, setIsTrendingMoviesLoading] = useState(true);
-  const [isTrendingTvLoading, setIsTrendingTvLoading] = useState(true);
-  const [isCombinedTrendingLoading, setIsCombinedTrendingLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setIsHeroLoading(true);
+    setIsDataLoading(true);
     window.scrollTo(0, 0);
+    
     axios
-      .get(`${BASE}/api/trending`, {
-        params: {
-          page: 1,
-          page_size: 10,
-        },
-      })
+      .get(`${BASE}/api/home`)
       .then((response) => {
-        setHeroPopularMovies(response.data.results);
-        setIsHeroLoading(false);
+        const { hero, latest_movies, latest_tv, trending_now } = response.data;
+        setHeroPopularMovies(hero);
+        setTrendingMovies(latest_movies);
+        setTrendingTv(latest_tv);
+        setCombinedTrending(trending_now);
+        setIsDataLoading(false);
       })
-      .catch((error) => {
-        console.error("Error fetching trending media:", error);
-        setIsHeroLoading(false);
+      .catch((err) => {
+        console.error("Error fetching home data:", err);
+        setError(err);
+        setIsDataLoading(false);
       });
   }, [BASE]);
 
-  useEffect(() => {
-    setIsTrendingMoviesLoading(true);
-    axios
-      .get(`${BASE}/api/movies`, {
-        params: {
-          sort_by: "updated_on:desc",
-          page: 1,
-          page_size: 20,
-        },
-      })
-      .then((response) => {
-        setTrendingMovies(response.data.movies);
-        setIsTrendingMoviesLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching trending movies:", error);
-        setIsTrendingMoviesLoading(false);
-      });
-  }, [BASE]);
-
-  useEffect(() => {
-    setIsTrendingTvLoading(true);
-    axios
-      .get(`${BASE}/api/tvshows`, {
-        params: {
-          sort_by: "updated_on:desc",
-          page: 1,
-          page_size: 20,
-        },
-      })
-      .then((response) => {
-        setTrendingTv(response.data.tv_shows);
-        setIsTrendingTvLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching trending TV shows:", error);
-        setIsTrendingTvLoading(false);
-      });
-  }, [BASE]);
-
-  // Combined Trending (Movies + Series)
-  useEffect(() => {
-    setIsCombinedTrendingLoading(true);
-
-    const fetchTrending = async () => {
-      try {
-        const [movieRes, tvRes] = await Promise.all([
-          axios.get(`${BASE}/api/movies`, { params: { sort_by: "views:desc", page: 1, page_size: 15 } }),
-          axios.get(`${BASE}/api/tvshows`, { params: { sort_by: "views:desc", page: 1, page_size: 15 } })
-        ]);
-
-        const merged = [
-          ...(movieRes.data.movies || []),
-          ...(tvRes.data.tv_shows || [])
-        ];
-
-        // Sort merged by views
-        merged.sort((a, b) => (b.views || 0) - (a.views || 0));
-
-        setCombinedTrending(merged);
-      } catch (error) {
-        console.error("Error fetching combined trending:", error);
-      } finally {
-        setIsCombinedTrendingLoading(false);
-      }
-    };
-
-    fetchTrending();
-  }, [BASE]);
+  // Map old loading states to the new unified loading state
+  const isHeroLoading = isDataLoading;
+  const isTrendingMoviesLoading = isDataLoading;
+  const isTrendingTvLoading = isDataLoading;
+  const isCombinedTrendingLoading = isDataLoading;
 
   return (
     <div>
@@ -122,10 +56,10 @@ export default function Home() {
       {/* SEO SECTION */}
       <SEO
         title={`${SITENAME} - Watch Anime in Tamil, Hindi & Telugu Dubbed Online`}
-        description={`Watch the latest Tamil dubbed anime online in HD quality, 480p, 720p and 1080p. Explore Hindi, Telugu, English and multi audio anime episodes updated daily on ${SITENAME}.`}
+        description={`Watch the latest Tamil dubbed anime online in HD quality, 480p, 720p and 1080p. Explore Hindi, Telugu, English and multi audio anime episodes updated daily on  ${SITENAME}.`}
         name={SITENAME}
         type="website"
-        keywords="Tamil dubbed anime, watch anime in Tamil, AnimeToon, Hindi dubbed anime, Telugu dubbed anime, English dubbed anime, multi audio anime, anime online, HD anime streaming"
+        keywords="watch movies online, watch hd movies, watch full movies, streaming movies online, free streaming movie, watch movies free, watch hd movies online, watch series online, watch hd series free, free tv series, free movies online, tv online, tv links, tv links movies, free tv shows, watch tv shows online, watch tv shows online free, free hd movies, New Movie Releases, Top Movies of the Year, Watch Movies Online, Streaming Services, Movie Reviews, Upcoming Films, Best Movie Scenes, Classic Movies, HD Movie Streaming, Film Trailers, Action Movies, Drama Films, Comedy Movies, Sci-Fi Films, Horror Movie Picks, Family-Friendly Movies, Award-Winning Films, Movie Recommendations, Cinematic Experiences, Behind-the-Scenes, Director Spotlights, Actor Interviews, Film Festivals, Cult Classics, Top Box Office Hits, Celebrity News, Movie Soundtracks, Oscar-Winning Movies, Movie Trivia, Exclusive Film Content, Best Cinematography, Must-Watch Movies, Film Industry News, Filmmaking Tips, Top Movie Blogs, Latest Movie Gossip, Interactive Movie Quizzes, Red Carpet Moments, IMDb Ratings, Movie Fan Communities, fmovies, fmovies.to, fmovies to, fmovies is, fmovie, free movies, online movie, movie online, free movies online, watch movies online free, free hd movies, watch movies online"
         link={`https://${SITENAME}.com`}
       />
 

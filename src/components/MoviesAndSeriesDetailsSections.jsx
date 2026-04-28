@@ -21,13 +21,27 @@ import { LuLanguages } from "react-icons/lu";
 import TelegramButton from "./TelegramButtons";
 import DownloadButton from "./Buttons";
 import { MdOutlineHighQuality } from "react-icons/md";
+import { useWatchlist } from "../context/WatchlistContext";
+import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/popover";
+import { PiPlusBold, PiCheckBold, PiDownloadSimpleBold, PiGlobeBold } from "react-icons/pi";
 
 export default function MoviesAndSeriesDetailsSections(props) {
   const [isWatchMoviePopupOpen, setIsWatchMoviePopupOpen] = useState(false);
   const [isWatchEpisodePopupOpen, setIsWatchEpisodePopupOpen] = useState(false);
   const [isSeasonsOpen, setIsSeasonspOpen] = useState(false);
   const { settings } = useSettings();
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
+  
+  const inWatchlist = isInWatchlist(props.movieData.tmdb_id);
   const showViews = settings?.showViews !== false; // Default to true if not specified
+
+  const handleWatchlistToggle = () => {
+    if (inWatchlist) {
+      removeFromWatchlist(props.movieData.tmdb_id);
+    } else {
+      addToWatchlist(props.movieData);
+    }
+  };
 
   return (
     <div className="relative bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
@@ -153,21 +167,74 @@ export default function MoviesAndSeriesDetailsSections(props) {
                       </p>
                     </div>
                   )}
+
+                  {/* Simplified Watchlist Toggle (placed after views) */}
+                  <button 
+                    onClick={handleWatchlistToggle}
+                    className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 border ml-1 ${
+                      inWatchlist 
+                        ? "bg-green-500 text-white border-green-600 shadow-lg shadow-green-500/30" 
+                        : "bg-bgColorSecondary dark:bg-white/10 text-primaryTextColor/70 dark:text-white/70 hover:bg-otherColor/10 border-secondaryTextColor/20 dark:border-white/10"
+                    }`}
+                    title={inWatchlist ? "In Watchlist" : "Add to Watchlist"}
+                  >
+                    {inWatchlist ? (
+                      <PiCheckBold className="text-sm animate-in zoom-in duration-300" />
+                    ) : (
+                      <PiPlusBold className="text-sm" />
+                    )}
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center flex-wrap gap-2 text-primaryTextColor mt-3">
+              {/* Consolidated Action Buttons Grid - Adaptive Layout */}
+              <div className="grid grid-cols-2 md:flex md:flex-wrap gap-3 text-primaryTextColor mt-5 w-full">
+                <div className="col-span-1 md:flex-1 md:min-w-[120px]">
+                  <TelegramButton movieData={props.movieData} />
+                </div>
+                
+                <div className="col-span-1 md:flex-1 md:min-w-[120px]">
+                  <DownloadButton
+                    movieData={props.movieData}
+                    btnType="Download"
+                  />
+                </div>
+                
+                {props.movieData.external_links?.length > 0 && (
+                  <div className="col-span-1 md:flex-1 md:min-w-[120px]">
+                    <Popover placement="bottom" showArrow={true}>
+                      <PopoverTrigger>
+                        <button className="flex items-center justify-center gap-2 w-full h-8 sm:h-9 bg-otherColor/10 text-otherColor border-2 border-otherColor rounded-full font-black text-[9px] uppercase tracking-wider hover:bg-otherColor hover:text-bgColor transition-all">
+                          <PiGlobeBold className="text-base" />
+                          External Links
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="bg-bgColorSecondary dark:bg-btnColor border border-secondaryTextColor/20 p-2 min-w-[160px] shadow-2xl">
+                        <div className="flex flex-col gap-1 w-full">
+                          <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-secondaryTextColor font-bold">Links</p>
+                          {props.movieData.external_links.map((link, idx) => (
+                            <a 
+                              key={idx}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group"
+                            >
+                              <span className="font-medium">{link.name || `Link ${idx + 1}`}</span>
+                              <PiGlobeBold className="text-otherColor opacity-50 group-hover:opacity-100 transition-opacity" />
+                            </a>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
 
-                <TelegramButton movieData={props.movieData} />
-                <DownloadButton
-                  movieData={props.movieData}
-                  btnType="Download"
-                />
-              </div>
-              <div className="mt-3 flex md:hidden">
-                <DownloadButton
-                  movieData={props.movieData}
-                  btnType="MX Player"
-                />
+                <div className="col-span-1 md:hidden">
+                  <DownloadButton
+                    movieData={props.movieData}
+                    btnType="MX Player"
+                  />
+                </div>
               </div>
               <AdComponent type="adSidebar" className="mt-5" />
             </div>

@@ -8,9 +8,10 @@ import { useSettings } from "../context/SettingsContext";
 
 import { FiSearch } from "react-icons/fi";
 import { VscClose } from "react-icons/vsc";
-import { BiHomeAlt2, BiSolidMovie, BiStar } from "react-icons/bi";
+import { BiHomeAlt2, BiSolidMovie, BiStar, BiLibrary } from "react-icons/bi";
 
 import { BsTv } from "react-icons/bs";
+import { PiHeartFill } from "react-icons/pi";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalAd from "./GlobalAd";
@@ -53,10 +54,12 @@ export default function Nav() {
     const path = location.pathname;
     if (path === "/") {
       setNavStatus("Home");
-    } else if (path.startsWith("/mov") || path.startsWith("/Movies")) {
+    } else if (path.startsWith("/mov") || path.startsWith("/movies")) {
       setNavStatus("Movies");
-    } else if (path.startsWith("/ser") || path.startsWith("/Series")) {
+    } else if (path.startsWith("/ser") || path.startsWith("/series")) {
       setNavStatus("Series");
+    } else if (path.startsWith("/watchlist")) {
+      setNavStatus("Watchlist");
     }
   }, [location.pathname]);
 
@@ -145,27 +148,29 @@ export default function Nav() {
 
         {/* Navigations Large Screen*/}
         <nav className="hidden md:flex justify-center flex-1">
-          <ul className="flex items-center gap-6 lg:gap-14">
+          <ul className="flex items-center gap-4 lg:gap-6">
             {[
               { icon: BiHomeAlt2, name: "Home" },
               { icon: BiSolidMovie, name: "Movies" },
               { icon: BsTv, name: "Series" },
+              { icon: BiLibrary, name: "Collections" },
+              { icon: PiHeartFill, name: "Watchlist" },
             ].map((navItem, index) => {
               return (
                 <Link
                   key={index}
-                  to={navItem.name === "Home" ? "/" : navItem.name}
+                  to={navItem.name === "Home" ? "/" : navItem.name.toLowerCase()}
                   className={
                     navStatus === navItem.name
-                      ? "flex flex-col items-center transition-all duration-300 ease-in-out text-otherColor scale-105"
-                      : "flex flex-col items-center transition-all duration-300 ease-in-out hover:text-otherColor hover:scale-105"
+                      ? "flex flex-col items-center justify-center w-14 lg:w-16 transition-all duration-300 ease-in-out text-otherColor scale-105"
+                      : "flex flex-col items-center justify-center w-14 lg:w-16 transition-all duration-300 ease-in-out hover:text-otherColor hover:scale-105"
                   }
                   onClick={() => setNavStatus(navItem.name)}
                 >
-                  <li className="text-2xl">
+                  <li className="text-lg lg:text-xl list-none">
                     <navItem.icon />
                   </li>
-                  <p className="text-sm text-secondaryTextColor">
+                  <p className="text-[8px] lg:text-[9px] font-black uppercase tracking-[0.15em] text-secondaryTextColor/80">
                     {navItem.name}
                   </p>
                 </Link>
@@ -335,11 +340,13 @@ export default function Nav() {
                       { icon: BiHomeAlt2, name: "Home" },
                       { icon: BiSolidMovie, name: "Movies" },
                       { icon: BsTv, name: "Series" },
+                      { icon: BiLibrary, name: "Collections" },
+                      { icon: PiHeartFill, name: "Watchlist" },
                     ].map((navItem, index) => {
                       return (
                         <Link
                           key={index}
-                          to={navItem.name === "Home" ? "/" : navItem.name}
+                          to={navItem.name === "Home" ? "/" : navItem.name.toLowerCase()}
                           className={
                             navStatus === navItem.name
                               ? "flex items-center gap-4 p-3 rounded-xl bg-otherColor/10 text-otherColor transition-all"

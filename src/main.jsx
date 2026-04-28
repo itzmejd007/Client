@@ -8,6 +8,7 @@ import { registerSW } from 'virtual:pwa-register'
 registerSW({ immediate: true })
 
 import { SettingsProvider } from "./context/SettingsContext.jsx";
+import { WatchlistProvider } from "./context/WatchlistContext.jsx";
 
 import App from "./App.jsx";
 import "./index.css";
@@ -17,7 +18,9 @@ createRoot(document.getElementById("root")).render(
     <NextUIProvider>
       <HelmetProvider>
         <SettingsProvider>
-          <App />
+          <WatchlistProvider>
+            <App />
+          </WatchlistProvider>
         </SettingsProvider>
       </HelmetProvider>
     </NextUIProvider>
