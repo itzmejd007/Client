@@ -185,7 +185,13 @@ const Admin = () => {
         setIsFetchingExisting(true);
         try {
             // Use Hybrid NDJSON Streaming for "connection movies" (Existing Content list)
-            const response = await fetch(`${BASE}/api/${existingMediaType}s/stream?sort_by=updated_on:desc`);
+            const response = await fetch(`${BASE}/api/${existingMediaType}s/stream?sort_by=updated_on:desc`, {
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                    'Accept': 'application/x-ndjson'
+                }
+            });
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let partialChunk = "";
