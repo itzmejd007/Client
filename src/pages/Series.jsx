@@ -54,11 +54,11 @@ export default function Series() {
     <div>
       {/* SEO SECTION */}
       <SEO
-        title={`TV Shows - ${SITENAME}`}
-        description={`Browse our massive catalog of the latest and greatest TV Shows on ${SITENAME}. Stream them in HD for free.`}
+        title={`Anime Series - ${SITENAME}`}
+        description={`Browse the latest anime series in Tamil, Hindi, Telugu and English dubbed on ${SITENAME}. Stream episodes in HD quality.`}
         name={SITENAME}
         type="website"
-        keywords="watch series online, free tv series, tv online, free tv shows, watch tv shows online, free hd series, Top TV Shows of the Year, Watch Series Online"
+        keywords="anime series, Tamil dubbed anime series, Hindi dubbed anime series, Telugu dubbed anime, watch anime episodes online"
         link={`https://${SITENAME}.com/series`}
       />
       <MoviesAndSeriesSections
