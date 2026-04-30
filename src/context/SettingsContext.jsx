@@ -31,6 +31,11 @@ export const SettingsProvider = ({ children }) => {
         adSocialBar: localStorage.getItem("adSocialBar") || "",
         adSmartlink: localStorage.getItem("adSmartlink") || "",
         language_priority: localStorage.getItem("language_priority") ? localStorage.getItem("language_priority").split(",") : [],
+        logoTextFont: localStorage.getItem("logoTextFont") || "",
+        logoCustomFontUrl: localStorage.getItem("logoCustomFontUrl") || "",
+        logoImageUrl: localStorage.getItem("logoImageUrl") || "",
+        logoFontSize: parseInt(localStorage.getItem("logoFontSize") || "24"),
+        logoImageSize: parseInt(localStorage.getItem("logoImageSize") || "40"),
     });
 
     const BASE = import.meta.env.VITE_BASE_URL;
