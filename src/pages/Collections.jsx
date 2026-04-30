@@ -12,10 +12,11 @@ export default function Collections() {
 
   const [collections, setCollections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("updated_on:desc");
 
   useEffect(() => {
     setIsLoading(true);
-    axios.get(`${BASE}/api/collections`)
+    axios.get(`${BASE}/api/collections`, { params: { sort_by: sortBy } })
       .then(res => {
         setCollections(res.data.collections || []);
         setIsLoading(false);
@@ -24,7 +25,7 @@ export default function Collections() {
         console.error("Error fetching collections", err);
         setIsLoading(false);
       });
-  }, [BASE]);
+  }, [BASE, sortBy]);
 
   return (
     <div className="w-full">
@@ -34,12 +35,25 @@ export default function Collections() {
         name={SITENAME}
         type="website"
       />
-      <div className="flex flex-col gap-6 md:gap-8 mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <h1 className="text-2xl md:text-3xl font-black text-primaryTextColor flex items-center gap-2 relative z-10 w-fit">
           Curated Collections
           <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-primaryBtn rounded-full blur-sm opacity-50 mix-blend-screen"></span>
           <span className="absolute -bottom-2 left-0 w-1/3 h-1 bg-primaryBtn rounded-full"></span>
         </h1>
+        
+        <div className="flex items-center gap-3 bg-bgColorSecondary/50 p-2 rounded-2xl border border-secondaryTextColor/10">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor ml-2">Sort By:</span>
+            <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-bgColor text-xs font-bold p-2 px-4 rounded-xl outline-none focus:border-primaryBtn border border-transparent transition-all"
+            >
+                <option value="updated_on:desc">Recently Updated</option>
+                <option value="title:asc">Name (A-Z)</option>
+                <option value="items:desc">Most Items</option>
+            </select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -51,7 +65,7 @@ export default function Collections() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map(col => (
-            <Link to={`/collection/${col._id}`} key={col._id} className="group relative rounded-2xl overflow-hidden aspect-video block bg-bgColorSecondary transition-transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primaryBtn/20">
+            <Link to={`/collection/${col.slug || col._id}`} key={col._id} className="group relative rounded-2xl overflow-hidden aspect-video block bg-bgColorSecondary transition-transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primaryBtn/20">
               <img src={col.thumbnail} alt={col.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
                 <h2 className="text-xl md:text-2xl font-black text-white group-hover:text-primaryBtn transition-colors">{col.title}</h2>

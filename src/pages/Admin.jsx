@@ -127,6 +127,7 @@ const Admin = () => {
 
     // --- Collections DB State ---
     const [collections, setCollections] = useState([]);
+    const [collectionsSort, setCollectionsSort] = useState("updated_on:desc");
     const [newCollectionTitle, setNewCollectionTitle] = useState("");
     const [newCollectionThumbnail, setNewCollectionThumbnail] = useState("");
     const [editingCollection, setEditingCollection] = useState(null);
@@ -142,6 +143,17 @@ const Admin = () => {
     // --- Add/Edit Flow Flag ---
     const [isNewAddition, setIsNewAddition] = useState(false);
     const [originalTitle, setOriginalTitle] = useState(null);
+
+    const fetchCollections = useCallback(async () => {
+        try {
+            const res = await axios.get(`${BASE}/api/collections`, {
+                params: { sort_by: collectionsSort }
+            });
+            setCollections(res.data.collections || []);
+        } catch (error) {
+            console.error("Failed to fetch collections:", error);
+        }
+    }, [collectionsSort]);
 
     // Fetch Analytics
     const fetchAnalytics = useCallback(async () => {
@@ -172,15 +184,38 @@ const Admin = () => {
     const fetchExistingContent = useCallback(async () => {
         setIsFetchingExisting(true);
         try {
-            const res = await axios.get(`${BASE}/api/${existingMediaType}s`, {
-                params: { page_size: 100, sort_by: "updated_on:desc" }
-            });
-            setExistingContent(existingMediaType === "movie" ? (res.data.movies || []) : (res.data.tv_shows || []));
+            // Use Hybrid NDJSON Streaming for "connection movies" (Existing Content list)
+            const response = await fetch(`${BASE}/api/${existingMediaType}s/stream?sort_by=updated_on:desc`);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let partialChunk = "";
+            const items = [];
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = (partialChunk + chunk).split("\n");
+                partialChunk = lines.pop(); // Keep last potentially incomplete line
+
+                for (const line of lines) {
+                    if (line.trim()) {
+                        try {
+                            items.push(JSON.parse(line));
+                        } catch (e) {
+                            console.error("Error parsing NDJSON line:", e);
+                        }
+                    }
+                }
+                // Update state for live streaming feel
+                setExistingContent([...items]);
+            }
         } catch (error) {
-            console.error("Failed to fetch existing content:", error);
+            console.error("Failed to fetch existing content via NDJSON:", error);
         }
         setIsFetchingExisting(false);
-    }, [existingMediaType]);
+    }, [existingMediaType, BASE]);
 
     // Fetch manual files
     const fetchManualFiles = useCallback(async () => {
@@ -204,16 +239,7 @@ const Admin = () => {
             fetchAnalytics();
             fetchCollections();
         }
-    }, [isAuthenticated, fetchExistingContent, fetchManualFiles, fetchAnalytics]);
-
-    const fetchCollections = async () => {
-        try {
-            const res = await axios.get(`${BASE}/api/collections`);
-            setCollections(res.data.collections || []);
-        } catch (error) {
-            console.error("Failed to fetch collections:", error);
-        }
-    };
+    }, [isAuthenticated, fetchExistingContent, fetchManualFiles, fetchAnalytics, fetchCollections]);
 
     const handleCreateCollection = async (e) => {
         e.preventDefault();
@@ -820,7 +846,18 @@ const Admin = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
-                                <h2 className="text-xl font-bold mb-4">All Collections</h2>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold">All Collections</h2>
+                                    <select 
+                                        value={collectionsSort} 
+                                        onChange={(e) => setCollectionsSort(e.target.value)}
+                                        className="bg-bgColor text-[10px] font-bold p-2 px-3 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn"
+                                    >
+                                        <option value="updated_on:desc">Latest First</option>
+                                        <option value="title:asc">A-Z</option>
+                                        <option value="items:desc">Most Items</option>
+                                    </select>
+                                </div>
                                 <div className="space-y-4">
                                     {collections.map(col => (
                                         <div key={col._id} className={`p-4 rounded-xl border cursor-pointer transition-all ${editingCollection?._id === col._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor"}`} onClick={async () => {

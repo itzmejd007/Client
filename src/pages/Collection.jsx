@@ -16,19 +16,54 @@ export default function Collection() {
 
   const [collection, setCollection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("updated:desc");
 
   useEffect(() => {
     setIsLoading(true);
+    
+    // Initial fetch for collection metadata
     axios.get(`${BASE}/api/collections/${id}`)
-      .then(res => {
-        setCollection(res.data);
+      .then(async (res) => {
+        const colData = res.data;
+        setCollection({ ...colData, populated_items: [] });
         setIsLoading(false);
+
+        // Then stream the items for "Hybrid" performance
+        try {
+          const response = await fetch(`${BASE}/api/collections/${colData._id}/stream?sort_by=${sortBy}`);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let partialChunk = "";
+          let streamedItems = [];
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = (partialChunk + chunk).split("\n");
+            partialChunk = lines.pop();
+
+            for (const line of lines) {
+              if (line.trim()) {
+                try {
+                  streamedItems.push(JSON.parse(line));
+                } catch (e) {
+                  console.error("Error parsing NDJSON:", e);
+                }
+              }
+            }
+            setCollection(prev => ({ ...prev, populated_items: [...streamedItems] }));
+          }
+        } catch (error) {
+          console.error("Error streaming collection items:", error);
+        }
       })
       .catch(err => {
-        console.error("Error fetching collection", err);
+        console.error("Error fetching collection metadata", err);
         setIsLoading(false);
       });
-  }, [BASE, id]);
+  }, [BASE, id, sortBy]);
 
   if (isLoading) {
     return (
@@ -61,7 +96,23 @@ export default function Collection() {
         <img src={collection.thumbnail} alt={collection.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
           <h1 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg">{collection.title}</h1>
-          <p className="text-gray-300 mt-2 font-medium">{collection.populated_items?.length || 0} Items Curated for You</p>
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
+            <p className="text-gray-300 font-medium">{collection.populated_items?.length || 0} Items Curated for You</p>
+            
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1 px-3 rounded-xl border border-white/10">
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
+                <select 
+                    value={sortBy} 
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-[11px] font-black text-white outline-none cursor-pointer p-1"
+                >
+                    <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
+                    <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
+                    <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
+                    <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
+                </select>
+            </div>
+          </div>
         </div>
       </div>
 
