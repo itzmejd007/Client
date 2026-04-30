@@ -117,7 +117,8 @@ const DownloadButton = ({ movieData, btnType }) => {
           selectorIcon: "text-primaryTextColor",
         }}
       >
-        {movieData.seasons
+        {(movieData.seasons || [])
+          .slice()
           .sort((a, b) => a.season_number - b.season_number)
           .map((s) => (
             <SelectItem key={String(s.season_number)} textValue={`Season ${s.season_number}`}>
@@ -146,7 +147,8 @@ const DownloadButton = ({ movieData, btnType }) => {
           selectorIcon: "text-primaryTextColor",
         }}
       >
-        {episodes
+        {(episodes || [])
+          .slice()
           .sort((a, b) => a.episode_number - b.episode_number)
           .map((e) => (
             <SelectItem key={String(e.episode_number)} textValue={`Episode ${e.episode_number}`}>

@@ -41,19 +41,6 @@ export default function Collections() {
           <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-primaryBtn rounded-full blur-sm opacity-50 mix-blend-screen"></span>
           <span className="absolute -bottom-2 left-0 w-1/3 h-1 bg-primaryBtn rounded-full"></span>
         </h1>
-        
-        <div className="flex items-center gap-3 bg-bgColorSecondary/50 p-2 rounded-2xl border border-secondaryTextColor/10">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor ml-2">Sort By:</span>
-            <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-bgColor text-xs font-bold p-2 px-4 rounded-xl outline-none focus:border-primaryBtn border border-transparent transition-all"
-            >
-                <option value="updated_on:desc">Recently Updated</option>
-                <option value="title:asc">Name (A-Z)</option>
-                <option value="items:desc">Most Items</option>
-            </select>
-        </div>
       </div>
 
       {isLoading ? (

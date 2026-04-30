@@ -129,7 +129,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                     <div className="flex items-center gap-2">
                       <LuLanguages className="text-lg xl:text-xl" />
                       <p className="text-xs xl:text-sm">
-                        {props.movieData.languages
+                        {(props.movieData.languages || [])
                           .map(
                             (lang) =>
                               lang.charAt(0).toUpperCase() + lang.slice(1)
@@ -264,7 +264,8 @@ export default function MoviesAndSeriesDetailsSections(props) {
                         }}
                         className="absolute top-11  border-2 border-secondaryTextColor/10 left-0 right-0 z-10 max-h-[30dvh] overflow-y-scroll py-4 text-secondaryTextColor text-md rounded-lg bg-btnColor"
                       >
-                        {props.movieData.seasons
+                        {(props.movieData.seasons || [])
+                          .slice()
                           .sort((a, b) => a.season_number - b.season_number)
                           .map((season, index) => {
                             return (
@@ -291,8 +292,8 @@ export default function MoviesAndSeriesDetailsSections(props) {
 
               <div className="relative grid content-center items-center w-full  p-5 gap-1 bg-btnColor/70 rounded-xl overflow-y-scroll grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {!props.isEpisodesLoading ? (
-                  props.episodes &&
-                  props.episodes
+                  (props.episodes || [])
+                    .slice()
                     .sort((a, b) => a.episode_number - b.episode_number)
                     .map((eps, index) => (
                       <div

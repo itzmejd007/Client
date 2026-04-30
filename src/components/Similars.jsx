@@ -48,7 +48,7 @@ export default function HomeSection(props) {
         {!props.isMovieDataLoading ? (
           <div className="relative ">
             <div className="grid  gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4  lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
-              {props.movieData.map((movie, index) => {
+              {(props.movieData || []).map((movie, index) => {
                 return (
                   <React.Fragment key={index}>
                     <MovieCard movie={movie} />

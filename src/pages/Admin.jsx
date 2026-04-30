@@ -185,7 +185,8 @@ const Admin = () => {
         setIsFetchingExisting(true);
         try {
             // Use Hybrid NDJSON Streaming for "connection movies" (Existing Content list)
-            const response = await fetch(`${BASE}/api/${existingMediaType}s/stream?sort_by=updated_on:desc`, {
+            const path = existingMediaType === 'tv' ? 'tvshows' : 'movies';
+            const response = await fetch(`${BASE}/api/${path}/stream?sort_by=updated_on:desc`, {
                 mode: 'cors',
                 credentials: 'omit',
                 headers: {

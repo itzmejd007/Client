@@ -121,11 +121,12 @@ export default function Collection() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
           <h1 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg">{collection.title}</h1>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-            <p className="text-gray-300 text-sm md:text-base font-medium order-2 sm:order-1">
+            <p className="text-gray-300 text-sm md:text-base font-medium">
               {collection.populated_items?.length || 0} / {collection.items?.length || 0} Items Curated for You
             </p>
             
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1.5 px-4 rounded-xl border border-white/20 w-fit order-1 sm:order-2">
+            {/* Sort Control - Desktop (Visible on sm and up) */}
+            <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-md p-1.5 px-4 rounded-xl border border-white/20 w-fit">
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
                 <select 
                     value={sortBy} 
@@ -139,6 +140,23 @@ export default function Collection() {
                 </select>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sort Control - Mobile (Visible only on xs/sm, hidden on sm and up) */}
+      <div className="flex sm:hidden justify-center mb-8">
+        <div className="flex items-center gap-2 bg-bgColorSecondary p-2 px-6 rounded-2xl border border-white/5 shadow-xl w-full max-w-[280px] justify-between">
+            <span className="text-[11px] font-black uppercase tracking-widest text-secondaryTextColor">Sort By:</span>
+            <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-[13px] font-black text-primaryTextColor outline-none cursor-pointer"
+            >
+                <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
+                <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
+                <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
+                <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
+            </select>
         </div>
       </div>
 
