@@ -17,7 +17,7 @@ export default function Collections() {
     setIsLoading(true);
     axios.get(`${BASE}/api/collections`)
       .then(res => {
-        setCollections(res.data);
+        setCollections(res.data.collections || []);
         setIsLoading(false);
       })
       .catch(err => {

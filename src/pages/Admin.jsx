@@ -209,7 +209,7 @@ const Admin = () => {
     const fetchCollections = async () => {
         try {
             const res = await axios.get(`${BASE}/api/collections`);
-            setCollections(res.data);
+            setCollections(res.data.collections || []);
         } catch (error) {
             console.error("Failed to fetch collections:", error);
         }
