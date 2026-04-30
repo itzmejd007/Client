@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, A11y, Autoplay } from "swiper/modules";
 import MovieCard from "./MovieCard";
-import MovieCardSkeleton from "./MovieCardSkeleton";
+import { SingleMovieCardSkeleton } from "./MovieCardSkeleton";
 import { BiArrowFromLeft } from "react-icons/bi";
 import { BsArrowLeftCircle, BsArrowRightCircle } from "react-icons/bs";
 
@@ -72,8 +72,8 @@ export default function TrendingSlider({ movieData, isMovieDataLoading, sectionT
                         ))}
                     </Swiper>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {[...Array(6)].map((_, i) => <MovieCardSkeleton key={i} />)}
+                    <div className="grid grid-flow-col auto-cols-[calc(50%-7.5px)] sm:auto-cols-[calc(33.333%-10px)] md:auto-cols-[calc(25%-11.25px)] lg:auto-cols-[calc(20%-12px)] xl:auto-cols-[calc(16.666%-12.5px)] gap-[15px] overflow-hidden">
+                        {[...Array(7)].map((_, i) => <SingleMovieCardSkeleton key={i} />)}
                     </div>
                 )}
             </div>
