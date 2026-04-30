@@ -79,7 +79,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                 {props.movieData.title}
               </h1>
 
-              {props.movieData.media_type == "tv" ? (
+              {props.movieData.media_type == "tv" && props.movieData.status !== "Returning Series" && props.movieData.status !== "Unknown" ? (
                 <p className="bg-otherColor/40 text-otherColor px-5 rounded-full w-fit line-clamp-1 text-sm xl:text-md">
                   {props.movieData.status}
                 </p>
@@ -139,7 +139,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                     </div>
                   )}
                   {/* Quality */}
-                  {props.movieData.rip && (
+                  {props.movieData.rip && props.movieData.rip !== "Unknown" && (
                     <div className="flex items-center gap-2">
                       <MdOutlineHighQuality className="text-lg xl:text-xl" />
                       <p className="text-xs xl:text-sm">

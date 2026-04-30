@@ -98,13 +98,9 @@ const MovieCard = ({ movie }) => {
         </div>
       )}
 
-      {movie.rip ? (
+      {movie.rip && movie.rip !== "Unknown" && (
         <div className="flex bg-bgColorSecondary rounded-full items-center gap-1 absolute bottom-16 left-3 text-primaryTextColor py-1 px-3 font-medium text-[0.6rem] sm:text-xs">
           <p>{movie.rip}</p>
-        </div>
-      ) : (
-        <div className="flex bg-bgColorSecondary rounded-full items-center gap-1 absolute bottom-16 left-3 text-primaryTextColor py-1 px-3 font-medium text-[0.6rem] sm:text-xs">
-          <p>Blu-Ray</p>
         </div>
       )}
 

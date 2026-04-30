@@ -131,6 +131,51 @@ export default function Nav() {
     };
   }, []);
 
+  useEffect(() => {
+    // Inject Custom Font URL if present
+    if (settings?.logoCustomFontUrl) {
+      const linkId = 'custom-logo-font';
+      let link = document.getElementById(linkId);
+      if (!link) {
+        link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      link.href = settings.logoCustomFontUrl;
+    }
+
+    // Inject Default Font if URL is not present
+    if (settings?.logoTextFont && !settings?.logoCustomFontUrl) {
+      const linkId = 'default-logo-font';
+      let link = document.getElementById(linkId);
+      if (!link) {
+        link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      link.href = `https://fonts.googleapis.com/css2?family=${settings.logoTextFont.replace(/ /g, '+')}:wght@400;700;900&display=swap`;
+    }
+  }, [settings?.logoCustomFontUrl, settings?.logoTextFont]);
+
+  const getLogoFontFamily = () => {
+    if (settings?.logoCustomFontUrl) {
+      try {
+        // More robust extraction using regex for Google Fonts URLs
+        const match = settings.logoCustomFontUrl.match(/family=([^&:]+)/);
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]).replace(/\+/g, " ");
+        }
+      } catch (e) {
+        console.warn("Font extraction failed", e);
+      }
+    }
+    return settings?.logoTextFont;
+  };
+
+  const logoFontFamily = getLogoFontFamily();
+
   return (
     <>
       {/* Header Ad Placement */}
@@ -141,9 +186,33 @@ export default function Nav() {
         {/* LOGO / TITLE (Visible on all screens) */}
         <Link
           to="/"
-          className="flex items-center gap-2 uppercase text-otherColor font-extrabold text-xl sm:text-2xl shrink-0 lg:w-1/4"
+          className="flex items-center gap-2 text-otherColor shrink-0 lg:w-1/4"
+          style={logoFontFamily ? { 
+            fontFamily: `"${logoFontFamily}", sans-serif`,
+            fontSize: `${settings?.logoFontSize || 24}px`,
+            textTransform: 'none' 
+          } : {
+            fontSize: `${settings?.logoFontSize || 24}px`
+          }}
         >
-          <p>{SITENAME}</p>
+          {settings?.logoImageUrl ? (
+            <img 
+              src={settings.logoImageUrl} 
+              alt={settings?.siteName || SITENAME} 
+              className="w-auto object-contain" 
+              style={{ height: `${settings?.logoImageSize || 40}px`, maxWeight: 'none' }} 
+            />
+          ) : (
+            <p 
+              className={logoFontFamily ? "tracking-tighter" : "font-bold tracking-tighter"}
+              style={{ 
+                fontFamily: logoFontFamily ? `"${logoFontFamily}", sans-serif` : 'inherit',
+                fontSize: `${settings?.logoFontSize || 24}px`
+              }}
+            >
+              {settings?.siteName || SITENAME}
+            </p>
+          )}
         </Link>
 
         {/* Navigations Large Screen*/}
