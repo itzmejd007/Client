@@ -11,6 +11,14 @@ import { BsArrowLeftCircle, BsArrowRightCircle } from "react-icons/bs";
 import { FaPlay } from "react-icons/fa";
 import { PiStarFill } from "react-icons/pi";
 
+const slugify = (text) => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
 export default function HeroSlider({ movieData, isMovieDataLoading }) {
   return (
     <div className="">
@@ -105,8 +113,8 @@ export default function HeroSlider({ movieData, isMovieDataLoading }) {
                         <Link
                           className="flex items-center gap-2 bg-primaryBtn text-bgColor text-sm py-1 px-5 rounded-full sm:text-base transition-all duration-300 ease-in-out hover:bg-primaryBtnHower hover:text-primaryTextColor"
                           to={movie.media_type === "tvshow" 
-                            ? `/ser/${movie.tmdb_id}/${encodeURIComponent(movie.title)}` 
-                            : `/mov/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`}
+                            ? `/ser/${movie.tmdb_id}/${slugify(movie.title)}` 
+                            : `/mov/${movie.tmdb_id}/${slugify(movie.title)}`}
                           style={{ textDecoration: "none" }}
                         >
                           <FaPlay />

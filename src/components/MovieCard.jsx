@@ -8,6 +8,14 @@ import { PiStarFill, PiPencilSimpleFill } from "react-icons/pi";
 import { BsPlayFill } from "react-icons/bs";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
 
+const slugify = (text) => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
 const MovieCard = ({ movie }) => {
   const [showPlayBtn, setShowPlayBtn] = useState(false);
   const [openId, setOpenId] = useState();
@@ -26,9 +34,9 @@ const MovieCard = ({ movie }) => {
     <div className="relative">
       <Link
         to={
-          movie.media_type === "movie"
-            ? `/mov/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
-            : `/ser/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
+            movie.media_type === "movie"
+                ? `/mov/${movie.tmdb_id}/${slugify(movie.title)}`
+                : `/ser/${movie.tmdb_id}/${slugify(movie.title)}`
         }
         className="rounded-t-2xl"
       >
@@ -109,8 +117,8 @@ const MovieCard = ({ movie }) => {
           <Link
             to={
               movie.media_type === "movie"
-                ? `/mov/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
-                : `/ser/${movie.tmdb_id}/${encodeURIComponent(movie.title)}`
+                ? `/mov/${movie.tmdb_id}/${slugify(movie.title)}`
+                : `/ser/${movie.tmdb_id}/${slugify(movie.title)}`
             }
             onMouseEnter={showPlay}
             onMouseLeave={hidePlay}
