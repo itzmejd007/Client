@@ -333,7 +333,7 @@ const Admin = () => {
 
     const handleEditExisting = async (tmdb_id, type, title = null) => {
         try {
-            const res = await axios.get(`${BASE}/api/id/${tmdb_id}`, { params: { title } });
+            const res = await axios.get(`${BASE}/api/id/${tmdb_id}`, { params: { title, media_type: type } });
             // Force media_type from list context if missing in payload
             const data = res.data;
             if (!data.media_type) data.media_type = (type === "tv" || data.seasons) ? "tv" : "movie";
@@ -912,6 +912,61 @@ const Admin = () => {
                                             placeholder="e.g. MovieStream"
                                         />
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Custom Font URL (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={localSettings.logoCustomFontUrl || ""}
+                                            onChange={(e) => setLocalSettings({ ...localSettings, logoCustomFontUrl: e.target.value })}
+                                            className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all"
+                                            placeholder="https://fonts.googleapis.com/css2?family=..."
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Logo Font Size (px)</label>
+                                        <div className="flex items-center gap-4">
+                                            <input
+                                                type="range"
+                                                min="16"
+                                                max="60"
+                                                value={localSettings.logoFontSize || 24}
+                                                onChange={(e) => setLocalSettings({ ...localSettings, logoFontSize: parseInt(e.target.value) })}
+                                                className="flex-1 accent-primaryBtn"
+                                            />
+                                            <span className="text-sm font-bold w-12 text-center bg-bgColor p-2 rounded-lg border border-secondaryTextColor/20">
+                                                {localSettings.logoFontSize || 24}px
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Logo Image URL</label>
+                                        <input
+                                            type="text"
+                                            value={localSettings.logoImageUrl || ""}
+                                            onChange={(e) => setLocalSettings({ ...localSettings, logoImageUrl: e.target.value })}
+                                            className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all"
+                                            placeholder="https://example.com/logo.png"
+                                        />
+                                    </div>
+                                    {localSettings.logoImageUrl && (
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Logo Image Height (px)</label>
+                                            <div className="flex items-center gap-4">
+                                                <input
+                                                    type="range"
+                                                    min="20"
+                                                    max="120"
+                                                    value={localSettings.logoImageSize || 40}
+                                                    onChange={(e) => setLocalSettings({ ...localSettings, logoImageSize: parseInt(e.target.value) })}
+                                                    className="flex-1 accent-primaryBtn"
+                                                />
+                                                <span className="text-sm font-bold w-12 text-center bg-bgColor p-2 rounded-lg border border-secondaryTextColor/20">
+                                                    {localSettings.logoImageSize || 40}px
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Telegram Link</label>
                                         <input
@@ -1375,6 +1430,16 @@ const Admin = () => {
                                                                     onChange={(e) => setEditingMedia({ ...editingMedia, rating: e.target.value })}
                                                                     className="text-amber-500 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded w-16"
                                                                 />
+                                                                <div className="flex items-center gap-1">
+                                                                    <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase">Rip:</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingMedia.rip || "Unknown"}
+                                                                        onChange={(e) => setEditingMedia({ ...editingMedia, rip: e.target.value })}
+                                                                        className="text-primaryBtn font-bold text-xs bg-primaryBtn/10 px-2 py-0.5 rounded w-24 outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                                        placeholder="Quality/Rip"
+                                                                    />
+                                                                </div>
                                                                 <div className="flex-1">
                                                                     <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Audio Languages (en, hi, ta...)</label>
                                                                     <input
@@ -1398,6 +1463,28 @@ const Admin = () => {
                                                         className="mt-3 text-xs text-secondaryTextColor bg-transparent border-none p-0 resize-none h-16 focus:ring-0 scrollbar-none"
                                                         placeholder="Description..."
                                                     />
+                                                    <div className="flex gap-4 mt-2">
+                                                        <div className="flex-1">
+                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Poster URL (Vertical)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={editingMedia.poster || ""}
+                                                                placeholder="Poster image URL..."
+                                                                onChange={(e) => setEditingMedia({ ...editingMedia, poster: e.target.value })}
+                                                                className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Backdrop URL (Landscape)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={editingMedia.backdrop || ""}
+                                                                placeholder="Backdrop image URL..."
+                                                                onChange={(e) => setEditingMedia({ ...editingMedia, backdrop: e.target.value })}
+                                                                className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

@@ -28,42 +28,19 @@ export default function Home() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    // Fetch Hero immediately
-    axios.get(`${BASE}/api/trending?page=1&page_size=10`)
-      .then((response) => {
-        setHeroPopularMovies(response.data.results || []);
+    axios.get(`${BASE}/api/home`)
+      .then(res => {
+        setHeroPopularMovies(res.data.hero || []);
         setIsHeroLoading(false);
-      })
-      .catch((err) => console.error("Error fetching hero:", err));
-
-    // Fetch Combined Trending
-    Promise.all([
-      axios.get(`${BASE}/api/movies?sort_by=views:desc&page=1&page_size=15`),
-      axios.get(`${BASE}/api/tvs?sort_by=views:desc&page=1&page_size=15`)
-    ]).then(([moviesRes, tvsRes]) => {
-      const m = moviesRes.data.movies || [];
-      const t = tvsRes.data.tv_shows || [];
-      const combined = [...m, ...t].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 20);
-      setCombinedTrending(combined);
-      setIsCombinedTrendingLoading(false);
-    }).catch((err) => console.error("Error fetching combined trending:", err));
-
-    // Fetch Latest Movies
-    axios.get(`${BASE}/api/movies?sort_by=updated_on:desc&page=1&page_size=20`)
-      .then((response) => {
-        setTrendingMovies(response.data.movies || []);
+        setTrendingMovies(res.data.latest_movies || []);
         setIsTrendingMoviesLoading(false);
-      })
-      .catch((err) => console.error("Error fetching latest movies:", err));
-
-    // Fetch Latest TV Shows
-    axios.get(`${BASE}/api/tvs?sort_by=updated_on:desc&page=1&page_size=20`)
-      .then((response) => {
-        setTrendingTv(response.data.tv_shows || []);
+        setTrendingTv(res.data.latest_tv || []);
         setIsTrendingTvLoading(false);
+        
+        setCombinedTrending(res.data.trending_now || []);
+        setIsCombinedTrendingLoading(false);
       })
-      .catch((err) => console.error("Error fetching latest tv shows:", err));
-      
+      .catch((err) => console.error("Error fetching home data:", err));
   }, [BASE]);
 
   return (

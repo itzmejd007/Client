@@ -59,7 +59,7 @@ export default function Collection() {
       
       <div className="relative w-full aspect-[21/9] md:aspect-[32/9] rounded-[2rem] overflow-hidden mb-12 shadow-2xl">
         <img src={collection.thumbnail} alt={collection.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-bgColor via-bgColor/50 to-transparent flex flex-col justify-end p-8 md:p-12">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
           <h1 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg">{collection.title}</h1>
           <p className="text-gray-300 mt-2 font-medium">{collection.populated_items?.length || 0} Items Curated for You</p>
         </div>
