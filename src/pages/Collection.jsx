@@ -30,7 +30,13 @@ export default function Collection() {
 
         // Then stream the items for "Hybrid" performance
         try {
-          const response = await fetch(`${BASE}/api/collections/${colData._id}/stream?sort_by=${sortBy}`);
+          const response = await fetch(`${BASE}/api/collections/${colData._id}/stream?sort_by=${sortBy}`, {
+            mode: 'cors',
+            credentials: 'omit'
+          });
+          
+          if (!response.ok) throw new Error("Stream request failed");
+          
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let partialChunk = "";
@@ -56,7 +62,11 @@ export default function Collection() {
             setCollection(prev => ({ ...prev, populated_items: [...streamedItems] }));
           }
         } catch (error) {
-          console.error("Error streaming collection items:", error);
+          console.error("Error streaming collection items, falling back to standard fetch:", error);
+          // Fallback to standard non-streaming fetch if NDJSON fails (CORS or Network Error)
+          axios.get(`${BASE}/api/collections/${id}`, { params: { sort_by: sortBy } })
+            .then(res => setCollection(res.data))
+            .catch(err => console.error("Fallback fetch also failed", err));
         }
       })
       .catch(err => {

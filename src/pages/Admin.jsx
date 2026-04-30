@@ -212,7 +212,15 @@ const Admin = () => {
                 setExistingContent([...items]);
             }
         } catch (error) {
-            console.error("Failed to fetch existing content via NDJSON:", error);
+            console.error("Failed to fetch existing content via NDJSON, falling back to standard API:", error);
+            try {
+                const res = await axios.get(`${BASE}/api/${existingMediaType}s`, {
+                    params: { page_size: 100, sort_by: "updated_on:desc" }
+                });
+                setExistingContent(existingMediaType === "movie" ? (res.data.movies || []) : (res.data.tv_shows || []));
+            } catch (err) {
+                console.error("Fallback fetch also failed:", err);
+            }
         }
         setIsFetchingExisting(false);
     }, [existingMediaType, BASE]);

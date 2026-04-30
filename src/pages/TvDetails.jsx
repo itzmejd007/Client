@@ -33,11 +33,9 @@ export default function TvDetails() {
     window.scrollTo(0, 0);
  
      axios
-       .get(`${BASE}/api/id/${seriesID}`, {
-         params: { title: titleParam }
-       })
+       .get(`${BASE}/api/id/${seriesID}`)
       .then((response) => {
-        const sortedSeasons = response.data.seasons.sort(
+        const sortedSeasons = (response.data.seasons || []).sort(
           (a, b) => a.season_number - b.season_number
         );
 
@@ -55,9 +53,7 @@ export default function TvDetails() {
       });
 
     // Increment View Count
-    axios.post(`${BASE}/api/view/tv/${seriesID}`, null, {
-      params: { title: titleParam }
-    }).catch(() => { });
+    axios.post(`${BASE}/api/view/tv/${seriesID}`, null).catch(() => { });
   }, [seriesID, slug, BASE]);
 
   // Fetch Similar Series
@@ -89,7 +85,6 @@ export default function TvDetails() {
     setIsEpisodesLoading(true);
 
     const params = { season_number: seasonNumber };
-    if (titleParam) params.title = titleParam;
 
     axios
       .get(`${BASE}/api/id/${seriesID}`, { params })
