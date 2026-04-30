@@ -39,12 +39,22 @@ export default function HeroSlider({ movieData, isMovieDataLoading }) {
               <SwiperSlide key={index}>
                 <div className="relative">
                   <div className="rounded-t-2xl aspect-video md:h-96 mask md:aspect-auto">
-                    <LazyLoadImage
-                      src={movie.backdrop}
-                      className="rounded-t-2xl"
-                      effect="black-and-white"
-                      alt={movie.title}
-                    />
+                    {index === 0 ? (
+                      <img
+                        src={movie.backdrop}
+                        className="rounded-t-2xl w-full h-full object-cover"
+                        alt={movie.title}
+                        fetchPriority="high"
+                        loading="eager"
+                      />
+                    ) : (
+                      <LazyLoadImage
+                        src={movie.backdrop}
+                        className="rounded-t-2xl w-full h-full object-cover"
+                        effect="black-and-white"
+                        alt={movie.title}
+                      />
+                    )}
                   </div>
                   <div className="absolute bottom-4 left-4 right-0 sm:left-8 flex flex-col gap-1 xs:gap-2 text-secondaryTextColor w-[90%] md:w-2/3 lg:w-1/2 before:content-[''] before:absolute before:-inset-4 before:-left-4 before:sm:-left-8 before:-bottom-4 before:bg-white/40 dark:before:bg-transparent before:backdrop-blur-md dark:before:backdrop-blur-none before:z-[-1] before:mask">
                     {movie.title && (
