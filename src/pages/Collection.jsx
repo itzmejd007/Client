@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import { useSettings } from "../context/SettingsContext";
 import MovieCard from "../components/MovieCard";
-import MovieCardSkeleton from "../components/MovieCardSkeleton";
+import MovieCardSkeleton, { SingleMovieCardSkeleton } from "../components/MovieCardSkeleton";
 
 export default function Collection() {
   const { id } = useParams();
@@ -17,22 +17,33 @@ export default function Collection() {
   const [collection, setCollection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState("updated:desc");
+  const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
+    setIsStreaming(false);
     
     // Initial fetch for collection metadata
     axios.get(`${BASE}/api/collections/${id}`)
       .then(async (res) => {
         const colData = res.data;
+        
+        // SEO Redirect
+        if (colData.slug && id !== colData.slug) {
+          navigate(`/collection/${colData.slug}`, { replace: true });
+          return;
+        }
+
         setCollection({ ...colData, populated_items: [] });
         setIsLoading(false);
+        setIsStreaming(true);
 
         // Then stream the items for "Hybrid" performance
         try {
           const response = await fetch(`${BASE}/api/collections/${colData._id}/stream?sort_by=${sortBy}`, {
             mode: 'cors',
-            credentials: 'omit'
+            credentials: 'omit',
+            headers: { 'Accept': 'application/x-ndjson' }
           });
           
           if (!response.ok) throw new Error("Stream request failed");
@@ -61,9 +72,11 @@ export default function Collection() {
             }
             setCollection(prev => ({ ...prev, populated_items: [...streamedItems] }));
           }
+          setIsStreaming(false);
         } catch (error) {
           console.error("Error streaming collection items, falling back to standard fetch:", error);
-          // Fallback to standard non-streaming fetch if NDJSON fails (CORS or Network Error)
+          setIsStreaming(false);
+          // Fallback
           axios.get(`${BASE}/api/collections/${id}`, { params: { sort_by: sortBy } })
             .then(res => setCollection(res.data))
             .catch(err => console.error("Fallback fetch also failed", err));
@@ -72,6 +85,7 @@ export default function Collection() {
       .catch(err => {
         console.error("Error fetching collection metadata", err);
         setIsLoading(false);
+        setIsStreaming(false);
       });
   }, [BASE, id, sortBy]);
 
@@ -106,15 +120,17 @@ export default function Collection() {
         <img src={collection.thumbnail} alt={collection.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
           <h1 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg">{collection.title}</h1>
-          <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
-            <p className="text-gray-300 font-medium">{collection.populated_items?.length || 0} Items Curated for You</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+            <p className="text-gray-300 text-sm md:text-base font-medium order-2 sm:order-1">
+              {collection.populated_items?.length || 0} / {collection.items?.length || 0} Items Curated for You
+            </p>
             
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1 px-3 rounded-xl border border-white/10">
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1.5 px-4 rounded-xl border border-white/20 w-fit order-1 sm:order-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
                 <select 
                     value={sortBy} 
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-[11px] font-black text-white outline-none cursor-pointer p-1"
+                    className="bg-transparent text-[12px] font-bold text-white outline-none cursor-pointer p-0.5"
                 >
                     <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
                     <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
@@ -126,10 +142,24 @@ export default function Collection() {
         </div>
       </div>
 
+      {/* Streaming Progress Indicator */}
+      {isStreaming && (
+        <div className="w-full h-1 bg-bgColorSecondary rounded-full overflow-hidden mb-6">
+          <div className="h-full bg-primaryBtn animate-loading-bar shadow-[0_0_10px_#f97316]"></div>
+        </div>
+      )}
+
       <div className="grid gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4 lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
         {collection.populated_items?.map((item) => (
           <MovieCard key={item.tmdb_id} movie={item} />
         ))}
+        
+        {/* Loading skeletons for remaining items in the stream */}
+        {collection.items && collection.populated_items && collection.items.length > collection.populated_items.length && (
+            [...Array(collection.items.length - collection.populated_items.length)].map((_, i) => (
+                <SingleMovieCardSkeleton key={`skeleton-${i}`} />
+            ))
+        )}
       </div>
     </div>
   );
