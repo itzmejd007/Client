@@ -539,7 +539,8 @@ const Admin = () => {
                 file_ids: selectedManualFiles,
                 tmdb_id: target.tmdb_id,
                 media_type: existingMediaType,
-                title: target.title
+                title: target.title,
+                doc_id: target._id || target.id
             });
             alert(res.data.message + (res.data.errors?.length ? `\n\nErrors:\n${res.data.errors.join('\n')}` : ""));
             setSelectedManualFiles([]);
@@ -765,7 +766,7 @@ const Admin = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {stats?.recent?.movies?.map(m => (
-                                        <div key={m.tmdb_id} className="flex items-center gap-4 p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(m.tmdb_id, "movie"); }}>
+                                        <div key={m._id || m.tmdb_id} className="flex items-center gap-4 p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(m.tmdb_id, "movie", m.title); }}>
                                             <img src={m.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
                                             <div>
                                                 <p className="font-bold text-sm group-hover:text-primaryBtn transition-colors">{m.title}</p>
@@ -782,7 +783,7 @@ const Admin = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {stats?.recent?.tv_shows?.map(t => (
-                                        <div key={t.tmdb_id} className="flex items-center gap-4 p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(t.tmdb_id, "tv"); }}>
+                                        <div key={t._id || t.tmdb_id} className="flex items-center gap-4 p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(t.tmdb_id, "tv", t.title); }}>
                                             <img src={t.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
                                             <div>
                                                 <p className="font-bold text-sm group-hover:text-primaryBtn transition-colors">{t.title}</p>
@@ -804,7 +805,7 @@ const Admin = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {stats?.top_viewed?.movies?.map(m => (
-                                        <div key={m.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(m.tmdb_id, "movie"); }}>
+                                        <div key={m._id || m.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(m.tmdb_id, "movie", m.title); }}>
                                             <div className="flex items-center gap-4">
                                                 <img src={m.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
                                                 <div>
@@ -828,7 +829,7 @@ const Admin = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {stats?.top_viewed?.tv_shows?.map(t => (
-                                        <div key={t.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(t.tmdb_id, "tv"); }}>
+                                        <div key={t._id || t.tmdb_id} className="flex items-center justify-between p-3 hover:bg-bgColor/50 rounded-2xl transition-all cursor-pointer group" onClick={() => { setActiveTab("content"); handleEditExisting(t.tmdb_id, "tv", t.title); }}>
                                             <div className="flex items-center gap-4">
                                                 <img src={t.poster} className="w-12 h-16 object-cover rounded-lg shadow-md" alt="" />
                                                 <div>
@@ -1995,7 +1996,14 @@ const Admin = () => {
                                                             }
                                                             const qual = prompt("Quality (e.g. 1080p, 720p, 4K)?", linkingFile.detected?.quality || "1080p");
                                                             if (!qual) return;
-                                                            const p = { file_id: linkingFile._id, tmdb_id: target.tmdb_id, media_type: existingMediaType, quality: qual, title: target.title };
+                                                            const p = { 
+                                                                file_id: linkingFile._id, 
+                                                                tmdb_id: target.tmdb_id, 
+                                                                media_type: existingMediaType, 
+                                                                quality: qual, 
+                                                                title: target.title,
+                                                                doc_id: target._id || target.id
+                                                            };
                                                             if (existingMediaType === "tv") {
                                                                 const s = prompt("Season Number?", linkingFile.detected?.season || "1");
                                                                 const ep = prompt("Episode Number?", linkingFile.detected?.episode || "1");
