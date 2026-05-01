@@ -1469,37 +1469,43 @@ const Admin = () => {
                                                                 onChange={(e) => setEditingMedia({ ...editingMedia, title: e.target.value })}
                                                                 className="text-2xl md:text-3xl font-black tracking-tight bg-transparent border-none p-0 w-full focus:ring-0"
                                                             />
-                                                            <div className="flex flex-wrap gap-2 md:gap-4 mt-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingMedia.release_year}
-                                                                    onChange={(e) => setEditingMedia({ ...editingMedia, release_year: e.target.value })}
-                                                                    className="text-secondaryTextColor font-mono text-xs uppercase tracking-widest bg-btnColor/20 px-2 py-0.5 rounded w-16 md:w-20"
-                                                                />
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingMedia.rating}
-                                                                    onChange={(e) => setEditingMedia({ ...editingMedia, rating: e.target.value })}
-                                                                    className="text-amber-500 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded w-12 md:w-16"
-                                                                />
-                                                                <div className="flex items-center gap-1">
-                                                                    <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase">Rip:</label>
+                                                            <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2 md:gap-4 mt-3">
+                                                                <div className="flex flex-col">
+                                                                    <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase mb-1">Year</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingMedia.release_year}
+                                                                        onChange={(e) => setEditingMedia({ ...editingMedia, release_year: e.target.value })}
+                                                                        className="text-secondaryTextColor font-mono text-xs uppercase tracking-widest bg-btnColor/20 px-3 py-2 rounded-lg w-full md:w-20 outline-none"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase mb-1">Rating</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingMedia.rating}
+                                                                        onChange={(e) => setEditingMedia({ ...editingMedia, rating: e.target.value })}
+                                                                        className="text-amber-500 font-bold text-xs bg-amber-500/10 px-3 py-2 rounded-lg w-full md:w-16 outline-none"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase mb-1">Rip</label>
                                                                     <input
                                                                         type="text"
                                                                         value={editingMedia.rip || "Unknown"}
                                                                         onChange={(e) => setEditingMedia({ ...editingMedia, rip: e.target.value })}
-                                                                        className="text-primaryBtn font-bold text-xs bg-primaryBtn/10 px-2 py-0.5 rounded w-20 md:w-24 outline-none focus:ring-1 focus:ring-primaryBtn"
-                                                                        placeholder="Quality/Rip"
+                                                                        className="text-primaryBtn font-bold text-xs bg-primaryBtn/10 px-3 py-2 rounded-lg w-full md:w-24 outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                                        placeholder="Rip"
                                                                     />
                                                                 </div>
-                                                                <div className="w-full md:flex-1">
-                                                                    <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Audio Languages</label>
+                                                                <div className="col-span-3 w-full md:flex-1 md:mt-0">
+                                                                    <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase mb-1 block">Audio Languages (en, hi, ta...)</label>
                                                                     <input
                                                                         type="text"
                                                                         value={typeof editingMedia.languages === 'string' ? editingMedia.languages : (editingMedia.languages?.join(', ') || '')}
                                                                         placeholder="e.g. English, Hindi"
                                                                         onChange={(e) => setEditingMedia({ ...editingMedia, languages: e.target.value })}
-                                                                        className="w-full bg-btnColor/20 px-3 py-1 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                                        className="w-full bg-btnColor/20 px-3 py-2 rounded-lg text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
                                                                     />
                                                                 </div>
                                                             </div>
