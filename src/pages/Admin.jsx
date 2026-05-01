@@ -123,6 +123,7 @@ const Admin = () => {
     const [manualSearchQuery, setManualSearchQuery] = useState("");
     const [selectedManualFiles, setSelectedManualFiles] = useState([]);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isBulkLinking, setIsBulkLinking] = useState(false);
     const [linkingFile, setLinkingFile] = useState(null);
 
     // --- Collections DB State ---
@@ -575,6 +576,7 @@ const Admin = () => {
         const auto = window.confirm(`Bulk Link ${selectedManualFiles.length} files to "${target.title}"?\n\nThis will use auto-detected Season/Episode for series.`);
         if (!auto) return;
 
+        setIsBulkLinking(true);
         try {
             const res = await axios.post(`${BASE}/api/admin/manual/bulk_link`, {
                 file_ids: selectedManualFiles,
@@ -590,6 +592,8 @@ const Admin = () => {
             if (editingMedia) handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
         } catch (error) {
             alert("Bulk link failed: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setIsBulkLinking(false);
         }
     };
 
@@ -2106,6 +2110,15 @@ const Admin = () => {
                                                 </div>
                                             </div>
                                         </div>
+                                        {isBulkLinking && (
+                                            <div className="absolute inset-0 bg-bgColorSecondary/60 backdrop-blur-md z-50 flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300">
+                                                <div className="w-12 h-12 border-4 border-primaryBtn border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(249,115,22,0.3)]"></div>
+                                                <div className="flex flex-col items-center">
+                                                    <p className="text-lg font-black tracking-tighter text-primaryTextColor animate-pulse">Linking Repository</p>
+                                                    <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-secondaryTextColor/60">Processing {selectedManualFiles.length} Files</p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
