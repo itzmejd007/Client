@@ -41,7 +41,7 @@ export default function TvDetails() {
 
         setSeriesDetail({ ...response.data, seasons: sortedSeasons });
 
-        if (sortedSeasons.length > 0) {
+        if (sortedSeasons.length > 0 && sortedSeasons[0]) {
           setSeasonNumber(sortedSeasons[0].season_number);
         }
 

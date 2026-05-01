@@ -24,7 +24,7 @@ export default function WatchTrailer(props) {
           let selectedPoster = "";
 
           if (props.popUpType === "movie") {
-            videoSources = props.id.telegram.map((q) => {
+            videoSources = (props.id.telegram || []).map((q) => {
               const name = q.name.toLowerCase();
               const type = name.endsWith(".mp4") ? "video/mp4" : 
                            name.endsWith(".webm") ? "video/webm" : 
@@ -39,7 +39,7 @@ export default function WatchTrailer(props) {
             });
             selectedPoster = props.id.backdrop;
           } else if (props.popUpType === "episode") {
-            const season = props.id.seasons.find(
+            const season = (props.id.seasons || []).find(
               (season) => season.season_number === props.seasonNumber
             );
 
@@ -49,7 +49,7 @@ export default function WatchTrailer(props) {
               );
 
               if (episode) {
-                videoSources = episode.telegram.map((q) => {
+                videoSources = (episode.telegram || []).map((q) => {
                   const name = q.name.toLowerCase();
                   const type = name.endsWith(".mp4") ? "video/mp4" : 
                                name.endsWith(".webm") ? "video/webm" : 
