@@ -131,9 +131,12 @@ const Admin = () => {
     const [newCollectionTitle, setNewCollectionTitle] = useState("");
     const [newCollectionThumbnail, setNewCollectionThumbnail] = useState("");
     const [editingCollection, setEditingCollection] = useState(null);
+    const [editingCollectionTitle, setEditingCollectionTitle] = useState("");
+    const [editingCollectionThumbnail, setEditingCollectionThumbnail] = useState("");
     const [collectionItemSearch, setCollectionItemSearch] = useState("");
     const [collectionItemResults, setCollectionItemResults] = useState([]);
     const [isSearchingColItems, setIsSearchingColItems] = useState(false);
+    const [selectedColItems, setSelectedColItems] = useState([]);
 
     // --- Analytics State ---
     const [stats, setStats] = useState(null);
@@ -269,6 +272,18 @@ const Admin = () => {
         }
     };
 
+    const handleUpdateCollection = async (e) => {
+        e.preventDefault();
+        if (!editingCollection) return;
+        try {
+            await axios.put(`${BASE}/api/collections/${editingCollection._id}`, { title: editingCollectionTitle, thumbnail: editingCollectionThumbnail });
+            fetchCollections();
+            alert("Collection updated successfully!");
+        } catch (error) {
+            alert("Error updating collection: " + error.message);
+        }
+    };
+
     const handleDeleteCollection = async (id) => {
         if (!window.confirm("Delete this collection?")) return;
         try {
@@ -303,9 +318,29 @@ const Admin = () => {
             });
             const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
             setEditingCollection(res.data);
+            setCollectionItemResults(prev => prev.filter(r => r.tmdb_id !== item.tmdb_id || r.title !== item.title));
             fetchCollections();
         } catch (error) {
             alert("Error adding item: " + error.message);
+        }
+    };
+
+    const handleBulkAddItemsToCollection = async () => {
+        if (!editingCollection || selectedColItems.length === 0) return;
+        try {
+            await axios.post(`${BASE}/api/collections/${editingCollection._id}/bulk-items`, selectedColItems.map(item => ({
+                tmdb_id: item.tmdb_id,
+                media_type: item.media_type,
+                title: item.title
+            })));
+            const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
+            setEditingCollection(res.data);
+            setCollectionItemResults(prev => prev.filter(r => !selectedColItems.some(s => s.tmdb_id === r.tmdb_id && s.title === r.title)));
+            setSelectedColItems([]);
+            fetchCollections();
+            alert("Items added successfully!");
+        } catch (error) {
+            alert("Error adding items: " + error.message);
         }
     };
 
@@ -885,6 +920,10 @@ const Admin = () => {
                                         <div key={col._id} className={`p-4 rounded-xl border cursor-pointer transition-all ${editingCollection?._id === col._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor"}`} onClick={async () => {
                                             const res = await axios.get(`${BASE}/api/collections/${col._id}`);
                                             setEditingCollection(res.data);
+                                            setEditingCollectionTitle(res.data.title);
+                                            setEditingCollectionThumbnail(res.data.thumbnail);
+                                            setSelectedColItems([]);
+                                            setCollectionItemResults([]);
                                         }}>
                                             <div className="flex justify-between items-center">
                                                 <div>
@@ -903,6 +942,21 @@ const Admin = () => {
                             {editingCollection && (
                                 <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
                                     <h2 className="text-xl font-bold mb-4">Editing: {editingCollection.title}</h2>
+                                    
+                                    <form onSubmit={handleUpdateCollection} className="space-y-4 mb-6">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Title</label>
+                                            <input type="text" value={editingCollectionTitle} onChange={e => setEditingCollectionTitle(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Thumbnail URL</label>
+                                            <input type="url" value={editingCollectionThumbnail} onChange={e => setEditingCollectionThumbnail(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button type="submit" className="flex-1 bg-primaryBtn text-white py-3 rounded-lg font-bold text-sm">Update Collection</button>
+                                        </div>
+                                    </form>
+
                                     <img src={editingCollection.thumbnail} alt="" className="w-full h-40 object-cover rounded-xl mb-6" />
                                     
                                     <div className="mb-6">
@@ -913,9 +967,23 @@ const Admin = () => {
                                         </form>
                                         {isSearchingColItems && <p className="text-xs mt-2">Searching...</p>}
                                         <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-                                            {collectionItemResults.map(item => (
+                                            {collectionItemResults
+                                                .filter(item => !editingCollection.items?.some(existing => existing.tmdb_id === item.tmdb_id && (existing.title === item.title || (!existing.title && !item.title))))
+                                                .map(item => (
                                                 <div key={item.tmdb_id} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
                                                     <div className="flex items-center gap-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="accent-primaryBtn" 
+                                                            checked={selectedColItems.some(s => s.tmdb_id === item.tmdb_id && s.title === item.title)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setSelectedColItems([...selectedColItems, item]);
+                                                                } else {
+                                                                    setSelectedColItems(selectedColItems.filter(s => s.tmdb_id !== item.tmdb_id || s.title !== item.title));
+                                                                }
+                                                            }}
+                                                        />
                                                         <img src={item.poster} className="w-8 h-10 object-cover rounded" />
                                                         <div>
                                                             <p className="text-xs font-bold line-clamp-1">{item.title}</p>
@@ -926,6 +994,14 @@ const Admin = () => {
                                                 </div>
                                             ))}
                                         </div>
+                                        {selectedColItems.length > 0 && (
+                                            <button 
+                                                onClick={handleBulkAddItemsToCollection}
+                                                className="w-full mt-4 bg-primaryBtn text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2"
+                                            >
+                                                <PiPlusBold /> Add Selected ({selectedColItems.length})
+                                            </button>
+                                        )}
                                     </div>
                                     
                                     <div>
