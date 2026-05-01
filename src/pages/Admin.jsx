@@ -296,7 +296,11 @@ const Admin = () => {
     const handleAddItemToCollection = async (item) => {
         if (!editingCollection) return;
         try {
-            await axios.post(`${BASE}/api/collections/${editingCollection._id}/items`, { tmdb_id: item.tmdb_id, media_type: item.media_type });
+            await axios.post(`${BASE}/api/collections/${editingCollection._id}/items`, { 
+                tmdb_id: item.tmdb_id, 
+                media_type: item.media_type,
+                title: item.title 
+            });
             const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
             setEditingCollection(res.data);
             fetchCollections();
@@ -305,10 +309,12 @@ const Admin = () => {
         }
     };
 
-    const handleRemoveItemFromCollection = async (tmdb_id, media_type) => {
+    const handleRemoveItemFromCollection = async (tmdb_id, media_type, title) => {
         if (!editingCollection) return;
         try {
-            await axios.delete(`${BASE}/api/collections/${editingCollection._id}/items/${media_type}/${tmdb_id}`);
+            await axios.delete(`${BASE}/api/collections/${editingCollection._id}/items/${media_type}/${tmdb_id}`, {
+                params: { title: title }
+            });
             const res = await axios.get(`${BASE}/api/collections/${editingCollection._id}`);
             setEditingCollection(res.data);
             fetchCollections();
@@ -925,8 +931,8 @@ const Admin = () => {
                                     <div>
                                         <h3 className="text-sm font-bold mb-2">Current Items ({editingCollection.populated_items?.length || 0})</h3>
                                         <div className="space-y-2 max-h-64 overflow-y-auto">
-                                            {editingCollection.populated_items?.map(item => (
-                                                <div key={item.tmdb_id} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
+                                            {editingCollection.populated_items?.map((item, idx) => (
+                                                <div key={`${item.tmdb_id}_${item.title || idx}`} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
                                                     <div className="flex items-center gap-2">
                                                         <img src={item.poster} className="w-8 h-10 object-cover rounded" />
                                                         <div>
@@ -934,7 +940,7 @@ const Admin = () => {
                                                             <p className="text-[10px] text-secondaryTextColor">{item.media_type}</p>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => handleRemoveItemFromCollection(item.tmdb_id, item.media_type)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
+                                                    <button onClick={() => handleRemoveItemFromCollection(item.tmdb_id, item.media_type, item.title)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
                                                 </div>
                                             ))}
                                         </div>

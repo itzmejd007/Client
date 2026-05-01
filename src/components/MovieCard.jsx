@@ -117,8 +117,8 @@ const MovieCard = ({ movie }) => {
           <Link
             to={
               movie.media_type === "movie"
-                ? `/mov/${movie.tmdb_id}/${slugify(movie.title)}`
-                : `/ser/${movie.tmdb_id}/${slugify(movie.title)}`
+                ? `/mov/${movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
+                : `/ser/${movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
             }
             onMouseEnter={showPlay}
             onMouseLeave={hidePlay}

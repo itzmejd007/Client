@@ -169,7 +169,7 @@ export default function Collection() {
 
       <div className="grid gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4 lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
         {collection.populated_items?.map((item) => (
-          <MovieCard key={item.tmdb_id} movie={item} />
+          <MovieCard key={item._id || item.id} movie={item} />
         ))}
         
         {/* Loading skeletons for remaining items in the stream */}

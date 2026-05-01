@@ -16,6 +16,13 @@ import posterPlaceholder from "../assets/images/poster-placeholder.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalAd from "./GlobalAd";
 // import UserInfoBtn from "./Logout";
+const slugify = (text) => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
 
 export default function Nav() {
   const { settings } = useSettings();
@@ -294,11 +301,11 @@ export default function Nav() {
                         }}
                         to={
                           result.media_type === "movie"
-                            ? `/mov/${result.tmdb_id}`
-                            : `/ser/${result.tmdb_id}`
+                            ? `/mov/${result.tmdb_id}/${result.slug || slugify(result.title)}`
+                            : `/ser/${result.tmdb_id}/${result.slug || slugify(result.title)}`
                         }
                         style={{ textDecoration: "none" }}
-                        key={result.tmdb_id}
+                        key={result._id || result.id}
                       >
                         <div className="flex items-center w-[3.5rem] sm:w-[4rem] aspect-[9/13.5] object-cover bg-bgColor shrink-0 rounded-lg">
                           {result.poster ? (
