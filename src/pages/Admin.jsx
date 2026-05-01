@@ -676,9 +676,9 @@ const Admin = () => {
     }
 
     return (
-        <div className="min-h-screen bg-bgColor text-primaryTextColor p-4 md:p-8 font-sans selection:bg-primaryBtn selection:text-white pb-32">
+        <div className="min-h-screen bg-bgColor text-primaryTextColor p-3 md:p-8 font-sans selection:bg-primaryBtn selection:text-white pb-32">
             <div className="max-w-7xl mx-auto">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 md:mb-12">
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 md:mb-12">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-black flex items-center gap-3 tracking-tighter">
                             <PiPencilSimpleFill className="text-primaryBtn animate-pulse" />
@@ -710,7 +710,7 @@ const Admin = () => {
                 {activeTab === "dashboard" && (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                             {[
                                 { label: "Total Movies", value: stats?.stats?.movies || 0, color: "from-pink-500 to-rose-500" },
                                 { label: "TV Series", value: stats?.stats?.tv_shows || 0, color: "from-violet-500 to-indigo-500" },
@@ -721,10 +721,10 @@ const Admin = () => {
                                 { label: "Monthly Views", value: stats?.stats?.monthly_views || 0, color: "from-purple-500 to-fuchsia-500" },
                                 { label: "Total Views", value: stats?.stats?.total_views || 0, color: "from-orange-500 to-red-500" },
                             ].map((stat, i) => (
-                                <div key={i} className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden group">
+                                <div key={i} className="bg-bgColorSecondary p-6 md:p-8 rounded-3xl md:rounded-[2rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden group">
                                     <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
-                                    <p className="text-secondaryTextColor font-bold text-xs uppercase tracking-widest">{stat.label}</p>
-                                    <h3 className="text-5xl font-black mt-2 tracking-tighter">{stat.value.toLocaleString()}</h3>
+                                    <p className="text-secondaryTextColor font-bold text-[10px] md:text-xs uppercase tracking-widest">{stat.label}</p>
+                                    <h3 className="text-3xl md:text-5xl font-black mt-2 tracking-tighter">{stat.value.toLocaleString()}</h3>
                                 </div>
                             ))}
                         </div>
@@ -1432,7 +1432,7 @@ const Admin = () => {
                                             <option value="rating">Top Rated</option>
                                         </select>
                                     </div>
-                                    <div className="space-y-2 h-[600px] overflow-y-auto pr-2 scrollbar-thin">
+                                    <div className="space-y-2 h-[300px] md:h-[600px] overflow-y-auto pr-2 scrollbar-thin">
                                         {isFetchingExisting ? <div className="text-center py-20 animate-pulse text-secondaryTextColor">Loading Library...</div> :
                                             existingContent.filter(m => m.title.toLowerCase().includes(existingContentQuery.toLowerCase())).map(item => (
                                                 <div key={item._id || item.id} onClick={() => handleEditExisting(item.tmdb_id, existingMediaType, item.title)} className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${(editingMedia?.tmdb_id === item.tmdb_id && editingMedia?.title === item.title) ? "bg-primaryBtn/10 border-primaryBtn shadow-inner" : "hover:bg-btnColor/20 border-transparent"}`}>
@@ -1451,7 +1451,7 @@ const Admin = () => {
                             {/* Editor Panel - REWRITTEN FOR STABILITY */}
                             <div className="lg:col-span-8">
                                 {editingMedia ? (
-                                    <div className="bg-bgColorSecondary p-4 md:p-8 rounded-2xl border border-secondaryTextColor/20 shadow-xl h-full flex flex-col min-h-[700px]">
+                                    <div className="bg-bgColorSecondary p-4 md:p-8 rounded-2xl border border-secondaryTextColor/20 shadow-xl h-full flex flex-col min-h-0 md:min-h-[700px]">
                                         <div className="flex justify-between items-start border-b border-secondaryTextColor/10 pb-6 mb-6">
                                             <div className="flex flex-col md:flex-row gap-6 w-full">
                                                 <div className="relative group shrink-0 flex justify-center">
@@ -1469,18 +1469,18 @@ const Admin = () => {
                                                                 onChange={(e) => setEditingMedia({ ...editingMedia, title: e.target.value })}
                                                                 className="text-2xl md:text-3xl font-black tracking-tight bg-transparent border-none p-0 w-full focus:ring-0"
                                                             />
-                                                            <div className="flex gap-4 mt-2">
+                                                            <div className="flex flex-wrap gap-2 md:gap-4 mt-2">
                                                                 <input
                                                                     type="text"
                                                                     value={editingMedia.release_year}
                                                                     onChange={(e) => setEditingMedia({ ...editingMedia, release_year: e.target.value })}
-                                                                    className="text-secondaryTextColor font-mono text-xs uppercase tracking-widest bg-btnColor/20 px-2 py-0.5 rounded w-20"
+                                                                    className="text-secondaryTextColor font-mono text-xs uppercase tracking-widest bg-btnColor/20 px-2 py-0.5 rounded w-16 md:w-20"
                                                                 />
                                                                 <input
                                                                     type="text"
                                                                     value={editingMedia.rating}
                                                                     onChange={(e) => setEditingMedia({ ...editingMedia, rating: e.target.value })}
-                                                                    className="text-amber-500 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded w-16"
+                                                                    className="text-amber-500 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded w-12 md:w-16"
                                                                 />
                                                                 <div className="flex items-center gap-1">
                                                                     <label className="text-[8px] font-black text-secondaryTextColor/40 uppercase">Rip:</label>
@@ -1488,12 +1488,12 @@ const Admin = () => {
                                                                         type="text"
                                                                         value={editingMedia.rip || "Unknown"}
                                                                         onChange={(e) => setEditingMedia({ ...editingMedia, rip: e.target.value })}
-                                                                        className="text-primaryBtn font-bold text-xs bg-primaryBtn/10 px-2 py-0.5 rounded w-24 outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                                        className="text-primaryBtn font-bold text-xs bg-primaryBtn/10 px-2 py-0.5 rounded w-20 md:w-24 outline-none focus:ring-1 focus:ring-primaryBtn"
                                                                         placeholder="Quality/Rip"
                                                                     />
                                                                 </div>
-                                                                <div className="flex-1">
-                                                                    <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Audio Languages (en, hi, ta...)</label>
+                                                                <div className="w-full md:flex-1">
+                                                                    <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Audio Languages</label>
                                                                     <input
                                                                         type="text"
                                                                         value={typeof editingMedia.languages === 'string' ? editingMedia.languages : (editingMedia.languages?.join(', ') || '')}
@@ -1512,26 +1512,26 @@ const Admin = () => {
                                                     <textarea
                                                         value={editingMedia.description}
                                                         onChange={(e) => setEditingMedia({ ...editingMedia, description: e.target.value })}
-                                                        className="mt-3 text-xs text-secondaryTextColor bg-transparent border-none p-0 resize-none h-16 focus:ring-0 scrollbar-none"
+                                                        className="mt-3 text-xs text-secondaryTextColor bg-transparent border-none p-0 resize-none h-24 md:h-16 focus:ring-0 scrollbar-none"
                                                         placeholder="Description..."
                                                     />
-                                                    <div className="flex gap-4 mt-2">
+                                                    <div className="flex flex-col md:flex-row gap-4 mt-2">
                                                         <div className="flex-1">
-                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Poster URL (Vertical)</label>
+                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Poster URL</label>
                                                             <input
                                                                 type="text"
                                                                 value={editingMedia.poster || ""}
-                                                                placeholder="Poster image URL..."
+                                                                placeholder="Poster URL..."
                                                                 onChange={(e) => setEditingMedia({ ...editingMedia, poster: e.target.value })}
                                                                 className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
                                                             />
                                                         </div>
                                                         <div className="flex-1">
-                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Backdrop URL (Landscape)</label>
+                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Backdrop URL</label>
                                                             <input
                                                                 type="text"
                                                                 value={editingMedia.backdrop || ""}
-                                                                placeholder="Backdrop image URL..."
+                                                                placeholder="Backdrop URL..."
                                                                 onChange={(e) => setEditingMedia({ ...editingMedia, backdrop: e.target.value })}
                                                                 className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
                                                             />
