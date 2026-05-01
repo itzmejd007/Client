@@ -463,7 +463,12 @@ const Admin = () => {
         try {
             const type = (editingMedia.media_type === "movie" || editingMedia.media_type === "mov") ? "movie" : "tv";
             await axios.put(`${BASE}/api/admin/media/${type}/${editingMedia.tmdb_id}/quality/${quality_id}`, updated_data, {
-                params: { season, episode, title: originalTitle }
+                params: { 
+                    season, 
+                    episode, 
+                    title: editingMedia.title, 
+                    doc_id: editingMedia._id || editingMedia.id 
+                }
             });
             handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
         } catch (error) {
@@ -500,25 +505,46 @@ const Admin = () => {
 
     const handleUpdateEpisode = async (season_number, episode_number, updated_data) => {
         try {
-            await axios.put(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}/episode/${episode_number}`, updated_data);
-            handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
-        } catch (error) { console.error(error); }
+            await axios.put(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}/episode/${episode_number}`, updated_data, {
+                params: {
+                    title: editingMedia.title,
+                    doc_id: editingMedia._id || editingMedia.id
+                }
+            });
+            handleEditExisting(editingMedia.tmdb_id, "tv", editingMedia.title);
+        } catch (error) {
+            alert("Update episode failed");
+        }
     };
 
     const handleDeleteSeason = async (season_number) => {
-        if (!window.confirm(`Delete ALL episodes in Season ${season_number}?`)) return;
+        if (!window.confirm(`Delete Season ${season_number}?`)) return;
         try {
-            await axios.delete(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}`);
-            handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
-        } catch (error) { console.error(error); }
+            await axios.delete(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}`, {
+                params: {
+                    title: editingMedia.title,
+                    doc_id: editingMedia._id || editingMedia.id
+                }
+            });
+            handleEditExisting(editingMedia.tmdb_id, "tv", editingMedia.title);
+        } catch (error) {
+            alert("Delete season failed");
+        }
     };
 
     const handleDeleteEpisode = async (season_number, episode_number) => {
         if (!window.confirm(`Delete Episode ${episode_number}?`)) return;
         try {
-            await axios.delete(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}/episode/${episode_number}`);
-            handleEditExisting(editingMedia.tmdb_id, editingMedia.media_type, editingMedia.title);
-        } catch (error) { console.error(error); }
+            await axios.delete(`${BASE}/api/admin/media/tv/${editingMedia.tmdb_id}/season/${season_number}/episode/${episode_number}`, {
+                params: {
+                    title: editingMedia.title,
+                    doc_id: editingMedia._id || editingMedia.id
+                }
+            });
+            handleEditExisting(editingMedia.tmdb_id, "tv", editingMedia.title);
+        } catch (error) {
+            alert("Delete episode failed");
+        }
     };
 
     const handleSaveMedia = async () => {
@@ -1125,6 +1151,33 @@ const Admin = () => {
                                             className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all"
                                             placeholder="SpartanAiBot"
                                         />
+                                    </div>
+
+                                    <div className="pt-6 mt-6 border-t border-secondaryTextColor/10 space-y-6">
+                                        <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10">
+                                            <div>
+                                                <p className="text-sm font-black text-red-500 uppercase tracking-widest">Maintenance Mode</p>
+                                                <p className="text-[10px] text-secondaryTextColor mt-1">Take the website offline for all public users.</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setLocalSettings({ ...localSettings, maintenanceMode: !localSettings.maintenanceMode })}
+                                                className={`w-14 h-8 rounded-full transition-all relative ${localSettings.maintenanceMode ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-bgColor border border-secondaryTextColor/20"}`}
+                                            >
+                                                <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${localSettings.maintenanceMode ? "left-7" : "left-1"}`} />
+                                            </button>
+                                        </div>
+
+                                        {localSettings.maintenanceMode && (
+                                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Maintenance Message</label>
+                                                <textarea
+                                                    value={localSettings.maintenanceMessage}
+                                                    onChange={(e) => setLocalSettings({ ...localSettings, maintenanceMessage: e.target.value })}
+                                                    className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all min-h-[100px]"
+                                                    placeholder="Enter message for your users..."
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">

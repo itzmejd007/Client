@@ -22,6 +22,8 @@ const Watchlist = lazy(() => import("./pages/Watchlist"));
 const NotFoundPage = lazy(() => import("./pages/NotFound"));
 const Collections = lazy(() => import("./pages/Collections"));
 const Collection = lazy(() => import("./pages/Collection"));
+import { useSettings } from "./context/SettingsContext";
+
 // Professional Loading Placeholder
 const PageLoader = () => (
   <div className="min-h-[70vh] flex flex-col items-center justify-center animate-pulse">
@@ -30,12 +32,43 @@ const PageLoader = () => (
   </div>
 );
 
+const MaintenanceScreen = ({ message }) => (
+  <div className="fixed inset-0 bg-bgColor z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primaryBtn/10 rounded-full blur-[100px] animate-pulse"></div>
+    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primaryBtn/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+    
+    <div className="relative z-10 max-w-2xl">
+      <div className="w-24 h-24 bg-primaryBtn/10 rounded-3xl flex items-center justify-center text-primaryBtn text-5xl mb-8 mx-auto shadow-2xl shadow-primaryBtn/20">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v4M7 7h10" />
+        </svg>
+      </div>
+      <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter text-primaryTextColor leading-none">Under <span className="text-primaryBtn">Maintenance</span></h1>
+      <p className="text-lg md:text-xl text-secondaryTextColor font-medium leading-relaxed mb-10 px-4 md:px-0">
+        {message || "We're currently performing some scheduled updates to improve your streaming experience. We'll be back online shortly!"}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="px-6 py-3 bg-bgColorSecondary rounded-2xl border border-secondaryTextColor/10 text-xs font-black uppercase tracking-widest text-secondaryTextColor">Status: Upgrading Core</div>
+        <div className="px-6 py-3 bg-bgColorSecondary rounded-2xl border border-secondaryTextColor/10 text-xs font-black uppercase tracking-widest text-secondaryTextColor">ETA: Soon</div>
+      </div>
+    </div>
+  </div>
+);
+
 function App() {
+  const { settings } = useSettings();
+  const isAdmin = sessionStorage.getItem("adminAuth") === "true";
+  const isMaintenance = settings.maintenanceMode && !isAdmin && window.location.pathname !== "/admin";
+
   ReactGa.initialize("G-JDFS7KRV40");
   
   useEffect(() => {
     ReactGa.pageview(window.location.pathname + window.location.search);
   }, []);
+
+  if (isMaintenance) {
+    return <MaintenanceScreen message={settings.maintenanceMessage} />;
+  }
 
   return (
     <BrowserRouter>
