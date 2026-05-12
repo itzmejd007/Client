@@ -43,6 +43,26 @@ export default function MoviesAndSeriesDetailsSections(props) {
     }
   };
 
+  const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
+  const API_KEY = settings.shortenerApiKey || import.meta.env.VITE_API_KEY;
+
+  const handleExternalLinkClick = async (e, url) => {
+    const useShortener = settings.useShortenerExternal !== false && !props.movieData.disable_shortener;
+    if (!useShortener || !API_KEY || !API_URL) return;
+
+    e.preventDefault();
+    try {
+      const response = await axios.get(API_URL, {
+        params: { api: API_KEY, url: url, format: "json" }
+      });
+      const shortUrl = response.data?.shortenedUrl || response.data?.short || response.data?.url || url;
+      window.open(shortUrl, "_blank", "noopener noreferrer");
+    } catch (error) {
+      console.error("Error shortening external link:", error);
+      window.open(url, "_blank", "noopener noreferrer");
+    }
+  };
+
   return (
     <div className="relative bg-btnColor/40 p-3 md:p-10 rounded-3xl ">
       {!props.isMovieDataLoading ? (
@@ -57,7 +77,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
               className="aspect-video w-full relative flex items-center shrink-0 bg-btnColor  rounded-3xl cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 "
             >
               <div className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-otherColor  bg-otherColor/50 cursor-pointer rounded-full text-4xl sm:text-5xl">
-                {props.detailType === "movie" ? <BiPlay /> : null}
+                {(props.detailType === "movie" && settings.showPlayerButton !== false) ? <BiPlay /> : null}
               </div>
 
               <LazyLoadImage
@@ -139,7 +159,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                     </div>
                   )}
                   {/* Quality */}
-                  {props.movieData.rip && props.movieData.rip !== "Unknown" && (
+                  {settings.showQuality !== false && props.movieData.rip && props.movieData.rip !== "Unknown" && (
                     <div className="flex items-center gap-2">
                       <MdOutlineHighQuality className="text-lg xl:text-xl" />
                       <p className="text-xs xl:text-sm">
@@ -188,18 +208,22 @@ export default function MoviesAndSeriesDetailsSections(props) {
               </div>
               {/* Consolidated Action Buttons Grid - Adaptive Layout */}
               <div className="grid grid-cols-2 md:flex md:flex-wrap gap-3 text-primaryTextColor mt-5 w-full">
-                <div className="col-span-1 md:flex-1 md:min-w-[120px]">
-                  <TelegramButton movieData={props.movieData} />
-                </div>
+                {settings.showTelegramButton !== false && (
+                  <div className="col-span-1 md:flex-1 md:min-w-[120px]">
+                    <TelegramButton movieData={props.movieData} />
+                  </div>
+                )}
                 
-                <div className="col-span-1 md:flex-1 md:min-w-[120px]">
-                  <DownloadButton
-                    movieData={props.movieData}
-                    btnType="Download"
-                  />
-                </div>
+                {settings.showDownloadButton !== false && (
+                  <div className="col-span-1 md:flex-1 md:min-w-[120px]">
+                    <DownloadButton
+                      movieData={props.movieData}
+                      btnType="Download"
+                    />
+                  </div>
+                )}
                 
-                {props.movieData.external_links?.length > 0 && (
+                {settings.showExternalLinks !== false && props.movieData.external_links?.length > 0 && (
                   <div className="col-span-1 md:flex-1 md:min-w-[120px]">
                     <Popover placement="bottom" showArrow={true}>
                       <PopoverTrigger>
@@ -215,6 +239,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                             <a 
                               key={idx}
                               href={link.url}
+                              onClick={(e) => handleExternalLinkClick(e, link.url)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group"

@@ -43,8 +43,12 @@ const TelegramButton = ({ movieData }) => {
     setLoading((prev) => ({ ...prev, [quality]: true }));
     let shortUrl = originalUrl;
 
+    const useShortener = settings.useShortenerTelegram !== false && !movieData.disable_shortener;
+
     try {
-      shortUrl = await shortenUrl(originalUrl);
+      if (useShortener && API_KEY && API_URL) {
+        shortUrl = await shortenUrl(originalUrl);
+      }
       setShortenedUrls((prev) => ({ ...prev, [originalUrl]: shortUrl }));
     } catch (error) {
       console.error("Error processing URL:", error);
@@ -55,12 +59,12 @@ const TelegramButton = ({ movieData }) => {
   };
 
   const renderQualityButtons = (qualityDetails) =>
-    qualityDetails.map(({ quality, size }, index) => (
+    qualityDetails.map(({ quality, size, id }, index) => (
       <Button
         key={index}
         onClick={() =>
           handleButtonClick(
-            `https://t.me/${USERNAME}?start=file_${movieData.tmdb_id}_${quality}`,
+            `https://t.me/${USERNAME}?start=get_${id}`,
             quality
           )
         }
@@ -69,7 +73,9 @@ const TelegramButton = ({ movieData }) => {
         isLoading={loading[quality]}
         spinner={<Spinner />}
       >
-        {quality} {size ? `| ${size}` : ""}
+        {settings.showQuality !== false ? quality : ""}
+        {settings.showQuality !== false && settings.showSize !== false && size ? " | " : ""}
+        {settings.showSize !== false && size ? size : ""}
       </Button>
     ));
 

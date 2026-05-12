@@ -1,320 +1,448 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  createPlayer, 
-  usePlayer, 
-  Container, 
-  Tooltip,
-  Popover,
-  mediaProps
-} from '@videojs/react';
+import { createPlayer, usePlayer } from '@videojs/react';
 import { videoFeatures, VideoSkin, Video } from '@videojs/react/video';
 import '@videojs/react/video/skin.css';
 import { MdSettings } from 'react-icons/md';
 
-// Create the player instance outside to avoid re-creation
+// Create a single player instance (must be outside component)
 const Player = createPlayer({ features: videoFeatures });
 
-// Quality Selector Component
+// ─── Quality Selector (lives inside Player.Provider context) ───
 const QualitySelector = ({ sources, currentSrc, onQualityChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const controlsVisible = usePlayer((s) => s.controlsVisible);
-  
-  if (!sources || sources.length === 0) return null;
+
+  // Hide menu when controls hide
+  useEffect(() => {
+    if (!controlsVisible) setIsOpen(false);
+  }, [controlsVisible]);
+
+  if (!sources || sources.length <= 1) return null;
 
   return (
-    <div 
-      className={`media-button-quality absolute bottom-[12px] right-[190px] z-[999] transition-all duration-300 ${
-        controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-      }`}
+    <div
+      className={`vjsx-quality ${controlsVisible ? 'vjsx-quality--visible' : ''}`}
     >
-      <div className="relative">
-        {/* Quality Menu */}
-        <div className={`absolute bottom-full right-0 mb-4 p-2 min-w-[160px] bg-black/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right ${
-          isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
-        }`}>
-          <div className="flex flex-col gap-1">
-            <div className="px-3 py-2 flex items-center justify-between border-b border-white/5 mb-1">
-              <span className="text-[10px] uppercase tracking-widest text-white/40 font-black">Quality</span>
-              <span className="text-[8px] bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded font-bold uppercase">HQ</span>
-            </div>
-            {sources.map((source, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  onQualityChange(source);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2.5 rounded-xl text-xs text-left transition-all flex justify-between items-center group/item ${
-                  currentSrc === source.src 
-                    ? 'bg-white/10 text-white font-bold' 
-                    : 'hover:bg-white/5 text-white/60 hover:text-white'
-                }`}
-              >
-                <div className="flex flex-col">
-                   <span className="tracking-wide">{source.label || `Quality ${index + 1}`}</span>
-                </div>
-                {currentSrc === source.src ? (
-                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(255,140,0,1)]" />
-                ) : (
-                   <div className="w-1 h-1 rounded-full bg-white/10 group-hover/item:bg-white/30 transition-all" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Gear Button */}
-        <button 
-          type="button" 
-          onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center justify-center w-[2.5rem] h-[2.5rem] rounded-full transition-all duration-300 border-2 ${
-            isOpen ? 'bg-orange-500 border-orange-500 text-white scale-110 rotate-90 shadow-[0_0_20px_rgba(255,140,0,0.4)]' : 'bg-black/20 border-white/10 text-white/60 hover:text-white hover:border-white/30'
-          }`}
-        >
-          <MdSettings className="w-6 h-6" />
-        </button>
+      {/* Dropdown menu */}
+      <div className={`vjsx-quality-menu ${isOpen ? 'vjsx-quality-menu--open' : ''}`}>
+        <div className="vjsx-quality-header">Quality</div>
+        {sources.map((source, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => {
+              onQualityChange(source);
+              setIsOpen(false);
+            }}
+            className={`vjsx-quality-item ${
+              currentSrc === source.src ? 'vjsx-quality-item--active' : ''
+            }`}
+          >
+            <span>{source.label || `Quality ${i + 1}`}</span>
+            {currentSrc === source.src && <span className="vjsx-quality-dot" />}
+          </button>
+        ))}
       </div>
+
+      {/* Gear trigger */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`vjsx-quality-btn ${isOpen ? 'vjsx-quality-btn--active' : ''}`}
+        aria-label="Quality"
+      >
+        <MdSettings />
+      </button>
     </div>
   );
 };
 
-export const VideoJS = (props) => {
-  const { options, onReady } = props;
+// ─── Main VideoJS Component ───
+export const VideoJS = ({ options, onReady }) => {
   const [currentSource, setCurrentSource] = useState(options.sources?.[0] || {});
   const [error, setError] = useState(false);
   const videoRef = React.useRef(null);
+  const containerRef = React.useRef(null);
   const switchingRef = React.useRef(false);
 
+  // ── Landscape lock on fullscreen (mobile Chrome) ──
+  useEffect(() => {
+    const handleFullscreenChange = async () => {
+      const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const orientation = screen?.orientation;
+      if (!orientation) return;
+
+      try {
+        if (isFullscreen) {
+          await orientation.lock('landscape');
+        } else {
+          orientation.unlock();
+        }
+      } catch {
+        // Orientation lock not supported or not allowed — ignore silently
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Sync when sources change externally
   useEffect(() => {
     if (options.sources?.length > 0) {
-      const exists = options.sources.find(s => s.src === currentSource.src);
-      if (!exists) {
-        setCurrentSource(options.sources[0]);
-      }
+      const exists = options.sources.find((s) => s.src === currentSource.src);
+      if (!exists) setCurrentSource(options.sources[0]);
     }
   }, [options.sources, currentSource.src]);
 
-  // Extreme PiP Hiding fail-safe
-  useEffect(() => {
-    const hidePip = () => {
-      const selectors = [
-        '[aria-label*="Picture"]', 
-        '[title*="Picture"]', 
-        '[aria-label*="PIP"]',
-        '.vjs-picture-in-picture-control',
-        '.vjs-pip-control',
-        '.media-button-pip'
-      ];
-      selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => {
-          if (el.style.display !== 'none') {
-            el.style.setProperty('display', 'none', 'important');
-            el.style.setProperty('visibility', 'hidden', 'important');
-            el.style.setProperty('opacity', '0', 'important');
-            el.style.setProperty('pointer-events', 'none', 'important');
-          }
-        });
-      });
-    };
-    hidePip();
-    const interval = setInterval(hidePip, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Mock onReady for compatibility
+  // Compatibility shim
   useEffect(() => {
     if (onReady) {
-      const playerShim = {
-        on: (event, cb) => {},
-        off: (event, cb) => {},
+      onReady({
+        on: () => {},
+        off: () => {},
         dispose: () => {},
-        src: (newSrc) => {
-           if (typeof newSrc === 'string') setCurrentSource({ src: newSrc });
-           else if (newSrc?.src) setCurrentSource(newSrc);
-        },
-        currentTime: (t) => videoRef.current ? videoRef.current.currentTime : 0,
-        paused: () => videoRef.current ? videoRef.current.paused : true,
-        play: () => videoRef.current && videoRef.current.play().catch(() => {}),
-      };
-      onReady(playerShim);
+        src: (s) => setCurrentSource(typeof s === 'string' ? { src: s } : s),
+        currentTime: () => videoRef.current?.currentTime || 0,
+        paused: () => videoRef.current?.paused ?? true,
+        play: () => videoRef.current?.play().catch(() => {}),
+      });
     }
   }, [onReady]);
 
-  const handleQualityChange = useCallback((source) => {
-    if (source.src === currentSource.src) return;
+  const handleQualityChange = useCallback(
+    (source) => {
+      if (source.src === currentSource.src) return;
+      const video = videoRef.current;
+      if (video) {
+        switchingRef.current = { time: video.currentTime, playing: !video.paused };
+        video.pause();
+      }
+      setCurrentSource(source);
+      setError(false);
+    },
+    [currentSource.src]
+  );
 
-    const video = videoRef.current;
-    if (video) {
-      const currTime = video.currentTime;
-      const wasPlaying = !video.paused;
-      switchingRef.current = { time: currTime, playing: wasPlaying };
-      // Force pause and clear src to prevent fetch abort errors
-      video.pause();
-    }
-
-    setCurrentSource(source);
-    setError(false);
-  }, [currentSource.src]);
-
-  // Handle seeking back after source change
   const handleLoadedMetadata = useCallback((e) => {
     if (switchingRef.current) {
       const { time, playing } = switchingRef.current;
-      const video = e.target;
-      
-      // Use a slightly safer approach for setting time
-      const seekAndPlay = () => {
-        video.currentTime = time;
-        if (playing) {
-          video.play().catch(() => {});
-        }
-        switchingRef.current = false;
-      };
-
-      if (video.readyState >= 1) {
-        seekAndPlay();
-      } else {
-        video.addEventListener('loadedmetadata', seekAndPlay, { once: true });
-      }
+      e.target.currentTime = time;
+      if (playing) e.target.play().catch(() => {});
+      switchingRef.current = false;
     }
   }, []);
 
   return (
     <Player.Provider>
-      <div className="w-full h-full relative bg-black group select-none">
-        <VideoSkin 
-          poster={options.poster}
-          className="media-default-skin-custom"
-        >
-          <Video 
-            key={currentSource.src} // Force remount on source change to stop fetch abort issues
+      <div className="vjsx-root" ref={containerRef}>
+        {/* VideoSkin provides the full control bar with all icons, tooltips, 
+            hotkeys, gestures, buffering indicator, error dialog, and overlay */}
+        <VideoSkin poster={options.poster} className="vjsx-skin">
+          <Video
+            key={currentSource.src}
             ref={videoRef}
-            src={currentSource.src} 
+            src={currentSource.src}
             type={currentSource.type}
             autoPlay={options.autoplay}
+            preload="auto"
             controls={false}
             crossOrigin="anonymous"
-            disablePictureInPicture={true}
-            className="w-full h-full object-contain"
+            disablePictureInPicture
             onLoadedMetadata={handleLoadedMetadata}
             onError={(e) => {
-              const err = e.target.error;
-              // Ignore abort error (code 4)
-              if (err && err.code !== 4) { 
-                setError(true);
-              }
+              if (e.target.error?.code !== 4) setError(true);
             }}
           />
           
-
-          <QualitySelector 
-            sources={options.sources} 
-            currentSrc={currentSource.src} 
-            onQualityChange={handleQualityChange} 
+          {/* Quality selector — moved inside VideoSkin so it's visible in fullscreen */}
+          <QualitySelector
+            sources={options.sources}
+            currentSrc={currentSource.src}
+            onQualityChange={handleQualityChange}
           />
         </VideoSkin>
 
-        {/* Custom Error Overlay with Audio Troubleshooting */}
+        {/* Custom codec-aware error overlay */}
         {error && (
-          <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-10 text-center z-[100] backdrop-blur-md">
-            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
-              <span className="text-red-500 text-4xl font-black">!</span>
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-white tracking-tight">Playback Error</h3>
-            <p className="text-sm text-white/40 max-w-sm mb-4 leading-relaxed">
-              This video format or audio codec might not be supported by your browser.
+          <div className="vjsx-error">
+            <div className="vjsx-error-badge">!</div>
+            <h3 className="vjsx-error-title">Playback Error</h3>
+            <p className="vjsx-error-desc">
+              This video format may not be supported by your browser.
             </p>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8 max-w-xs">
-              <p className="text-[11px] text-orange-500 font-bold uppercase tracking-widest mb-1">Audio Troubleshooting</p>
-              <p className="text-[10px] text-white/50 italic">
-                If you see video but hear no audio, the file likely uses AC3 or DTS which browsers do not support natively. Try using an external player.
-              </p>
+            <div className="vjsx-error-hint">
+              <strong>Audio issue?</strong> Files with AC3/DTS audio won't play
+              in browsers. Use an external player instead.
             </div>
-            <div className="flex gap-4">
-               <button 
-                 onClick={() => window.location.reload()}
-                 className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-bold transition-all text-white"
-               >
-                 Retry
-               </button>
-               <a 
-                 href={currentSource.src}
-                 className="px-8 py-3 bg-white text-black rounded-2xl text-xs font-bold transition-all hover:bg-gray-200"
-                 target="_blank"
-                 rel="noopener noreferrer"
-               >
-                 External Player
-               </a>
+            <div className="vjsx-error-actions">
+              <button onClick={() => window.location.reload()} className="vjsx-btn vjsx-btn--ghost">
+                Retry
+              </button>
+              <a href={currentSource.src} className="vjsx-btn vjsx-btn--solid" target="_blank" rel="noopener noreferrer">
+                External Player
+              </a>
             </div>
           </div>
         )}
 
         <style>{`
-          .media-default-skin-custom {
-            --media-primary-color: #ff8c00; /* Use orange accent from v10 logo */
-            --media-border-radius: 0px;
-            --media-button-icon-size: 1.5rem;
-          }
-          
-          /* Match the screenshot's progress bar look */
-          .media-slider__fill {
-            background: linear-gradient(90deg, #ff8c00, #ff4500) !important;
-          }
-          
-          .media-slider__thumb {
-            background: #fff !important;
-            box-shadow: 0 0 10px rgba(255,140,0,0.5);
+          /* ═══════════════════════════════════════
+             Root
+             ═══════════════════════════════════════ */
+          .vjsx-root {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
           }
 
-          /* Hide default quality settings if any, but we added our own */
-          
-          /* Hide native PiP button with absolute extreme prejudice */
-          body .video-js .vjs-picture-in-picture-control,
-          body .vjs-picture-in-picture-control,
-          body .vjs-pip-control,
-          body .vjs-pip-button,
-          body .media-pip-button,
-          body .vjs-icon-picture-in-picture-enter,
-          body .vjs-icon-picture-in-picture-exit,
-          button[aria-label*="Picture"],
-          button[title*="Picture"],
-          button[aria-label*="PIP"],
-          button[title*="PIP"],
-          .media-button:has(svg path[d*="M19"]),
-          .media-button:has(svg path[d*="M21"]),
-          [class*="pip-button"],
-          [class*="pip-toggle"] {
+          /* ═══════════════════════════════════════
+             Theme — orange accent
+             ═══════════════════════════════════════ */
+          .vjsx-skin {
+            --media-primary-color: #ff8c00;
+            --media-border-radius: 0;
+          }
+          .vjsx-skin .media-slider__fill {
+            background: linear-gradient(90deg, #ff8c00, #ff4500) !important;
+          }
+          .vjsx-skin .media-slider__thumb {
+            background: #fff !important;
+            box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+          }
+
+          /* ═══════════════════════════════════════
+             Hide PiP, Cast & Mute buttons (CSS only, no JS polling)
+             ═══════════════════════════════════════ */
+          .vjsx-skin .media-button--pip,
+          .vjsx-skin .media-button--cast,
+          .vjsx-skin .media-button--mute {
             display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            width: 0 !important;
-            height: 0 !important;
-            pointer-events: none !important;
-            position: absolute !important;
-            left: -9999px !important;
-            z-index: -999 !important;
           }
-          
-          /* Custom transitions for icons */
-          .media-icon {
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+          /* ═══════════════════════════════════════
+             Quality Selector — responsive for all viewports
+             ═══════════════════════════════════════ */
+          .vjsx-quality {
+            position: absolute;
+            z-index: 50;
+            /* Mobile default: above the wrapped 2-row control bar */
+            bottom: 6rem;
+            right: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 200ms ease;
           }
-          .media-button:hover .media-icon {
-            transform: scale(1.15);
+          .vjsx-quality--visible {
+            opacity: 1;
+            pointer-events: auto;
           }
-          
-          /* Position the quality button carefully in the control bar */
-          .media-button-quality {
-            bottom: 12px;
-            right: 190px; /* Move it well to the left of Volume/Fullscreen */
-          }
-          
-          @media (max-width: 640px) {
-            .media-button-quality {
-              right: 180px;
-              bottom: 8px;
+
+          /* Desktop: single-row control bar, sit safely above it */
+          @media (min-width: 672px) {
+            .vjsx-quality {
+              bottom: 4rem;
+              right: 1.5rem;
             }
           }
+
+          /* Fullscreen: adjust for full viewport */
+          :fullscreen .vjsx-quality,
+          :-webkit-full-screen .vjsx-quality {
+            bottom: 6.5rem;
+            right: 1.5rem;
+          }
+          @media (min-width: 672px) {
+            :fullscreen .vjsx-quality,
+            :-webkit-full-screen .vjsx-quality {
+              bottom: 4.5rem;
+              right: 2rem;
+            }
+          }
+
+          .vjsx-quality-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 200ms;
+            font-size: 26px !important;
+          }
+          .vjsx-quality-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+          }
+          .vjsx-quality-btn--active {
+            color: #ff8c00 !important;
+            transform: rotate(90deg);
+          }
+
+          .vjsx-quality-menu {
+            position: absolute;
+            bottom: calc(100% + 0.5rem);
+            right: 0;
+            min-width: 140px;
+            max-width: calc(100vw - 2rem);
+            padding: 0.375rem;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(16px) saturate(1.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.875rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            scale: 0.85;
+            pointer-events: none;
+            transform-origin: bottom right;
+            transition: opacity 150ms, scale 150ms;
+          }
+          .vjsx-quality-menu--open {
+            opacity: 1;
+            scale: 1;
+            pointer-events: auto;
+          }
+
+          /* On small screens, flip menu to open left if near right edge */
+          @media (max-width: 400px) {
+            .vjsx-quality-menu {
+              right: auto;
+              left: 0;
+              transform-origin: bottom left;
+            }
+          }
+
+          .vjsx-quality-header {
+            padding: 6px 10px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          }
+
+          .vjsx-quality-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 120ms;
+          }
+          .vjsx-quality-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+          }
+          .vjsx-quality-item--active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-weight: 600;
+          }
+
+          .vjsx-quality-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #ff8c00;
+            box-shadow: 0 0 6px rgba(255, 140, 0, 0.7);
+          }
+
+          /* ═══════════════════════════════════════
+             Error Overlay
+             ═══════════════════════════════════════ */
+          .vjsx-error {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.96);
+            backdrop-filter: blur(12px);
+          }
+          .vjsx-error-badge {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            font-size: 1.25rem;
+            font-weight: 900;
+            margin-bottom: 0.75rem;
+          }
+          .vjsx-error-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0 0 0.25rem;
+          }
+          .vjsx-error-desc {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0 0 0.75rem;
+          }
+          .vjsx-error-hint {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 140, 0, 0.05);
+            border: 1px solid rgba(255, 140, 0, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 1rem;
+            max-width: 16rem;
+            line-height: 1.5;
+          }
+          .vjsx-error-hint strong {
+            color: #ff8c00;
+          }
+          .vjsx-error-actions {
+            display: flex;
+            gap: 0.5rem;
+          }
+          .vjsx-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms;
+            text-decoration: none;
+            border: none;
+          }
+          .vjsx-btn--ghost {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          .vjsx-btn--ghost:hover { background: rgba(255, 255, 255, 0.1); }
+          .vjsx-btn--solid {
+            background: #fff;
+            color: #000;
+          }
+          .vjsx-btn--solid:hover { background: #e5e5e5; }
         `}</style>
       </div>
     </Player.Provider>

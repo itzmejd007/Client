@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import {
     PiPencilSimpleFill, PiTrashFill, PiPlusBold, PiMagnifyingGlassBold,
     PiCaretRightBold, PiCaretDownBold, PiXBold, PiListFill,
     PiPlusFill, PiMagnifyingGlassFill, PiXFill, PiCheckBold, PiGearFill, PiGlobeBold, PiLinkBold,
-    PiCloudArrowDownBold, PiDeviceMobileBold, PiCloudArrowUpBold
+    PiCloudArrowDownBold, PiDeviceMobileBold, PiCloudArrowUpBold, PiEyeBold
 } from "react-icons/pi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
@@ -109,6 +109,9 @@ const Admin = () => {
     const [existingContent, setExistingContent] = useState([]);
     const [existingMediaType, setExistingMediaType] = useState("movie");
     const [existingContentQuery, setExistingContentQuery] = useState("");
+    const [debouncedContentQuery, setDebouncedContentQuery] = useState("");
+    const [existingPage, setExistingPage] = useState(1);
+    const [existingTotal, setExistingTotal] = useState(0);
     const [isFetchingExisting, setIsFetchingExisting] = useState(false);
 
     const [editingMedia, setEditingMedia] = useState(null);
@@ -185,56 +188,46 @@ const Admin = () => {
     };
 
     // Fetch existing content list
+    const abortControllerRef = useRef(null);
+
     const fetchExistingContent = useCallback(async () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
+
         setIsFetchingExisting(true);
         try {
-            // Use Hybrid NDJSON Streaming for "connection movies" (Existing Content list)
             const path = existingMediaType === 'tv' ? 'tvshows' : 'movies';
-            const response = await fetch(`${BASE}/api/${path}/stream?sort_by=updated_on:desc`, {
-                mode: 'cors',
-                credentials: 'omit',
-                headers: {
-                    'Accept': 'application/x-ndjson'
-                }
+            const res = await axios.get(`${BASE}/api/${path}`, {
+                params: { 
+                    page: existingPage, 
+                    page_size: 10, 
+                    sort_by: "updated_on:desc",
+                    query: debouncedContentQuery 
+                },
+                signal
             });
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let partialChunk = "";
-            const items = [];
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = (partialChunk + chunk).split("\n");
-                partialChunk = lines.pop(); // Keep last potentially incomplete line
-
-                for (const line of lines) {
-                    if (line.trim()) {
-                        try {
-                            items.push(JSON.parse(line));
-                        } catch (e) {
-                            console.error("Error parsing NDJSON line:", e);
-                        }
-                    }
-                }
-                // Update state for live streaming feel
-                setExistingContent([...items]);
-            }
+            
+            const data = res.data;
+            setExistingContent(existingMediaType === "movie" ? (data.movies || []) : (data.tv_shows || []));
+            setExistingTotal(data.total_count || 0);
         } catch (error) {
-            console.error("Failed to fetch existing content via NDJSON, falling back to standard API:", error);
-            try {
-                const res = await axios.get(`${BASE}/api/${existingMediaType}s`, {
-                    params: { page_size: 100, sort_by: "updated_on:desc" }
-                });
-                setExistingContent(existingMediaType === "movie" ? (res.data.movies || []) : (res.data.tv_shows || []));
-            } catch (err) {
-                console.error("Fallback fetch also failed:", err);
-            }
+            if (error.name === 'AbortError') return;
+            console.error("Failed to fetch existing content:", error);
         }
         setIsFetchingExisting(false);
-    }, [existingMediaType, BASE]);
+    }, [existingMediaType, existingPage, debouncedContentQuery, BASE]);
+
+    // Handle Debounce for Search
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedContentQuery(existingContentQuery);
+            setExistingPage(1); // Reset to page 1 on new search
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [existingContentQuery]);
 
     // Fetch manual files
     const fetchManualFiles = useCallback(async () => {
@@ -252,13 +245,27 @@ const Admin = () => {
     }, [manualPage, manualSearchQuery]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchExistingContent();
-            fetchManualFiles();
-            fetchAnalytics();
-            fetchCollections();
+        const token = sessionStorage.getItem("adminToken");
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
-    }, [isAuthenticated, fetchExistingContent, fetchManualFiles, fetchAnalytics, fetchCollections]);
+    }, []);
+
+    useEffect(() => {
+        if (isAuthenticated) fetchExistingContent();
+    }, [isAuthenticated, fetchExistingContent]);
+
+    useEffect(() => {
+        if (isAuthenticated) fetchManualFiles();
+    }, [isAuthenticated, fetchManualFiles]);
+
+    useEffect(() => {
+        if (isAuthenticated) fetchAnalytics();
+    }, [isAuthenticated, fetchAnalytics]);
+
+    useEffect(() => {
+        if (isAuthenticated) fetchCollections();
+    }, [isAuthenticated, fetchCollections]);
 
     const handleCreateCollection = async (e) => {
         e.preventDefault();
@@ -644,17 +651,18 @@ const Admin = () => {
         }
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        const envUser = import.meta.env.VITE_ADMIN_USER;
-        const envPass = import.meta.env.VITE_ADMIN_PASS;
-
-        if (username === envUser && password === envPass) {
+        try {
+            const res = await axios.post(`${BASE}/api/admin/login`, { username, password });
+            const token = res.data.token;
             setIsAuthenticated(true);
             sessionStorage.setItem("adminAuth", "true");
+            sessionStorage.setItem("adminToken", token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             setLoginError("");
-        } else {
-            setLoginError("Invalid credentials");
+        } catch (error) {
+            setLoginError(error.response?.data?.detail || "Invalid credentials");
         }
     };
 
@@ -783,22 +791,31 @@ const Admin = () => {
                     <div className="space-y-8 animate-in fade-in duration-500">
                         {/* Stats Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                            {[
-                                { label: "Total Movies", value: stats?.stats?.movies || 0, color: "from-pink-500 to-rose-500" },
-                                { label: "TV Series", value: stats?.stats?.tv_shows || 0, color: "from-violet-500 to-indigo-500" },
-                                { label: "Unlinked Files", value: stats?.stats?.manual_files || 0, color: "from-amber-500 to-orange-500" },
-                                { label: "Total Library", value: stats?.stats?.total_content || 0, color: "from-emerald-500 to-teal-500" },
-                                { label: "Today Views", value: stats?.stats?.today_views || 0, color: "from-blue-500 to-cyan-500" },
-                                { label: "Yesterday", value: stats?.stats?.yesterday_views || 0, color: "from-slate-500 to-gray-500" },
-                                { label: "Monthly Views", value: stats?.stats?.monthly_views || 0, color: "from-purple-500 to-fuchsia-500" },
-                                { label: "Total Views", value: stats?.stats?.total_views || 0, color: "from-orange-500 to-red-500" },
-                            ].map((stat, i) => (
-                                <div key={i} className="bg-bgColorSecondary p-6 md:p-8 rounded-3xl md:rounded-[2rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden group">
-                                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
-                                    <p className="text-secondaryTextColor font-bold text-[10px] md:text-xs uppercase tracking-widest">{stat.label}</p>
-                                    <h3 className="text-3xl md:text-5xl font-black mt-2 tracking-tighter">{stat.value.toLocaleString()}</h3>
-                                </div>
-                            ))}
+                            {(isFetchingStats || !stats) ? (
+                                Array(8).fill(0).map((_, i) => (
+                                    <div key={i} className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10 shadow-xl animate-pulse">
+                                        <div className="w-16 h-3 bg-secondaryTextColor/20 rounded mb-4"></div>
+                                        <div className="w-24 h-10 bg-secondaryTextColor/10 rounded"></div>
+                                    </div>
+                                ))
+                            ) : (
+                                [
+                                    { label: "Total Movies", value: stats?.stats?.movies || 0, color: "from-pink-500 to-rose-500" },
+                                    { label: "TV Series", value: stats?.stats?.tv_shows || 0, color: "from-violet-500 to-indigo-500" },
+                                    { label: "Unlinked Files", value: stats?.stats?.manual_files || 0, color: "from-amber-500 to-orange-500" },
+                                    { label: "Total Library", value: stats?.stats?.total_content || 0, color: "from-emerald-500 to-teal-500" },
+                                    { label: "Today Views", value: stats?.stats?.today_views || 0, color: "from-blue-500 to-cyan-500" },
+                                    { label: "Yesterday", value: stats?.stats?.yesterday_views || 0, color: "from-slate-500 to-gray-500" },
+                                    { label: "Monthly Views", value: stats?.stats?.monthly_views || 0, color: "from-purple-500 to-fuchsia-500" },
+                                    { label: "Total Views", value: stats?.stats?.total_views || 0, color: "from-orange-500 to-red-500" },
+                                ].map((stat, i) => (
+                                    <div key={i} className="bg-bgColorSecondary p-6 md:p-8 rounded-3xl md:rounded-[2rem] border border-secondaryTextColor/10 shadow-xl relative overflow-hidden group animate-in zoom-in duration-500" style={{ animationDelay: `${i * 50}ms` }}>
+                                        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.color} opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
+                                        <p className="text-secondaryTextColor font-bold text-[10px] md:text-xs uppercase tracking-widest">{stat.label}</p>
+                                        <h3 className="text-3xl md:text-5xl font-black mt-2 tracking-tighter">{stat.value.toLocaleString()}</h3>
+                                    </div>
+                                ))
+                            )}
                         </div>
 
                         {/* Views Graph Section */}
@@ -1152,6 +1169,16 @@ const Admin = () => {
                                             placeholder="SpartanAiBot"
                                         />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-secondaryTextColor">Telegram Bot Custom Caption</label>
+                                        <textarea
+                                            value={localSettings.telegramCaption}
+                                            onChange={(e) => setLocalSettings({ ...localSettings, telegramCaption: e.target.value })}
+                                            className="w-full bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 font-medium focus:border-primaryBtn outline-none transition-all min-h-[100px]"
+                                            placeholder="Enter custom caption for files... Use {caption} for original file caption."
+                                        />
+                                        <p className="text-[10px] text-secondaryTextColor/60 px-2 italic">Tip: You can use {"{caption}"}, {"{quality}"}, {"{size}"}, {"{filename}"} and HTML tags.</p>
+                                    </div>
 
                                     <div className="pt-6 mt-6 border-t border-secondaryTextColor/10 space-y-6">
                                         <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10">
@@ -1326,12 +1353,73 @@ const Admin = () => {
                             </div>
                         </div>
 
+                        {/* Visibility & Shorteners Section */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div className="bg-btnColor/10 p-8 rounded-3xl border border-secondaryTextColor/10 shadow-sm transition-all">
+                                <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
+                                    <PiEyeBold className="text-primaryBtn" />
+                                    Button Visibility
+                                </h2>
+                                <div className="space-y-4">
+                                    {[
+                                        { id: 'showPlayerButton', label: 'Player Button', desc: 'Main stream/play button' },
+                                        { id: 'showTelegramButton', label: 'Telegram Button', desc: 'Direct bot link' },
+                                        { id: 'showDownloadButton', label: 'Download Button', desc: 'Primary download link' },
+                                        { id: 'showExternalLinks', label: 'External Links', desc: 'GDrive, Mega, etc. links' },
+                                        { id: 'showQuality', label: 'Quality Tags', desc: 'Display quality (1080p, etc.)' },
+                                        { id: 'showSize', label: 'File Size', desc: 'Display file sizes (1.2 GB, etc.)' }
+                                    ].map(item => (
+                                        <div key={item.id} className="flex items-center justify-between p-4 bg-bgColor rounded-xl border border-secondaryTextColor/10">
+                                            <div>
+                                                <p className="text-sm font-bold">{item.label}</p>
+                                                <p className="text-[10px] text-secondaryTextColor">{item.desc}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setLocalSettings({ ...localSettings, [item.id]: !localSettings[item.id] })}
+                                                className={`w-12 h-6 rounded-full transition-all relative ${localSettings[item.id] ? "bg-primaryBtn" : "bg-btnColor/20"}`}
+                                            >
+                                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings[item.id] ? "left-7" : "left-1"}`} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-btnColor/10 p-8 rounded-3xl border border-secondaryTextColor/10 shadow-sm transition-all">
+                                <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
+                                    <PiLinkBold className="text-primaryBtn" />
+                                    Link Shortener Toggles
+                                </h2>
+                                <div className="space-y-4">
+                                    {[
+                                        { id: 'useShortenerPlayer', label: 'Shorten Player Link', desc: 'Use shortener for Pop Player links' },
+                                        { id: 'useShortenerTelegram', label: 'Shorten Telegram Link', desc: 'Use shortener for Bot start links' },
+                                        { id: 'useShortenerDownload', label: 'Shorten Download Link', desc: 'Use shortener for direct downloads' },
+                                        { id: 'useShortenerExternal', label: 'Shorten External Links', desc: 'Use shortener for cloud links' }
+                                    ].map(item => (
+                                        <div key={item.id} className="flex items-center justify-between p-4 bg-bgColor rounded-xl border border-secondaryTextColor/10">
+                                            <div>
+                                                <p className="text-sm font-bold">{item.label}</p>
+                                                <p className="text-[10px] text-secondaryTextColor">{item.desc}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setLocalSettings({ ...localSettings, [item.id]: !localSettings[item.id] })}
+                                                className={`w-12 h-6 rounded-full transition-all relative ${localSettings[item.id] ? "bg-primaryBtn" : "bg-btnColor/20"}`}
+                                            >
+                                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings[item.id] ? "left-7" : "left-1"}`} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Shortener & Ad Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="bg-btnColor/10 p-8 rounded-3xl border border-secondaryTextColor/10 shadow-sm transition-all">
                                 <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
                                     <PiLinkBold className="text-primaryBtn" />
-                                    Link Shortener Config
+                                    Link Shortener API Config
                                 </h2>
                                 <div className="space-y-6">
                                     <div className="space-y-2">
@@ -1403,6 +1491,7 @@ const Admin = () => {
                         </div>
                     </div>
                 )}
+
 
                 {activeTab === "ads" && (
                     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1544,8 +1633,8 @@ const Admin = () => {
                                             >
                                                 PING
                                             </button>
-                                            <button onClick={() => setExistingMediaType("movie")} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>Movies</button>
-                                            <button onClick={() => setExistingMediaType("tv")} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>TV</button>
+                                            <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("movie"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>Movies</button>
+                                            <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("tv"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>TV</button>
                                         </div>
                                     </div>
                                     <div className="flex gap-2 mb-4">
@@ -1573,18 +1662,49 @@ const Admin = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-2 h-[300px] md:h-[600px] overflow-y-auto pr-2 scrollbar-thin">
-                                        {isFetchingExisting ? <div className="text-center py-20 animate-pulse text-secondaryTextColor">Loading Library...</div> :
-                                            existingContent.filter(m => m.title.toLowerCase().includes(existingContentQuery.toLowerCase())).map(item => (
-                                                <div key={item._id || item.id} onClick={() => handleEditExisting(item.tmdb_id, existingMediaType, item.title)} className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${(editingMedia?.tmdb_id === item.tmdb_id && editingMedia?.title === item.title) ? "bg-primaryBtn/10 border-primaryBtn shadow-inner" : "hover:bg-btnColor/20 border-transparent"}`}>
-                                                    <img src={item.poster} className="w-10 h-14 object-cover rounded shadow-sm" alt="" />
-                                                    <div className="flex-1 overflow-hidden">
-                                                        <p className="text-xs font-bold truncate">{item.title}</p>
-                                                        <p className="text-[9px] text-secondaryTextColor uppercase font-mono">{item.release_year}</p>
+                                        {isFetchingExisting ? (
+                                            <div className="flex flex-col items-center justify-center py-20 text-secondaryTextColor/40">
+                                                <div className="w-8 h-8 border-2 border-primaryBtn/20 border-t-primaryBtn rounded-full animate-spin mb-3"></div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest animate-pulse">Fetching Library...</p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {existingContent.map(item => (
+                                                    <div key={item._id || item.id} onClick={() => handleEditExisting(item.tmdb_id, item.media_type || existingMediaType, item.title)} className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${(editingMedia?.tmdb_id === item.tmdb_id && editingMedia?.title === item.title) ? "bg-primaryBtn/10 border-primaryBtn shadow-inner" : "hover:bg-btnColor/20 border-transparent"}`}>
+                                                        <img src={item.poster} className="w-10 h-14 object-cover rounded shadow-sm" alt="" />
+                                                        <div className="flex-1 overflow-hidden">
+                                                            <p className="text-xs font-bold truncate">{item.title}</p>
+                                                            <p className="text-[9px] text-secondaryTextColor uppercase font-mono">{item.release_year}</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))
-                                        }
+                                                ))}
+                                                {existingContent.length === 0 && <div className="text-center py-20 text-secondaryTextColor italic">No results found.</div>}
+                                            </>
+                                        )}
                                     </div>
+
+                                    {/* Library Pagination */}
+                                    {existingTotal > 10 && (
+                                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-secondaryTextColor/5">
+                                            <button 
+                                                disabled={existingPage === 1 || isFetchingExisting}
+                                                onClick={() => setExistingPage(p => p - 1)}
+                                                className="flex items-center gap-2 px-3 py-2 bg-bgColor rounded-lg border border-secondaryTextColor/10 disabled:opacity-30 hover:bg-btnColor/10 transition-all text-[10px] font-bold"
+                                            >
+                                                <PiCaretRightBold className="rotate-180" /> PREV
+                                            </button>
+                                            <div className="text-[10px] font-black uppercase tracking-tighter text-secondaryTextColor/60">
+                                                Page {existingPage} / {Math.ceil(existingTotal / 10)}
+                                            </div>
+                                            <button 
+                                                disabled={existingPage >= Math.ceil(existingTotal / 10) || isFetchingExisting}
+                                                onClick={() => setExistingPage(p => p + 1)}
+                                                className="flex items-center gap-2 px-3 py-2 bg-bgColor rounded-lg border border-secondaryTextColor/10 disabled:opacity-30 hover:bg-btnColor/10 transition-all text-[10px] font-bold"
+                                            >
+                                                NEXT <PiCaretRightBold />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1679,6 +1799,20 @@ const Admin = () => {
                                                                 value={editingMedia.backdrop || ""}
                                                                 placeholder="Backdrop URL..."
                                                                 onChange={(e) => setEditingMedia({ ...editingMedia, backdrop: e.target.value })}
+                                                                className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Manual Stream */}
+                                                    <div className="flex flex-col md:flex-row gap-4 mt-4 pt-4 border-t border-secondaryTextColor/10">
+                                                        <div className="flex-1">
+                                                            <label className="text-[9px] font-black text-secondaryTextColor/50 uppercase ml-1 block">Manual Stream URL (Pop Player)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={editingMedia.manual_stream_url || ""}
+                                                                placeholder="Embed link or direct .mp4 link..."
+                                                                onChange={(e) => setEditingMedia({ ...editingMedia, manual_stream_url: e.target.value })}
                                                                 className="w-full bg-btnColor/20 px-3 py-1.5 rounded text-xs font-bold outline-none focus:ring-1 focus:ring-primaryBtn"
                                                             />
                                                         </div>
@@ -1848,8 +1982,24 @@ const Admin = () => {
                                                                                                 setEditingMedia(m);
                                                                                             }} className="w-full bg-bgColor p-2.5 rounded-lg border border-secondaryTextColor/20 text-xs shadow-inner" />
                                                                                         </div>
+                                                                                        <div className="md:col-span-2">
+                                                                                            <label className="text-[9px] font-black uppercase text-secondaryTextColor">Manual Stream URL (Pop Player)</label>
+                                                                                            <input 
+                                                                                                type="text" 
+                                                                                                value={episode.manual_stream_url || ""} 
+                                                                                                onChange={(e) => {
+                                                                                                    const m = { ...editingMedia };
+                                                                                                    const sIdx = m.seasons.findIndex(s => s.season_number === season.season_number);
+                                                                                                    const eIdx = m.seasons[sIdx].episodes.findIndex(ep => ep.episode_number === episode.episode_number);
+                                                                                                    m.seasons[sIdx].episodes[eIdx].manual_stream_url = e.target.value;
+                                                                                                    setEditingMedia(m);
+                                                                                                }} 
+                                                                                                className="w-full bg-bgColor p-2.5 rounded-lg border border-secondaryTextColor/20 text-xs shadow-inner" 
+                                                                                                placeholder="Embed or direct link..."
+                                                                                            />
+                                                                                        </div>
                                                                                         <div className="md:col-span-2 flex justify-end">
-                                                                                            <button onClick={() => handleUpdateEpisode(season.season_number, episode.episode_number, { title: episode.title, episode_backdrop: episode.episode_backdrop })} className="px-4 py-2 bg-primaryBtn text-white text-[10px] font-black rounded-lg hover:shadow-lg transition-all">SAVE METADATA</button>
+                                                                                            <button onClick={() => handleUpdateEpisode(season.season_number, episode.episode_number, { title: episode.title, episode_backdrop: episode.episode_backdrop, manual_stream_url: episode.manual_stream_url })} className="px-4 py-2 bg-primaryBtn text-white text-[10px] font-black rounded-lg hover:shadow-lg transition-all">SAVE METADATA</button>
                                                                                         </div>
                                                                                     </div>
 

@@ -1,11 +1,9 @@
 import { AiOutlineClose } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
-import Plyr from "plyr-react";
-import "plyr-react/plyr.css";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
 import AdComponent from "./AdComponent";
+import { VideoJS } from "./VideoJS";
 
 export default function WatchTrailer(props) {
   const [sources, setSources] = useState([]);
@@ -13,7 +11,6 @@ export default function WatchTrailer(props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const BASE = import.meta.env.VITE_BASE_URL;
 
-  const playerRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -24,19 +21,28 @@ export default function WatchTrailer(props) {
           let selectedPoster = "";
 
           if (props.popUpType === "movie") {
-            videoSources = (props.id.telegram || []).map((q) => {
-              const name = q.name.toLowerCase();
-              const type = name.endsWith(".mp4") ? "video/mp4" : 
-                           name.endsWith(".webm") ? "video/webm" : 
-                           name.endsWith(".mkv") ? "video/webm" : // Some browsers handle MKV as webm/mp4
-                           undefined; // Let browser guess
+            const manualUrl = props.id.manual_stream_url;
+            if (manualUrl) {
+              videoSources = [{
+                src: manualUrl,
+                type: manualUrl.endsWith(".mp4") ? "video/mp4" : undefined,
+                label: "Manual Stream"
+              }];
+            } else {
+              videoSources = (props.id.telegram || []).map((q) => {
+                const name = q.name.toLowerCase();
+                const type = name.endsWith(".mp4") ? "video/mp4" : 
+                             name.endsWith(".webm") ? "video/webm" : 
+                             name.endsWith(".mkv") ? "video/x-matroska" : 
+                             undefined;
 
-              return {
-                src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
-                type: type,
-                size: parseInt(q.quality.replace("p", ""), 10),
-              };
-            });
+                return {
+                  src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
+                  type: type,
+                  label: q.quality || `Quality`,
+                };
+              });
+            }
             selectedPoster = props.id.backdrop;
           } else if (props.popUpType === "episode") {
             const season = (props.id.seasons || []).find(
@@ -49,19 +55,28 @@ export default function WatchTrailer(props) {
               );
 
               if (episode) {
-                videoSources = (episode.telegram || []).map((q) => {
-                  const name = q.name.toLowerCase();
-                  const type = name.endsWith(".mp4") ? "video/mp4" : 
-                               name.endsWith(".webm") ? "video/webm" : 
-                               name.endsWith(".mkv") ? "video/webm" : 
-                               undefined;
+                const manualUrl = episode.manual_stream_url;
+                if (manualUrl) {
+                  videoSources = [{
+                    src: manualUrl,
+                    type: manualUrl.endsWith(".mp4") ? "video/mp4" : undefined,
+                    label: "Manual Stream"
+                  }];
+                } else {
+                  videoSources = (episode.telegram || []).map((q) => {
+                    const name = q.name.toLowerCase();
+                    const type = name.endsWith(".mp4") ? "video/mp4" : 
+                                 name.endsWith(".webm") ? "video/webm" : 
+                                 name.endsWith(".mkv") ? "video/x-matroska" : 
+                                 undefined;
 
-                  return {
-                    src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
-                    type: type,
-                    size: parseInt(q.quality.replace("p", ""), 10),
-                  };
-                });
+                    return {
+                      src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
+                      type: type,
+                      label: q.quality || `Quality`,
+                    };
+                  });
+                }
                 selectedPoster = episode.episode_backdrop;
               }
             }
@@ -98,27 +113,12 @@ export default function WatchTrailer(props) {
     }
   };
 
-  const plyrProps = {
-    source: {
-      type: "video",
-      sources: sources,
-    },
-    options: {
-      poster: poster,
-      settings: ["captions", "quality", "speed"],
-      controls: [
-        "play-large",
-        "play",
-        "progress",
-        "current-time",
-        "mute",
-        "volume",
-        "captions",
-        "settings",
-        "fullscreen",
-      ],
-    },
-  };
+  // Check if the source is an embed/iframe URL
+  const isEmbedSource = sources.length === 1 && (
+    sources[0].src.includes("embed") || 
+    sources[0].src.includes("/e/") || 
+    !sources[0].src.match(/\.(mp4|mkv|webm|m3u8|mpd)$/i)
+  );
 
   return (
     <AnimatePresence>
@@ -142,9 +142,25 @@ export default function WatchTrailer(props) {
             animate={{ scale: 1 }}
             exit={{ scale: 0.9 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg relative bg-black"
+            className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg relative bg-black aspect-video"
           >
-            <Plyr ref={playerRef} {...plyrProps} id="player" />
+            {isEmbedSource ? (
+              <iframe
+                src={sources[0].src}
+                className="w-full h-full"
+                allowFullScreen
+                allow="autoplay; encrypted-media"
+                title="Manual Stream"
+              />
+            ) : (
+              <VideoJS
+                options={{
+                  autoplay: false,
+                  poster: poster,
+                  sources: sources,
+                }}
+              />
+            )}
             <AdComponent type="adPlayerBottom" className="mt-2" />
           </motion.div>
         </motion.div>

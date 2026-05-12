@@ -8,21 +8,23 @@ import Footer from "./components/Footer";
 import InstallPrompt from "./components/InstallPrompt";
 import AdComponent from "./components/AdComponent";
 
-// Lazy Load Pages for Performance
-const Home = lazy(() => import("./pages/Home"));
-const MovieDetails = lazy(() => import("./pages/MovieDetails"));
-const TvDetails = lazy(() => import("./pages/TvDetails"));
-const Movies = lazy(() => import("./pages/Movies"));
-const Series = lazy(() => import("./pages/Series"));
-const SimilarMov = lazy(() => import("./pages/SimilarMov"));
-const SimilarSeries = lazy(() => import("./pages/SimilarSeries"));
-const SearResults = lazy(() => import("./pages/SearchResults"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Watchlist = lazy(() => import("./pages/Watchlist"));
-const NotFoundPage = lazy(() => import("./pages/NotFound"));
-const Collections = lazy(() => import("./pages/Collections"));
-const Collection = lazy(() => import("./pages/Collection"));
+import { lazyWithRetry } from "./utils/lazyWithRetry";
 import { useSettings } from "./context/SettingsContext";
+
+// Lazy Load Pages with Auto-Retry on Chunk Failures
+const Home = lazyWithRetry(() => import("./pages/Home"));
+const MovieDetails = lazyWithRetry(() => import("./pages/MovieDetails"));
+const TvDetails = lazyWithRetry(() => import("./pages/TvDetails"));
+const Movies = lazyWithRetry(() => import("./pages/Movies"));
+const Series = lazyWithRetry(() => import("./pages/Series"));
+const SimilarMov = lazyWithRetry(() => import("./pages/SimilarMov"));
+const SimilarSeries = lazyWithRetry(() => import("./pages/SimilarSeries"));
+const SearResults = lazyWithRetry(() => import("./pages/SearchResults"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const Watchlist = lazyWithRetry(() => import("./pages/Watchlist"));
+const NotFoundPage = lazyWithRetry(() => import("./pages/NotFound"));
+const Collections = lazyWithRetry(() => import("./pages/Collections"));
+const Collection = lazyWithRetry(() => import("./pages/Collection"));
 
 // Professional Loading Placeholder
 const PageLoader = () => (

@@ -36,6 +36,17 @@ export const SettingsProvider = ({ children }) => {
         logoImageUrl: localStorage.getItem("logoImageUrl") || "",
         logoFontSize: parseInt(localStorage.getItem("logoFontSize") || "24"),
         logoImageSize: parseInt(localStorage.getItem("logoImageSize") || "40"),
+        telegramCaption: localStorage.getItem("telegramCaption") || "",
+        showPlayerButton: localStorage.getItem("showPlayerButton") !== "false",
+        showTelegramButton: localStorage.getItem("showTelegramButton") !== "false",
+        showDownloadButton: localStorage.getItem("showDownloadButton") !== "false",
+        showExternalLinks: localStorage.getItem("showExternalLinks") !== "false",
+        useShortenerPlayer: localStorage.getItem("useShortenerPlayer") !== "false",
+        useShortenerTelegram: localStorage.getItem("useShortenerTelegram") !== "false",
+        useShortenerDownload: localStorage.getItem("useShortenerDownload") !== "false",
+        useShortenerExternal: localStorage.getItem("useShortenerExternal") !== "false",
+        showQuality: localStorage.getItem("showQuality") !== "false",
+        showSize: localStorage.getItem("showSize") !== "false",
     });
 
     const BASE = import.meta.env.VITE_BASE_URL;

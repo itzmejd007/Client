@@ -76,9 +76,22 @@ const DownloadButton = ({ movieData, btnType }) => {
   const handleButtonClick = async (id, name, quality) => {
     setLoading((prev) => ({ ...prev, [quality]: true }));
     const rawUrl = generateUrl(id, name);
-    const shortUrl = await shortenUrl(rawUrl);
+    
+    // Determine which shortener toggle to check
+    const shortenerToggle = btnType === "Download" ? settings.useShortenerDownload : settings.useShortenerPlayer;
+    const useShortener = shortenerToggle !== false && !movieData.disable_shortener;
+
+    let finalUrl = rawUrl;
+    try {
+      if (useShortener && API_KEY && API_URL) {
+        finalUrl = await shortenUrl(rawUrl);
+      }
+    } catch (error) {
+      console.error("Error shortening URL:", error);
+    }
+
     setLoading((prev) => ({ ...prev, [quality]: false }));
-    window.open(shortUrl, "_blank", "noopener noreferrer");
+    window.open(finalUrl, "_blank", "noopener noreferrer");
   };
 
   const renderMovieButtons = () =>
@@ -91,7 +104,9 @@ const DownloadButton = ({ movieData, btnType }) => {
         isLoading={loading[q.quality]}
         spinner={<Spinner />}
       >
-        {q.quality} {q.size ? `| ${q.size}` : ""}
+        {settings.showQuality !== false ? q.quality : ""}
+        {settings.showQuality !== false && settings.showSize !== false && q.size ? " | " : ""}
+        {settings.showSize !== false && q.size ? q.size : ""}
       </Button>
     ));
 
@@ -178,8 +193,10 @@ const DownloadButton = ({ movieData, btnType }) => {
         }}
       >
         {qualities?.map((q) => (
-          <SelectItem key={String(q.quality)} textValue={`${q.quality} ${q.size ? `| ${q.size}` : ""}`}>
-            {q.quality} {q.size ? `| ${q.size}` : ""}
+          <SelectItem key={String(q.quality)} textValue={`${settings.showQuality !== false ? q.quality : ""} ${settings.showSize !== false && q.size ? `| ${q.size}` : ""}`}>
+            {settings.showQuality !== false ? q.quality : ""}
+            {settings.showQuality !== false && settings.showSize !== false && q.size ? " | " : ""}
+            {settings.showSize !== false && q.size ? q.size : ""}
           </SelectItem>
         ))}
       </Select>
