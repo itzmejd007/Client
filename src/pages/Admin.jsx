@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
     PiPencilSimpleFill, PiTrashFill, PiPlusBold, PiMagnifyingGlassBold,
@@ -151,6 +152,8 @@ const Admin = () => {
 
     // --- Add/Edit Flow Flag ---
     const [isNewAddition, setIsNewAddition] = useState(false);
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
     const [originalTitle, setOriginalTitle] = useState(null);
 
     const fetchCollections = useCallback(async () => {
@@ -689,6 +692,7 @@ const Admin = () => {
     };
 
     const handleDownloadBackup = async () => {
+        setIsBackingUp(true);
         try {
             const res = await axios.get(`${BASE}/api/admin/backup`);
             const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
@@ -701,6 +705,8 @@ const Admin = () => {
         } catch (error) {
             console.error("Backup failed:", error);
             alert("Failed to download backup.");
+        } finally {
+            setTimeout(() => setIsBackingUp(false), 1500);
         }
     };
 
@@ -713,6 +719,7 @@ const Admin = () => {
             try {
                 const data = JSON.parse(e.target.result);
                 if (window.confirm("CRITICAL: This will PERMANENTLY overwrite your current database with the backup data. Are you absolutely sure?")) {
+                    setIsRestoring(true);
                     const res = await axios.post(`${BASE}/api/admin/restore`, data);
                     alert(res.data.message);
                     window.location.reload(); // Reload to apply all restored settings
@@ -720,6 +727,8 @@ const Admin = () => {
             } catch (err) {
                 console.error("Restore failed:", err);
                 alert("Invalid backup file or server error.");
+            } finally {
+                setIsRestoring(false);
             }
         };
         reader.readAsText(file);
@@ -1474,32 +1483,78 @@ const Admin = () => {
                         </div>
 
                         {/* Backup & Export */}
-                        <div className="bg-btnColor/10 p-8 rounded-3xl border border-secondaryTextColor/10 shadow-sm transition-all">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-btnColor/10 p-8 rounded-3xl border border-secondaryTextColor/10 shadow-sm relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primaryBtn/5 blur-3xl -mr-32 -mt-32 pointer-events-none" />
+                            
                             <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-                                <PiCloudArrowDownBold className="text-primaryBtn" />
+                                <PiCloudArrowDownBold className={`text-primaryBtn ${isBackingUp ? "animate-bounce" : ""}`} />
                                 Backup & Export
                             </h2>
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-bgColor/50 p-6 rounded-2xl border border-secondaryTextColor/10">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-bgColor/50 p-6 rounded-2xl border border-secondaryTextColor/10 relative z-10">
                                 <div className="flex-1 text-left">
                                     <h3 className="text-lg font-bold">Site Data Backup</h3>
                                     <p className="text-sm text-secondaryTextColor">Download a snapshot of your entire database including settings, movies, series, and manual links.</p>
                                 </div>
                                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         onClick={handleDownloadBackup}
-                                        className="w-full md:w-auto px-8 py-4 bg-primaryBtn/10 text-primaryBtn border border-primaryBtn/20 hover:bg-primaryBtn hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                                        disabled={isBackingUp}
+                                        className={`w-full md:w-auto px-8 py-4 bg-primaryBtn text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-primaryBtn/20 ${isBackingUp ? "opacity-70 cursor-not-allowed" : "hover:shadow-primaryBtn/40"}`}
                                     >
-                                        <PiCloudArrowDownBold className="text-xl" />
-                                        EXPORT JSON
-                                    </button>
-                                    <label className="w-full md:w-auto px-8 py-4 bg-secondaryTextColor/10 text-secondaryTextColor border border-secondaryTextColor/20 hover:bg-secondaryTextColor hover:text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
-                                        <PiCloudArrowUpBold className="text-xl" />
-                                        IMPORT JSON
+                                        {isBackingUp ? (
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <PiCloudArrowDownBold className="text-xl" />
+                                        )}
+                                        {isBackingUp ? "PREPARING..." : "EXPORT JSON"}
+                                    </motion.button>
+                                    
+                                    <motion.label
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`w-full md:w-auto px-8 py-4 bg-bgColorSecondary text-primaryTextColor border border-secondaryTextColor/20 hover:border-primaryBtn/50 font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm ${isRestoring ? "opacity-70 pointer-events-none" : ""}`}
+                                    >
+                                        {isRestoring ? (
+                                            <div className="w-5 h-5 border-2 border-primaryBtn/30 border-t-primaryBtn rounded-full animate-spin" />
+                                        ) : (
+                                            <PiCloudArrowUpBold className="text-xl text-primaryBtn" />
+                                        )}
+                                        {isRestoring ? "RESTORING..." : "IMPORT JSON"}
                                         <input type="file" accept=".json" onChange={handleUploadBackup} className="hidden" />
-                                    </label>
+                                    </motion.label>
                                 </div>
                             </div>
-                        </div>
+
+                            {/* Progress bar animation for backup/restore */}
+                            <AnimatePresence>
+                                {(isBackingUp || isRestoring) && (
+                                    <motion.div 
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="mt-6 overflow-hidden"
+                                    >
+                                        <div className="w-full bg-bgColor h-2 rounded-full overflow-hidden">
+                                            <motion.div 
+                                                initial={{ width: "0%" }}
+                                                animate={{ width: "100%" }}
+                                                transition={{ duration: isBackingUp ? 1.5 : 5, ease: "easeInOut" }}
+                                                className="h-full bg-primaryBtn"
+                                            />
+                                        </div>
+                                        <p className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-primaryBtn mt-2 animate-pulse">
+                                            {isBackingUp ? "Processing Database Snapshot..." : "Rebuilding System State..."}
+                                        </p>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
 
                         {/* Save Button */}
                         <div className="flex justify-center pt-8">
