@@ -232,8 +232,8 @@ export default function MoviesAndSeriesDetailsSections(props) {
                           External Links
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="bg-bgColorSecondary dark:bg-btnColor border border-secondaryTextColor/20 p-2 min-w-[160px] shadow-2xl">
-                        <div className="flex flex-col gap-1 w-full">
+                      <PopoverContent className="bg-bgColorSecondary dark:bg-btnColor border border-secondaryTextColor/20 p-2 min-w-[160px] max-w-[calc(100vw-2rem)] shadow-2xl overflow-hidden">
+                        <div className="flex flex-col gap-1 w-full overflow-hidden">
                           <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-secondaryTextColor font-bold">Links</p>
                           {props.movieData.external_links.map((link, idx) => (
                             <a 
@@ -242,10 +242,10 @@ export default function MoviesAndSeriesDetailsSections(props) {
                               onClick={(e) => handleExternalLinkClick(e, link.url)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group"
+                              className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group w-full"
                             >
-                              <span className="font-medium">{link.name || `Link ${idx + 1}`}</span>
-                              <PiGlobeBold className="text-otherColor opacity-50 group-hover:opacity-100 transition-opacity" />
+                              <span className="font-medium break-all line-clamp-2">{link.name || `Link ${idx + 1}`}</span>
+                              <PiGlobeBold className="text-otherColor opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
                             </a>
                           ))}
                         </div>

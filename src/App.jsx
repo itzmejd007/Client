@@ -2,6 +2,10 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ReactGa from "react-ga";
 
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 // Components
 import Nav from "./components/Nav";
 import Footer from "./components/Footer";

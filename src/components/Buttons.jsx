@@ -233,9 +233,9 @@ const DownloadButton = ({ movieData, btnType }) => {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="bg-btnColor">
+      <PopoverContent className="bg-btnColor max-w-[calc(100vw-2rem)] shadow-2xl">
         {movieData.media_type === "movie"
-          ? <div className="px-1 py-2 flex gap-1 flex-wrap">{renderMovieButtons()}</div>
+          ? <div className="px-1 py-2 flex gap-1 flex-wrap justify-center">{renderMovieButtons()}</div>
           : renderShowSelectors()}
       </PopoverContent>
     </Popover>
