@@ -23,8 +23,14 @@ export default function MovieDetails() {
 
   // Fetch Movie Details Data
   useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+    };
+    scrollToTop();
+    const timer = setTimeout(scrollToTop, 50);
+
     setDetailsIsLoading(true);
-    window.scrollTo(0, 0);
 
     const titleParam = slug ? decodeURIComponent(slug) : undefined;
 

@@ -319,6 +319,10 @@ const Admin = () => {
                     })
                     .filter(l => l);
             }
+            // Ensure unique audio tracks
+            if (Array.isArray(mediaToSave.languages)) {
+                mediaToSave.languages = [...new Set(mediaToSave.languages)];
+            }
 
             if (isNewAddition) {
                 await axios.post(`${BASE}/api/admin/media/add`, mediaToSave);

@@ -24,8 +24,14 @@ export default function Movies() {
 
   // FETCH MOVIE DATA SECTION
   useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+    };
+    scrollToTop();
+    const timer = setTimeout(scrollToTop, 50);
+
     setIsMoviesDataLoading(true);
-    window.scrollTo(0, 0);
 
     const apiParams = {
       sort_by: `${movieFilter}:desc`,

@@ -8,6 +8,12 @@ import SEO from "../components/SEO";
 export default function Watchlist() {
     const { watchlist, removeFromWatchlist } = useWatchlist();
 
+    React.useEffect(() => {
+        setTimeout(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }, 0);
+    }, []);
+
     return (
         <div className="min-h-screen">
             <SEO title="My Watchlist" description="Keep track of movies and shows you want to watch." />

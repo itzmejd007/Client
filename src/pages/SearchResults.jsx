@@ -19,8 +19,10 @@ export default function SimilarMovies() {
 
   // Fetch Movie Data Section
   useEffect(() => {
+    setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, 0);
     setIsMoviesDataLoading(true);
-    window.scrollTo(0, 0);
 
     axios
       .get(`${BASE}/api/search/`, {

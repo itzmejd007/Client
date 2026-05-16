@@ -20,14 +20,17 @@ export default function Collection() {
   const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
+    setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, 0);
     setIsLoading(true);
     setIsStreaming(false);
-    
+
     // Initial fetch for collection metadata
     axios.get(`${BASE}/api/collections/${id}`)
       .then(async (res) => {
         const colData = res.data;
-        
+
         // SEO Redirect
         if (colData.slug && id !== colData.slug) {
           navigate(`/collection/${colData.slug}`, { replace: true });
@@ -45,9 +48,9 @@ export default function Collection() {
             credentials: 'omit',
             headers: { 'Accept': 'application/x-ndjson' }
           });
-          
+
           if (!response.ok) throw new Error("Stream request failed");
-          
+
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let partialChunk = "";
@@ -115,7 +118,7 @@ export default function Collection() {
         name={SITENAME}
         type="website"
       />
-      
+
       <div className="relative w-full aspect-[21/9] md:aspect-[32/9] rounded-[2rem] overflow-hidden mb-12 shadow-2xl">
         <img src={collection.thumbnail} alt={collection.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
@@ -124,20 +127,20 @@ export default function Collection() {
             <p className="text-gray-300 text-sm md:text-base font-medium">
               {collection.populated_items?.length || 0} / {collection.items?.length || 0} Items Curated for You
             </p>
-            
+
             {/* Sort Control - Desktop (Visible on sm and up) */}
             <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-md p-1.5 px-4 rounded-xl border border-white/20 w-fit">
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
-                <select 
-                    value={sortBy} 
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-[12px] font-bold text-white outline-none cursor-pointer p-0.5"
-                >
-                    <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
-                    <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
-                    <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
-                    <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
-                </select>
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-[12px] font-bold text-white outline-none cursor-pointer p-0.5"
+              >
+                <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
+                <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
+                <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
+                <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
+              </select>
             </div>
           </div>
         </div>
@@ -146,17 +149,17 @@ export default function Collection() {
       {/* Sort Control - Mobile (Visible only on xs/sm, hidden on sm and up) */}
       <div className="flex sm:hidden justify-center mb-8">
         <div className="flex items-center gap-2 bg-bgColorSecondary p-2 px-6 rounded-2xl border border-white/5 shadow-xl w-full max-w-[280px] justify-between">
-            <span className="text-[11px] font-black uppercase tracking-widest text-secondaryTextColor">Sort By:</span>
-            <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-[13px] font-black text-primaryTextColor outline-none cursor-pointer"
-            >
-                <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
-                <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
-                <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
-                <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
-            </select>
+          <span className="text-[11px] font-black uppercase tracking-widest text-secondaryTextColor">Sort By:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-transparent text-[13px] font-black text-primaryTextColor outline-none cursor-pointer"
+          >
+            <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
+            <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
+            <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
+            <option value="title:asc" className="bg-bgColor text-white">Name (A-Z)</option>
+          </select>
         </div>
       </div>
 
@@ -171,12 +174,12 @@ export default function Collection() {
         {collection.populated_items?.map((item) => (
           <MovieCard key={item._id || item.id} movie={item} />
         ))}
-        
+
         {/* Loading skeletons for remaining items in the stream */}
         {collection.items && collection.populated_items && collection.items.length > collection.populated_items.length && (
-            [...Array(collection.items.length - collection.populated_items.length)].map((_, i) => (
-                <SingleMovieCardSkeleton key={`skeleton-${i}`} />
-            ))
+          [...Array(collection.items.length - collection.populated_items.length)].map((_, i) => (
+            <SingleMovieCardSkeleton key={`skeleton-${i}`} />
+          ))
         )}
       </div>
     </div>

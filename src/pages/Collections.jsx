@@ -15,6 +15,9 @@ export default function Collections() {
   const [sortBy, setSortBy] = useState("updated_on:desc");
 
   useEffect(() => {
+    setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, 0);
     setIsLoading(true);
     axios.get(`${BASE}/api/collections`, { params: { sort_by: sortBy } })
       .then(res => {

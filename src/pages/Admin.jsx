@@ -86,6 +86,7 @@ const ViewsGraph = ({ data, period }) => {
 const BASE = import.meta.env.VITE_BASE_URL;
 
 const Admin = () => {
+    const location = useLocation();
     const { settings, updateSettings } = useSettings();
     const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem("adminAuth") === "true");
     const [username, setUsername] = useState("");
@@ -97,6 +98,7 @@ const Admin = () => {
     const [localSettings, setLocalSettings] = useState(settings);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         setLocalSettings(settings);
     }, [settings]);
 
@@ -266,6 +268,22 @@ const Admin = () => {
     useEffect(() => {
         if (isAuthenticated) fetchCollections();
     }, [isAuthenticated, fetchCollections]);
+
+    // Handle deep-linking from pencil icons on other pages
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tmdbId = params.get("tmdb_id");
+        const type = params.get("type");
+        const title = params.get("title");
+
+        if (tmdbId && type && isAuthenticated) {
+            setActiveTab("content");
+            handleEditExisting(tmdbId, type, title);
+            
+            // Optional: clear params after loading to avoid re-triggering
+            // window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [isAuthenticated, location.search]);
 
     const handleCreateCollection = async (e) => {
         e.preventDefault();
@@ -569,6 +587,10 @@ const Admin = () => {
                         return trimmed.includes(' - ') ? trimmed.split(' - ').pop().trim() : trimmed;
                     })
                     .filter(l => l);
+            }
+            // Ensure unique audio tracks
+            if (Array.isArray(mediaToSave.languages)) {
+                mediaToSave.languages = [...new Set(mediaToSave.languages)];
             }
 
             if (isNewAddition) {
