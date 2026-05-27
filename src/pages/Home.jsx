@@ -16,14 +16,9 @@ export default function Home() {
   const SITENAME = settings.siteName;
 
   const [heroPopularMovies, setHeroPopularMovies] = useState([]);
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [trendingTv, setTrendingTv] = useState([]);
-  const [combinedTrending, setCombinedTrending] = useState([]);
-  
   const [isHeroLoading, setIsHeroLoading] = useState(true);
-  const [isTrendingMoviesLoading, setIsTrendingMoviesLoading] = useState(true);
-  const [isTrendingTvLoading, setIsTrendingTvLoading] = useState(true);
-  const [isCombinedTrendingLoading, setIsCombinedTrendingLoading] = useState(true);
+  const [sections, setSections] = useState([]);
+  const [isSectionsLoading, setIsSectionsLoading] = useState(true);
 
   useEffect(() => {
     const scrollToTop = () => {
@@ -37,16 +32,27 @@ export default function Home() {
       .then(res => {
         setHeroPopularMovies(res.data.hero || []);
         setIsHeroLoading(false);
-        setTrendingMovies(res.data.latest_movies || []);
-        setIsTrendingMoviesLoading(false);
-        setTrendingTv(res.data.latest_tv || []);
-        setIsTrendingTvLoading(false);
-        
-        setCombinedTrending(res.data.trending_now || []);
-        setIsCombinedTrendingLoading(false);
+        setSections(res.data.sections || []);
+        setIsSectionsLoading(false);
       })
-      .catch((err) => console.error("Error fetching home data:", err));
+      .catch((err) => {
+        console.error("Error fetching home data:", err);
+        setIsSectionsLoading(false);
+      });
   }, [BASE]);
+
+  const getSectionItems = (section) => {
+    if (section.section_type === "recently_watched") {
+      try {
+        const localList = JSON.parse(localStorage.getItem("recently_watched") || "[]");
+        return localList.slice(0, section.limit || 10);
+      } catch (e) {
+        console.error("Failed to parse recently watched:", e);
+        return [];
+      }
+    }
+    return section.items || [];
+  };
 
   return (
     <div>
@@ -72,33 +78,47 @@ export default function Home() {
         />
       </div>
 
-      {/* Combined Trending Section (Slider) */}
-      <TrendingSlider
-        movieData={combinedTrending}
-        isMovieDataLoading={isCombinedTrendingLoading}
-        sectionTitle="Trending Now"
-        sectionSeeMoreButtonLink="/Movies"
-      />
-      <AdComponent type="adHomeTrending" />
+      {(() => {
+        const mockLoadingSections = [
+          { title: "Recently Watched", layout: "slider", _id: "loading-recent" },
+          { title: "Trending Now", layout: "slider", _id: "loading-trending" },
+          { title: "Latest Movies", layout: "grid", _id: "loading-movies" },
+          { title: "Latest Series", layout: "grid", _id: "loading-series" }
+        ];
 
-      {/* Latest Movies Section */}
-      <HomeSections
-        movieData={trendingMovies}
-        isMovieDataLoading={isTrendingMoviesLoading}
-        sectionTitle="Latest Movies"
-        sectionSeeMoreButtonLink="/Movies"
-        dataType="latestMovies"
-      />
-      <AdComponent type="adHomeLatest" />
+        const activeSections = isSectionsLoading ? mockLoadingSections : sections;
 
-      {/* Latest TV SHOWS Section */}
-      <HomeSections
-        movieData={trendingTv}
-        isMovieDataLoading={isTrendingTvLoading}
-        sectionTitle="Latest Series"
-        sectionSeeMoreButtonLink="/Series"
-        dataType="latestTv"
-      />
+        return activeSections.map((section, idx) => {
+          const items = getSectionItems(section);
+          if (!isSectionsLoading && items.length === 0) return null;
+
+          const seeMoreLink = section.media_type === "tv" ? "/Series" : "/Movies";
+
+          return (
+            <React.Fragment key={section._id || idx}>
+              {section.layout === "slider" ? (
+                <TrendingSlider
+                  movieData={isSectionsLoading ? [] : items}
+                  isMovieDataLoading={isSectionsLoading}
+                  sectionTitle={section.title}
+                  sectionSeeMoreButtonLink={seeMoreLink}
+                  sectionId={section._id}
+                />
+              ) : (
+                <HomeSections
+                  movieData={isSectionsLoading ? [] : items}
+                  isMovieDataLoading={isSectionsLoading}
+                  sectionTitle={section.title}
+                  sectionSeeMoreButtonLink={seeMoreLink}
+                  dataType={section._id}
+                />
+              )}
+              {idx === 0 && <AdComponent type="adHomeTrending" />}
+              {idx === 1 && <AdComponent type="adHomeLatest" />}
+            </React.Fragment>
+          );
+        });
+      })()}
     </div>
   );
 }

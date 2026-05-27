@@ -6,8 +6,9 @@ import axios from "axios";
 import { Button } from "@nextui-org/button";
 import Spinner from "./svg/Spinner";
 import { useLocation } from "react-router-dom";
+import { addToRecentlyWatched } from "../utils/watchHistory";
 
-const TelegramButton = ({ movieData }) => {
+const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
   const { settings } = useSettings();
   const USERNAME = settings.tgUsername || import.meta.env.VITE_TG_USERNAME;
   const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
@@ -40,6 +41,7 @@ const TelegramButton = ({ movieData }) => {
 
 
   const handleButtonClick = async (originalUrl, quality) => {
+    addToRecentlyWatched(movieData);
     setLoading((prev) => ({ ...prev, [quality]: true }));
     let shortUrl = originalUrl;
 
@@ -59,7 +61,7 @@ const TelegramButton = ({ movieData }) => {
   };
 
   const renderQualityButtons = (qualityDetails) =>
-    qualityDetails.map(({ quality, size, id }, index) => (
+    (qualityDetails || []).map(({ quality, size, id }, index) => (
       <Button
         key={index}
         onClick={() =>
@@ -125,6 +127,12 @@ const TelegramButton = ({ movieData }) => {
       );
     });
 
+  const getEpisodeQualityDetails = () => {
+    const season = movieData.seasons?.find(s => s.season_number === parseInt(seasonNumber));
+    const episode = season?.episodes?.find(e => e.episode_number === parseInt(episodeNumber));
+    return episode?.telegram || [];
+  };
+
   return (
     <Popover placement="bottom" showArrow={true}>
       <PopoverTrigger>
@@ -136,7 +144,9 @@ const TelegramButton = ({ movieData }) => {
         <div className="px-1 py-2 flex gap-1 flex-wrap flex-col">
           {movieData.media_type === "movie"
             ? renderQualityButtons(movieData.telegram || [])
-            : renderSeasonButtons()}
+            : (seasonNumber && episodeNumber)
+              ? renderQualityButtons(getEpisodeQualityDetails())
+              : renderSeasonButtons()}
         </div>
       </PopoverContent>
     </Popover>

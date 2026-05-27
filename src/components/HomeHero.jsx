@@ -141,13 +141,20 @@ export default function HeroSlider({ movieData, isMovieDataLoading }) {
           </div>
         </>
       ) : (
-        <>
-          <div className="relative">
-            <div className=" bg-bgColorSecondary rounded-t-2xl aspect-video rounded-2xl md:h-96 md:aspect-auto">
-              <LazyLoadImage className="rounded-2xl" />
+        <div className="relative animate-pulse">
+          <div className="bg-bgColorSecondary rounded-2xl aspect-video md:h-96 md:aspect-auto w-full relative overflow-hidden">
+            <div className="absolute bottom-4 left-4 right-0 sm:left-8 flex flex-col gap-2 w-[90%] md:w-2/3 lg:w-1/2">
+              <div className="h-7 sm:h-9 bg-bgColor/50 rounded-full w-2/3"></div>
+              <div className="hidden sm:flex gap-2 items-center mt-1">
+                <div className="h-3 bg-bgColor/50 rounded-full w-12"></div>
+                <div className="h-3 bg-bgColor/50 rounded-full w-20"></div>
+              </div>
+              <div className="h-4 bg-bgColor/50 rounded-full w-4/5 mt-1 sm:mt-2"></div>
+              <div className="h-4 bg-bgColor/50 rounded-full w-1/2 mt-1"></div>
+              <div className="h-8 bg-bgColor/50 rounded-full w-28 mt-3"></div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

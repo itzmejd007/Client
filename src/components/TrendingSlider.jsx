@@ -10,7 +10,10 @@ import { BsArrowLeftCircle, BsArrowRightCircle } from "react-icons/bs";
 import "swiper/css";
 import "swiper/css/navigation";
 
-export default function TrendingSlider({ movieData, isMovieDataLoading, sectionTitle, sectionSeeMoreButtonLink }) {
+export default function TrendingSlider({ movieData, isMovieDataLoading, sectionTitle, sectionSeeMoreButtonLink, sectionId }) {
+    const prevClass = `trending-prev-${sectionId || "default"}`;
+    const nextClass = `trending-next-${sectionId || "default"}`;
+
     return (
         <div className="mt-[2.5rem] md:mt-[5rem]">
             {/* Title */}
@@ -34,8 +37,8 @@ export default function TrendingSlider({ movieData, isMovieDataLoading, sectionT
                 </div>
 
                 <div className="hidden sm:flex items-center gap-2">
-                    <BsArrowLeftCircle className="trending-prev text-[2rem] text-secondaryTextColor cursor-pointer hover:text-primaryBtn transition-colors" />
-                    <BsArrowRightCircle className="trending-next text-[2rem] text-secondaryTextColor cursor-pointer hover:text-primaryBtn transition-colors" />
+                    <BsArrowLeftCircle className={`${prevClass} text-[2rem] text-secondaryTextColor cursor-pointer hover:text-primaryBtn transition-colors`} />
+                    <BsArrowRightCircle className={`${nextClass} text-[2rem] text-secondaryTextColor cursor-pointer hover:text-primaryBtn transition-colors`} />
                 </div>
             </div>
 
@@ -47,8 +50,8 @@ export default function TrendingSlider({ movieData, isMovieDataLoading, sectionT
                         spaceBetween={15}
                         slidesPerView={2}
                         navigation={{
-                            prevEl: ".trending-prev",
-                            nextEl: ".trending-next",
+                            prevEl: `.${prevClass}`,
+                            nextEl: `.${nextClass}`,
                         }}
                         autoplay={{
                             delay: 4000,

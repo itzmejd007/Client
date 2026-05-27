@@ -6,8 +6,9 @@ import { Button } from "@nextui-org/button";
 import { FaCloudDownloadAlt, FaPlay } from "react-icons/fa";
 import Spinner from "./svg/Spinner";
 import { useSettings } from "../context/SettingsContext";
+import { addToRecentlyWatched } from "../utils/watchHistory";
 
-const DownloadButton = ({ movieData, btnType }) => {
+const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => {
   const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL;
   const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
@@ -21,29 +22,43 @@ const DownloadButton = ({ movieData, btnType }) => {
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
-    if (selectedSeason) {
-      const season = movieData.seasons.find(
+    if (seasonNumber && episodeNumber) {
+      setSelectedSeason(seasonNumber);
+      setSelectedEpisode(episodeNumber);
+      const season = movieData.seasons?.find(
+        (s) => s.season_number === parseInt(seasonNumber)
+      );
+      if (season) {
+        const episode = season.episodes?.find(
+          (e) => e.episode_number === parseInt(episodeNumber)
+        );
+        if (episode) {
+          setQualities(episode.telegram || []);
+        }
+      }
+    } else if (selectedSeason) {
+      const season = movieData.seasons?.find(
         (s) => s.season_number === parseInt(selectedSeason)
       );
       if (season) {
-        setEpisodes(season.episodes);
+        setEpisodes(season.episodes || []);
         setSelectedEpisode("");
         setQualities([]);
       }
     }
-  }, [selectedSeason, movieData.seasons]);
+  }, [selectedSeason, seasonNumber, episodeNumber, movieData.seasons]);
 
   useEffect(() => {
-    if (selectedEpisode) {
+    if (!seasonNumber && !episodeNumber && selectedEpisode) {
       const episode = episodes.find(
         (e) => e.episode_number === parseInt(selectedEpisode)
       );
       if (episode) {
-        setQualities(episode.telegram);
+        setQualities(episode.telegram || []);
         setSelectedQuality("");
       }
     }
-  }, [selectedEpisode, episodes]);
+  }, [selectedEpisode, episodes, seasonNumber, episodeNumber]);
 
   const shortenUrl = async (url) => {
     try {
@@ -74,6 +89,7 @@ const DownloadButton = ({ movieData, btnType }) => {
   };
 
   const handleButtonClick = async (id, name, quality) => {
+    addToRecentlyWatched(movieData);
     setLoading((prev) => ({ ...prev, [quality]: true }));
     const rawUrl = generateUrl(id, name);
     
@@ -110,6 +126,22 @@ const DownloadButton = ({ movieData, btnType }) => {
       </Button>
     ));
 
+  const renderEpisodeButtons = () =>
+    qualities?.map((q, i) => (
+      <Button
+        key={i}
+        onClick={() => handleButtonClick(q.id, q.name, q.quality)}
+        size="sm"
+        className="bg-primaryBtn rounded-full text-bgColor font-medium"
+        isLoading={loading[q.quality]}
+        spinner={<Spinner />}
+      >
+        {settings.showQuality !== false ? q.quality : ""}
+        {settings.showQuality !== false && settings.showSize !== false && q.size ? " | " : ""}
+        {settings.showSize !== false && q.size ? q.size : ""}
+      </Button>
+    ));
+
   const renderShowSelectors = () => (
     <div className="px-1 py-2 flex flex-col gap-2">
 
@@ -122,7 +154,6 @@ const DownloadButton = ({ movieData, btnType }) => {
         className="w-40 mb-2"
         selectedKeys={selectedSeason ? new Set([selectedSeason]) : new Set()}
         onSelectionChange={(keys) => {
-          const [value] = keys;
           setSelectedSeason(Array.from(keys)[0]);
         }}
         classNames={{
@@ -152,8 +183,7 @@ const DownloadButton = ({ movieData, btnType }) => {
         disabled={!selectedSeason}
         selectedKeys={selectedEpisode ? new Set([selectedEpisode]) : new Set()}
         onSelectionChange={(keys) => {
-          const value = Array.from(keys)[0];
-          setSelectedEpisode(value);
+          setSelectedEpisode(Array.from(keys)[0]);
         }}
         classNames={{
           trigger: "bg-btnColor border-otherColor text-primaryTextColor",
@@ -182,8 +212,7 @@ const DownloadButton = ({ movieData, btnType }) => {
         disabled={!selectedEpisode}
         selectedKeys={selectedQuality ? new Set([selectedQuality]) : new Set()}
         onSelectionChange={(keys) => {
-          const value = Array.from(keys)[0];
-          setSelectedQuality(value);
+          setSelectedQuality(Array.from(keys)[0]);
         }}
         classNames={{
           trigger: "bg-btnColor border-otherColor text-primaryTextColor",
@@ -236,7 +265,9 @@ const DownloadButton = ({ movieData, btnType }) => {
       <PopoverContent className="bg-btnColor max-w-[calc(100vw-2rem)] shadow-2xl">
         {movieData.media_type === "movie"
           ? <div className="px-1 py-2 flex gap-1 flex-wrap justify-center">{renderMovieButtons()}</div>
-          : renderShowSelectors()}
+          : (seasonNumber && episodeNumber)
+            ? <div className="px-1 py-2 flex gap-1 flex-wrap justify-center">{renderEpisodeButtons()}</div>
+            : renderShowSelectors()}
       </PopoverContent>
     </Popover>
   );

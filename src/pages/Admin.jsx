@@ -143,7 +143,41 @@ const Admin = () => {
     const [collectionItemSearch, setCollectionItemSearch] = useState("");
     const [collectionItemResults, setCollectionItemResults] = useState([]);
     const [isSearchingColItems, setIsSearchingColItems] = useState(false);
+
+    // --- Home Sections State ---
+    const [homeSections, setHomeSections] = useState([]);
+    const [isFetchingHomeSections, setIsFetchingHomeSections] = useState(false);
+    const [editingSection, setEditingSection] = useState(null);
+
+    // New Section Form
+    const [newSecTitle, setNewSecTitle] = useState("");
+    const [newSecType, setNewSecType] = useState("latest");
+    const [newSecMediaType, setNewSecMediaType] = useState("both");
+    const [newSecLayout, setNewSecLayout] = useState("slider");
+    const [newSecLimit, setNewSecLimit] = useState(10);
+    const [newSecEnabled, setNewSecEnabled] = useState(true);
+    const [newSecPosition, setNewSecPosition] = useState(1);
+
+    // Edit Section Form
+    const [editSecTitle, setEditSecTitle] = useState("");
+    const [editSecType, setEditSecType] = useState("latest");
+    const [editSecMediaType, setEditSecMediaType] = useState("both");
+    const [editSecLayout, setEditSecLayout] = useState("slider");
+    const [editSecLimit, setEditSecLimit] = useState(10);
+    const [editSecEnabled, setEditSecEnabled] = useState(true);
+    const [editSecPosition, setEditSecPosition] = useState(1);
+
+    // Items for top_release section
+    const [selectedSecItems, setSelectedSecItems] = useState([]);
+    const [secItemSearch, setSecItemSearch] = useState("");
+    const [secItemResults, setSecItemResults] = useState([]);
+    const [isSearchingSecItems, setIsSearchingSecItems] = useState(false);
     const [selectedColItems, setSelectedColItems] = useState([]);
+    const [selectedCuratedDelete, setSelectedCuratedDelete] = useState([]);
+    const [draggedIndex, setDraggedIndex] = useState(null);
+    const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [draggedHomeIdx, setDraggedHomeIdx] = useState(null);
+    const [dragOverHomeIdx, setDragOverHomeIdx] = useState(null);
 
     // --- Analytics State ---
     const [stats, setStats] = useState(null);
@@ -166,6 +200,17 @@ const Admin = () => {
             console.error("Failed to fetch collections:", error);
         }
     }, [collectionsSort]);
+
+    const fetchHomeSections = useCallback(async () => {
+        setIsFetchingHomeSections(true);
+        try {
+            const res = await axios.get(`${BASE}/api/home-sections`);
+            setHomeSections(res.data || []);
+        } catch (error) {
+            console.error("Failed to fetch home sections:", error);
+        }
+        setIsFetchingHomeSections(false);
+    }, []);
 
     // Fetch Analytics
     const fetchAnalytics = useCallback(async () => {
@@ -272,6 +317,10 @@ const Admin = () => {
         if (isAuthenticated) fetchCollections();
     }, [isAuthenticated, fetchCollections]);
 
+    useEffect(() => {
+        if (isAuthenticated) fetchHomeSections();
+    }, [isAuthenticated, fetchHomeSections]);
+
     // Handle deep-linking from pencil icons on other pages
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -287,6 +336,178 @@ const Admin = () => {
             // window.history.replaceState({}, '', window.location.pathname);
         }
     }, [isAuthenticated, location.search]);
+
+    // --- Home Sections Handlers ---
+    const handleCreateHomeSection = async (e) => {
+        e.preventDefault();
+        const formattedTitle = newSecTitle.trim();
+        if (homeSections.some(sec => sec.title.trim().toLowerCase() === formattedTitle.toLowerCase())) {
+            alert("A home section with this title already exists!");
+            return;
+        }
+        try {
+            await axios.post(`${BASE}/api/home-sections`, {
+                title: formattedTitle,
+                section_type: newSecType,
+                media_type: newSecMediaType,
+                layout: newSecLayout,
+                limit: parseInt(newSecLimit),
+                enabled: newSecEnabled,
+                position: parseInt(newSecPosition),
+                items: []
+            });
+            setNewSecTitle("");
+            setNewSecType("latest");
+            setNewSecMediaType("both");
+            setNewSecLayout("slider");
+            setNewSecLimit(10);
+            setNewSecEnabled(true);
+            setNewSecPosition(homeSections.length + 2);
+            fetchHomeSections();
+            alert("Home section created successfully!");
+        } catch (error) {
+            alert("Error creating section: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const handleUpdateHomeSection = async (e) => {
+        e.preventDefault();
+        if (!editingSection) return;
+        const formattedTitle = editSecTitle.trim();
+        if (homeSections.some(sec => sec._id !== editingSection._id && sec.title.trim().toLowerCase() === formattedTitle.toLowerCase())) {
+            alert("A home section with this title already exists!");
+            return;
+        }
+        try {
+            await axios.put(`${BASE}/api/home-sections/${editingSection._id}`, {
+                title: formattedTitle,
+                section_type: editSecType,
+                media_type: editSecMediaType,
+                layout: editSecLayout,
+                limit: parseInt(editSecLimit),
+                enabled: editSecEnabled,
+                position: parseInt(editSecPosition),
+                items: editingSection.items || []
+            });
+            fetchHomeSections();
+            alert("Home section updated successfully!");
+        } catch (error) {
+            alert("Error updating section: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const handleDeleteHomeSection = async (id) => {
+        if (!window.confirm("Delete this home section?")) return;
+        try {
+            await axios.delete(`${BASE}/api/home-sections/${id}`);
+            fetchHomeSections();
+            if (editingSection?._id === id) setEditingSection(null);
+        } catch (error) {
+            alert("Error deleting section: " + error.message);
+        }
+    };
+
+    const handleSearchSecItems = async (e) => {
+        e.preventDefault();
+        if (!secItemSearch.trim()) return;
+        setIsSearchingSecItems(true);
+        try {
+            const res = await axios.get(`${BASE}/api/search/`, { params: { query: secItemSearch, page: 1, page_size: 10 } });
+            setSecItemResults(res.data.results);
+        } catch (error) {
+            console.error("Failed to search items:", error);
+        }
+        setIsSearchingSecItems(false);
+    };
+
+    const handleAddItemToSection = async (item) => {
+        if (!editingSection) return;
+        try {
+            const updatedItems = [...(editingSection.items || [])];
+            if (updatedItems.some(x => x.tmdb_id === item.tmdb_id && x.title === item.title)) {
+                alert("Item already in section");
+                return;
+            }
+            updatedItems.push({
+                tmdb_id: item.tmdb_id,
+                media_type: item.media_type,
+                title: item.title
+            });
+            
+            await axios.put(`${BASE}/api/home-sections/${editingSection._id}`, {
+                title: editSecTitle,
+                section_type: editSecType,
+                media_type: editSecMediaType,
+                layout: editSecLayout,
+                limit: parseInt(editSecLimit),
+                enabled: editSecEnabled,
+                position: parseInt(editSecPosition),
+                items: updatedItems
+            });
+
+            setEditingSection(prev => ({ ...prev, items: updatedItems }));
+            setSecItemResults(prev => prev.filter(r => r.tmdb_id !== item.tmdb_id || r.title !== item.title));
+            fetchHomeSections();
+        } catch (error) {
+            alert("Error adding item: " + error.message);
+        }
+    };
+
+    const handleBulkAddItemsToSection = async () => {
+        if (!editingSection || selectedSecItems.length === 0) return;
+        try {
+            const updatedItems = [...(editingSection.items || [])];
+            for (const item of selectedSecItems) {
+                if (!updatedItems.some(x => x.tmdb_id === item.tmdb_id && x.title === item.title)) {
+                    updatedItems.push({
+                        tmdb_id: item.tmdb_id,
+                        media_type: item.media_type,
+                        title: item.title
+                    });
+                }
+            }
+
+            await axios.put(`${BASE}/api/home-sections/${editingSection._id}`, {
+                title: editSecTitle,
+                section_type: editSecType,
+                media_type: editSecMediaType,
+                layout: editSecLayout,
+                limit: parseInt(editSecLimit),
+                enabled: editSecEnabled,
+                position: parseInt(editSecPosition),
+                items: updatedItems
+            });
+
+            setEditingSection(prev => ({ ...prev, items: updatedItems }));
+            setSecItemResults(prev => prev.filter(r => !selectedSecItems.some(s => s.tmdb_id === r.tmdb_id && s.title === r.title)));
+            setSelectedSecItems([]);
+            fetchHomeSections();
+            alert("Items added successfully!");
+        } catch (error) {
+            alert("Error adding items: " + error.message);
+        }
+    };
+
+    const handleRemoveItemFromSection = async (tmdb_id, title) => {
+        if (!editingSection) return;
+        try {
+            const updatedItems = (editingSection.items || []).filter(x => !(x.tmdb_id === tmdb_id && x.title === title));
+            await axios.put(`${BASE}/api/home-sections/${editingSection._id}`, {
+                title: editSecTitle,
+                section_type: editSecType,
+                media_type: editSecMediaType,
+                layout: editSecLayout,
+                limit: parseInt(editSecLimit),
+                enabled: editSecEnabled,
+                position: parseInt(editSecPosition),
+                items: updatedItems
+            });
+            setEditingSection(prev => ({ ...prev, items: updatedItems }));
+            fetchHomeSections();
+        } catch (error) {
+            alert("Error removing item: " + error.message);
+        }
+    };
 
     const handleCreateCollection = async (e) => {
         e.preventDefault();
@@ -384,6 +605,71 @@ const Admin = () => {
             fetchCollections();
         } catch (error) {
             alert("Error removing item: " + error.message);
+        }
+    };
+
+    const handleReorderCollectionItems = async (draggedIdx, targetIdx) => {
+        if (!editingCollection) return;
+        const newPopulated = [...editingCollection.populated_items];
+        const [draggedItem] = newPopulated.splice(draggedIdx, 1);
+        newPopulated.splice(targetIdx, 0, draggedItem);
+
+        const newItems = newPopulated.map(item => ({
+            tmdb_id: item.tmdb_id,
+            media_type: item.media_type,
+            title: item.title
+        }));
+
+        try {
+            await axios.put(`${BASE}/api/collections/${editingCollection._id}`, {
+                title: editingCollectionTitle,
+                thumbnail: editingCollectionThumbnail,
+                items: newItems
+            });
+            
+            setEditingCollection(prev => ({
+                ...prev,
+                items: newItems,
+                populated_items: newPopulated
+            }));
+            fetchCollections();
+        } catch (error) {
+            alert("Failed to save new items order: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const handleBulkDeleteCuratedItems = async () => {
+        if (!editingCollection || selectedCuratedDelete.length === 0) return;
+        if (!window.confirm(`Delete ${selectedCuratedDelete.length} selected items from this collection?`)) return;
+
+        const remainingPopulated = editingCollection.populated_items.filter(item => {
+            const id = `${item.media_type}_${item.tmdb_id}_${item.title || ""}`;
+            return !selectedCuratedDelete.includes(id);
+        });
+
+        const newItems = remainingPopulated.map(item => ({
+            tmdb_id: item.tmdb_id,
+            media_type: item.media_type,
+            title: item.title
+        }));
+
+        try {
+            await axios.put(`${BASE}/api/collections/${editingCollection._id}`, {
+                title: editingCollectionTitle,
+                thumbnail: editingCollectionThumbnail,
+                items: newItems
+            });
+
+            setEditingCollection(prev => ({
+                ...prev,
+                items: newItems,
+                populated_items: remainingPopulated
+            }));
+            setSelectedCuratedDelete([]);
+            fetchCollections();
+            alert("Selected items deleted successfully!");
+        } catch (error) {
+            alert("Error deleting items: " + (error.response?.data?.detail || error.message));
         }
     };
 
@@ -805,6 +1091,7 @@ const Admin = () => {
                             { id: "content", icon: <PiTrashFill />, label: "Content CMS" },
                             { id: "manual", icon: <PiListFill />, label: "Manual Files" },
                             { id: "collections", icon: <PiListFill />, label: "Collections" },
+                            { id: "home-sections", icon: <PiListFill />, label: "Home Layout" },
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -1001,6 +1288,7 @@ const Admin = () => {
                                             setEditingCollectionTitle(res.data.title);
                                             setEditingCollectionThumbnail(res.data.thumbnail);
                                             setSelectedColItems([]);
+                                            setSelectedCuratedDelete([]);
                                             setCollectionItemResults([]);
                                         }}>
                                             <div className="flex justify-between items-center">
@@ -1083,22 +1371,323 @@ const Admin = () => {
                                     </div>
                                     
                                     <div>
-                                        <h3 className="text-sm font-bold mb-2">Current Items ({editingCollection.populated_items?.length || 0})</h3>
-                                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                                            {editingCollection.populated_items?.map((item, idx) => (
-                                                <div key={`${item.tmdb_id}_${item.title || idx}`} className="flex justify-between items-center p-2 bg-bgColor rounded-lg border border-secondaryTextColor/5">
-                                                    <div className="flex items-center gap-2">
-                                                        <img src={item.poster} className="w-8 h-10 object-cover rounded" />
-                                                        <div>
-                                                            <p className="text-xs font-bold line-clamp-1">{item.title}</p>
-                                                            <p className="text-[10px] text-secondaryTextColor">{item.media_type}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => handleRemoveItemFromCollection(item.tmdb_id, item.media_type, item.title)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h3 className="text-sm font-bold">Current Items ({editingCollection.populated_items?.length || 0})</h3>
+                                            {editingCollection.populated_items?.length > 0 && (
+                                                <div className="flex items-center gap-3">
+                                                    <label className="flex items-center gap-1.5 text-xs text-secondaryTextColor cursor-pointer">
+                                                        <input 
+                                                            type="checkbox"
+                                                            className="accent-primaryBtn"
+                                                            checked={editingCollection.populated_items.length > 0 && selectedCuratedDelete.length === editingCollection.populated_items.length}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    const allIds = editingCollection.populated_items.map(item => `${item.media_type}_${item.tmdb_id}_${item.title || ""}`);
+                                                                    setSelectedCuratedDelete(allIds);
+                                                                } else {
+                                                                    setSelectedCuratedDelete([]);
+                                                                }
+                                                            }}
+                                                        />
+                                                        Select All
+                                                    </label>
+                                                    {selectedCuratedDelete.length > 0 && (
+                                                        <button 
+                                                            onClick={handleBulkDeleteCuratedItems}
+                                                            className="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded transition-colors animate-pulse"
+                                                        >
+                                                            Delete Selected ({selectedCuratedDelete.length})
+                                                        </button>
+                                                    )}
                                                 </div>
-                                            ))}
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                            {editingCollection.populated_items?.map((item, idx) => {
+                                                const itemId = `${item.media_type}_${item.tmdb_id}_${item.title || ""}`;
+                                                const isSelected = selectedCuratedDelete.includes(itemId);
+                                                const isDragOver = idx === dragOverIndex;
+                                                const isDragged = idx === draggedIndex;
+
+                                                return (
+                                                    <div 
+                                                        key={`${item.tmdb_id}_${item.title || idx}`} 
+                                                        draggable
+                                                        onDragStart={(e) => {
+                                                            setDraggedIndex(idx);
+                                                            e.dataTransfer.effectAllowed = "move";
+                                                        }}
+                                                        onDragOver={(e) => {
+                                                            e.preventDefault();
+                                                            if (dragOverIndex !== idx) {
+                                                                setDragOverIndex(idx);
+                                                            }
+                                                        }}
+                                                        onDragEnd={() => {
+                                                            if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                                                                handleReorderCollectionItems(draggedIndex, dragOverIndex);
+                                                            }
+                                                            setDraggedIndex(null);
+                                                            setDragOverIndex(null);
+                                                        }}
+                                                        className={`flex justify-between items-center p-2 bg-bgColor rounded-lg border transition-all ${
+                                                            isDragOver ? "border-primaryBtn bg-primaryBtn/15 scale-[1.01] shadow-md" : "border-secondaryTextColor/5 hover:border-secondaryTextColor/20"
+                                                        } ${isDragged ? "opacity-30" : ""}`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            {/* Drag Handle */}
+                                                            <div className="cursor-grab text-secondaryTextColor hover:text-primaryBtn transition-colors p-1" title="Drag to reorder">
+                                                                <PiListFill className="text-sm" />
+                                                            </div>
+                                                            {/* Checkbox */}
+                                                            <input 
+                                                                type="checkbox" 
+                                                                className="accent-primaryBtn cursor-pointer"
+                                                                checked={isSelected}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setSelectedCuratedDelete([...selectedCuratedDelete, itemId]);
+                                                                    } else {
+                                                                        setSelectedCuratedDelete(selectedCuratedDelete.filter(x => x !== itemId));
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <img src={item.poster} className="w-8 h-10 object-cover rounded" />
+                                                            <div>
+                                                                <p className="text-xs font-bold line-clamp-1">{item.title}</p>
+                                                                <p className="text-[10px] text-secondaryTextColor capitalize">{item.media_type}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleRemoveItemFromCollection(item.tmdb_id, item.media_type, item.title)} 
+                                                            className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"
+                                                            title="Delete"
+                                                        >
+                                                            <PiTrashFill />
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "home-sections" && (
+                    <div className="space-y-8 animate-in fade-in duration-500">
+                        <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                            <h2 className="text-2xl font-bold mb-6">Create Home Section</h2>
+                            <form onSubmit={handleCreateHomeSection} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Title</label>
+                                    <input type="text" placeholder="e.g. Action Hits" value={newSecTitle} onChange={e => setNewSecTitle(e.target.value)} required className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Section Type</label>
+                                    <select value={newSecType} onChange={e => setNewSecType(e.target.value)} className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                        <option value="latest">Latest Media</option>
+                                        <option value="trending">Trending (Views)</option>
+                                        <option value="top_release">Top Release (Curated)</option>
+                                        <option value="recently_watched">Recently Watched (History)</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Media Type</label>
+                                    <select value={newSecMediaType} onChange={e => setNewSecMediaType(e.target.value)} className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                        <option value="both">Both Movies & Series</option>
+                                        <option value="movie">Movies Only</option>
+                                        <option value="tv">Series Only</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Layout</label>
+                                    <select value={newSecLayout} onChange={e => setNewSecLayout(e.target.value)} className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                        <option value="slider">Slider</option>
+                                        <option value="grid">Grid</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Limit</label>
+                                    <input type="number" min="1" max="100" value={newSecLimit} onChange={e => setNewSecLimit(e.target.value)} required className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Position Order</label>
+                                    <input type="number" min="1" value={newSecPosition} onChange={e => setNewSecPosition(e.target.value)} required className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                </div>
+                                <div className="flex flex-col gap-2 justify-end">
+                                    <label className="flex items-center gap-2 cursor-pointer p-4 bg-bgColor rounded-xl border border-secondaryTextColor/20">
+                                        <input type="checkbox" checked={newSecEnabled} onChange={e => setNewSecEnabled(e.target.checked)} className="accent-primaryBtn" />
+                                        <span className="text-xs font-bold text-secondaryTextColor uppercase">Enabled</span>
+                                    </label>
+                                </div>
+                                <div className="flex items-end">
+                                    <button type="submit" className="w-full bg-primaryBtn text-white py-4 rounded-xl font-bold">Create Section</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                                <h2 className="text-xl font-bold mb-6">Home Layout Order & Config</h2>
+                                <div className="space-y-4">
+                                    {homeSections.map(sec => (
+                                        <div key={sec._id} className={`p-4 rounded-xl border cursor-pointer transition-all ${editingSection?._id === sec._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor"}`} onClick={() => {
+                                            setEditingSection(sec);
+                                            setEditSecTitle(sec.title);
+                                            setEditSecType(sec.section_type);
+                                            setEditSecMediaType(sec.media_type || "both");
+                                            setEditSecLayout(sec.layout || "slider");
+                                            setEditSecLimit(sec.limit || 10);
+                                            setEditSecEnabled(sec.enabled);
+                                            setEditSecPosition(sec.position || 1);
+                                            setSelectedSecItems([]);
+                                            setSecItemResults([]);
+                                        }}>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="bg-bgColor px-2 py-0.5 rounded text-[10px] font-mono font-bold text-primaryBtn">Pos {sec.position}</span>
+                                                        <p className="font-bold">{sec.title}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-secondaryTextColor uppercase mt-1">
+                                                        {sec.section_type} • {sec.media_type} • {sec.layout} • limit {sec.limit} • {sec.enabled ? "Active" : "Inactive"}
+                                                    </p>
+                                                </div>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteHomeSection(sec._id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg">
+                                                    <PiTrashFill />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {editingSection && (
+                                <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
+                                    <h2 className="text-xl font-bold mb-6">Editing: {editingSection.title}</h2>
+                                    
+                                    <form onSubmit={handleUpdateHomeSection} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Title</label>
+                                            <input type="text" value={editSecTitle} onChange={e => setEditSecTitle(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Section Type</label>
+                                            <select value={editSecType} onChange={e => setEditSecType(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                                <option value="latest">Latest Media</option>
+                                                <option value="trending">Trending (Views)</option>
+                                                <option value="top_release">Top Release (Curated)</option>
+                                                <option value="recently_watched">Recently Watched (History)</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Media Type</label>
+                                            <select value={editSecMediaType} onChange={e => setEditSecMediaType(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                                <option value="both">Both Movies & Series</option>
+                                                <option value="movie">Movies Only</option>
+                                                <option value="tv">Series Only</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Layout</label>
+                                            <select value={editSecLayout} onChange={e => setEditSecLayout(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn">
+                                                <option value="slider">Slider</option>
+                                                <option value="grid">Grid</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Limit</label>
+                                            <input type="number" min="1" max="100" value={editSecLimit} onChange={e => setEditSecLimit(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Position Order</label>
+                                            <input type="number" min="1" value={editSecPosition} onChange={e => setEditSecPosition(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
+                                        </div>
+                                        <div className="flex items-center gap-2 p-3 bg-bgColor rounded-lg border border-secondaryTextColor/20 md:col-span-2">
+                                            <input type="checkbox" id="editSecEnabled" checked={editSecEnabled} onChange={e => setEditSecEnabled(e.target.checked)} className="accent-primaryBtn" />
+                                            <label htmlFor="editSecEnabled" className="text-xs font-bold text-secondaryTextColor uppercase cursor-pointer">Enabled</label>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <button type="submit" className="w-full bg-primaryBtn text-white py-3 rounded-lg font-bold text-sm">Update Section Config</button>
+                                        </div>
+                                    </form>
+
+                                    {editSecType === "top_release" && (
+                                        <div className="border-t border-secondaryTextColor/10 pt-6">
+                                            <h3 className="text-sm font-bold mb-4">Curated Items List ({editingSection.items?.length || 0})</h3>
+                                            <form onSubmit={handleSearchSecItems} className="flex gap-2 mb-4">
+                                                <input type="text" placeholder="Search movies/series to add..." value={secItemSearch} onChange={e => setSecItemSearch(e.target.value)} className="flex-1 bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none" />
+                                                <button type="submit" className="bg-primaryBtn text-white px-4 rounded-lg font-bold text-xs">Search</button>
+                                            </form>
+
+                                            {isSearchingSecItems && <p className="text-xs text-secondaryTextColor mb-4">Searching...</p>}
+
+                                            {secItemResults.length > 0 && (
+                                                <div className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/10 max-h-60 overflow-y-auto mb-4 space-y-2">
+                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-secondaryTextColor/10">
+                                                        <span className="text-xs font-bold text-secondaryTextColor">Results</span>
+                                                        {selectedSecItems.length > 0 && (
+                                                            <button onClick={handleBulkAddItemsToSection} className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded font-bold">
+                                                                Add Selected ({selectedSecItems.length})
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {secItemResults.map(r => {
+                                                        const isSelected = selectedSecItems.some(s => s.tmdb_id === r.tmdb_id && s.title === r.title);
+                                                        const alreadyAdded = (editingSection.items || []).some(x => x.tmdb_id === r.tmdb_id && x.title === r.title);
+                                                        return (
+                                                            <div key={`${r.media_type}_${r.tmdb_id}_${r.title}`} className="flex items-center justify-between p-2 hover:bg-bgColorSecondary rounded-lg">
+                                                                <div className="flex items-center gap-3">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        disabled={alreadyAdded}
+                                                                        checked={isSelected || alreadyAdded} 
+                                                                        onChange={(e) => {
+                                                                            if (e.target.checked) {
+                                                                                setSelectedSecItems(prev => [...prev, r]);
+                                                                            } else {
+                                                                                setSelectedSecItems(prev => prev.filter(s => !(s.tmdb_id === r.tmdb_id && s.title === r.title)));
+                                                                            }
+                                                                        }} 
+                                                                        className="accent-primaryBtn" 
+                                                                    />
+                                                                    <img src={r.poster} className="w-8 h-10 object-cover rounded shadow" alt="" />
+                                                                    <div>
+                                                                        <p className="text-xs font-bold line-clamp-1">{r.title}</p>
+                                                                        <p className="text-[9px] text-secondaryTextColor uppercase font-mono">{r.media_type} • {r.release_year}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {!alreadyAdded && (
+                                                                    <button onClick={() => handleAddItemToSection(r)} className="text-xs text-primaryBtn hover:underline font-bold">Add</button>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                                {(editingSection.items || []).map(item => (
+                                                    <div key={`${item.media_type}_${item.tmdb_id}_${item.title}`} className="flex justify-between items-center bg-bgColor p-3 rounded-xl border border-secondaryTextColor/5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-14 bg-bgColorSecondary rounded overflow-hidden flex items-center justify-center border border-secondaryTextColor/10">
+                                                                <span className="text-[8px] font-bold text-secondaryTextColor uppercase">{item.media_type}</span>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-bold line-clamp-1">{item.title}</p>
+                                                                <p className="text-[10px] text-secondaryTextColor">TMDB: {item.tmdb_id}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => handleRemoveItemFromSection(item.tmdb_id, item.title)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

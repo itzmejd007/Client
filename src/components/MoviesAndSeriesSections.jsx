@@ -1,11 +1,38 @@
 import React from "react";
 import MovieCard from "./MovieCard";
-import MovieCardSkeleton from "./MovieCardSkeleton"
+import MovieCardSkeleton, { SingleMovieCardSkeleton } from "./MovieCardSkeleton";
 
-export default function HomeSection(props) {
+/**
+ * MoviesAndSeriesSections
+ * ──────────────────────────────────────────────────────────────────────────────
+ * Supports two rendering modes:
+ *
+ * 1. Classic mode (isStreaming = false):
+ *    - isMovieDataLoading = true  → show full skeleton grid
+ *    - isMovieDataLoading = false → show all cards
+ *
+ * 2. Hybrid streaming mode (isStreaming = true):
+ *    - cards already arrived are rendered immediately
+ *    - remaining slots show SingleMovieCardSkeleton placeholders
+ *    - no full-page spinner ever blocks the view
+ *
+ * The SKELETON_COUNT is a reasonable estimate so that the grid doesn't
+ * collapse when only a few cards have arrived yet.
+ */
+const SKELETON_COUNT = 20;
+
+export default function MoviesAndSeriesSections(props) {
+  const { isMovieDataLoading, isStreaming, movieData = [] } = props;
+
+  // Number of skeleton placeholder cards to append while streaming
+  const skeletonSlots =
+    isStreaming && movieData.length < SKELETON_COUNT
+      ? SKELETON_COUNT - movieData.length
+      : 0;
+
   return (
     <>
-      {/* Title */}
+      {/* ── Header: title + filters ───────────────────────────────────────── */}
       <div className="mt-[5rem] flex items-center flex-wrap gap-5 text-primaryTextColor pb-[1.5rem]">
         <div className="pl-[1rem] border-l-2 border-primaryBtn">
           <p className="text-[0.8rem] uppercase font-bold sm:text-[1rem]">
@@ -14,10 +41,12 @@ export default function HomeSection(props) {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center flex-wrap gap-6 text-secondaryTextColor w-full sm:w-auto mt-2 sm:mt-0">
-          {/* Sorting Dropdown */}
+          {/* Sort Dropdown */}
           {(props.dataType === "movies" || props.dataType === "series") && (
             <div className="flex items-center gap-3">
-              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">Sort By:</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">
+                Sort By:
+              </span>
               <select
                 value={props.movieFilterVal}
                 onChange={(e) => {
@@ -25,7 +54,15 @@ export default function HomeSection(props) {
                   props.setMovieFilter(e.target.value);
                 }}
                 className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+                style={{
+                  appearance: "none",
+                  backgroundImage:
+                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.7rem top 50%",
+                  backgroundSize: "0.65rem auto",
+                  paddingRight: "1.8rem",
+                }}
               >
                 <option value="updated_on">Latest</option>
                 <option value="views">Trending</option>
@@ -35,17 +72,27 @@ export default function HomeSection(props) {
             </div>
           )}
 
-          {/* Filtering Dropdowns */}
+          {/* Filter Dropdowns */}
           {(props.dataType === "movies" || props.dataType === "series") && (
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">Filters:</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">
+                Filters:
+              </span>
 
-              {/* Genre Filter */}
+              {/* Genre */}
               <select
                 value={props.genre}
                 onChange={(e) => props.setGenre(e.target.value)}
                 className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+                style={{
+                  appearance: "none",
+                  backgroundImage:
+                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.7rem top 50%",
+                  backgroundSize: "0.65rem auto",
+                  paddingRight: "1.8rem",
+                }}
               >
                 <option value="all">All Genres</option>
                 <option value="action">Action</option>
@@ -63,25 +110,46 @@ export default function HomeSection(props) {
                 <option value="family">Family</option>
               </select>
 
-              {/* Year Filter */}
+              {/* Year */}
               <select
                 value={props.year}
                 onChange={(e) => props.setYear(e.target.value)}
                 className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+                style={{
+                  appearance: "none",
+                  backgroundImage:
+                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.7rem top 50%",
+                  backgroundSize: "0.65rem auto",
+                  paddingRight: "1.8rem",
+                }}
               >
                 <option value="all">Any Year</option>
-                {Array.from(new Array(40), (val, index) => new Date().getFullYear() - index).map(year => (
-                  <option key={year} value={year}>{year}</option>
+                {Array.from(
+                  new Array(40),
+                  (_, i) => new Date().getFullYear() - i
+                ).map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
                 ))}
               </select>
 
-              {/* Audio Filter */}
+              {/* Audio */}
               <select
                 value={props.audio}
                 onChange={(e) => props.setAudio(e.target.value)}
                 className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{ appearance: "none", backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.7rem top 50%", backgroundSize: "0.65rem auto", paddingRight: "1.8rem" }}
+                style={{
+                  appearance: "none",
+                  backgroundImage:
+                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.7rem top 50%",
+                  backgroundSize: "0.65rem auto",
+                  paddingRight: "1.8rem",
+                }}
               >
                 <option value="all">Any Audio</option>
                 <option value="hi">Hindi</option>
@@ -105,22 +173,28 @@ export default function HomeSection(props) {
         </div>
       </div>
 
-      {/* Movies, series, and all other sections */}
+      {/* ── Grid ─────────────────────────────────────────────────────────────── */}
       <div>
-        {!props.isMovieDataLoading ? (
+        {/* Full skeleton – only shown before any item has arrived */}
+        {isMovieDataLoading ? (
+          <MovieCardSkeleton />
+        ) : (
           <div className="relative">
             <div className="grid gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4 lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
-              {props.movieData.map(
-                (movie, index) =>
-                  <MovieCard key={index} movie={movie} />
-              )}
+              {/* Real cards that have already streamed in */}
+              {movieData.map((movie, index) => (
+                <MovieCard key={movie._id || index} movie={movie} />
+              ))}
+
+              {/* Skeleton placeholders for slots not yet filled by the stream */}
+              {skeletonSlots > 0 &&
+                [...Array(skeletonSlots)].map((_, i) => (
+                  <SingleMovieCardSkeleton key={`sk-${i}`} />
+                ))}
             </div>
           </div>
-        ) : (
-          <MovieCardSkeleton />
         )}
       </div>
     </>
   );
 }
-
