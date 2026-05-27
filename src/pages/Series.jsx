@@ -1,64 +1,72 @@
 // src/pages/Series.jsx
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import Pagination from "../components/Pagination";
+// ─────────────────────────────────────────────────────────────────────────────
+// Hybrid streaming page: uses the backend NDJSON stream endpoint so that cards
+// render progressively instead of waiting for the full paginated response.
+//
+// JSON stack used:
+//   Backend  : orjson (serialise) + NDJSON framing
+//   Frontend : native JSON.parse inside ndjsonStream util (fastest browser path)
+//
+// For filter/sort changes the stream is aborted and re-started immediately.
+// ─────────────────────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import MoviesAndSeriesSections from "../components/MoviesAndSeriesSections";
-import SEO from "../components/SEO"; // import SEO
+import SEO from "../components/SEO";
 import { useSettings } from "../context/SettingsContext";
+import { streamNDJSON, buildQueryString } from "../utils/ndjsonStream";
 
 export default function Series() {
   const { settings } = useSettings();
-  const BASE = import.meta.env.VITE_BASE_URL; // Base URL for backend
+  const BASE = import.meta.env.VITE_BASE_URL;
   const SITENAME = settings.siteName;
 
-
-  // States
-  const [series, setSeries] = useState([]);
-  const [isSeriesDataLoading, setIsSeriesDataLoading] = useState(true);
-  const [seriesDataForPageCount, setSeriesDataForPageCount] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [seriesFilter, setSeriesFilter] = useState("updated_on");
+  // ── state ──────────────────────────────────────────────────────────────────
+  const [series, setSeries]                 = useState([]);
+  const [isStreaming, setIsStreaming]       = useState(true);
+  const [seriesFilter, setSeriesFilter]     = useState("updated_on");
   const [seriesFilterVal, setSeriesFilterVal] = useState("updated_on");
-  const [genre, setGenre] = useState("all");
-  const [year, setYear] = useState("all");
-  const [audio, setAudio] = useState("all");
+  const [genre, setGenre]                   = useState("all");
+  const [year, setYear]                     = useState("all");
+  const [audio, setAudio]                   = useState("all");
 
-  // FETCH SERIES DATA SECTION
-  useEffect(() => {
-    const scrollToTop = () => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-    };
-    scrollToTop();
-    const timer = setTimeout(scrollToTop, 50);
+  const abortRef = useRef(null);
 
-    setIsSeriesDataLoading(true);
+  // ── streaming fetch ────────────────────────────────────────────────────────
+  const startStream = useCallback(() => {
+    if (abortRef.current) abortRef.current();
 
-    const apiParams = {
+    setSeries([]);
+    setIsStreaming(true);
+    window.scrollTo(0, 0);
+
+    const qs = buildQueryString({
       sort_by: `${seriesFilter}:desc`,
-      page: currentPage,
-      page_size: 20
-    };
+      genre:   genre !== "all" ? genre : undefined,
+      year:    year  !== "all" ? year  : undefined,
+    });
 
-    if (genre !== "all") apiParams.genre = genre;
-    if (year !== "all") apiParams.year = year;
-    if (audio !== "all") apiParams.audio = audio;
+    const abort = streamNDJSON(
+      `${BASE}/api/tvshows/stream${qs}`,
+      (item) => setSeries((prev) => [...prev, item]),
+      () => setIsStreaming(false),
+      (err) => {
+        console.error("[Series] Stream error:", err);
+        setIsStreaming(false);
+      }
+    );
 
-    axios.get(`${BASE}/api/tvshows`, { params: apiParams })
-      .then(response => {
-        setSeries(response.data.tv_shows);
-        setSeriesDataForPageCount(response.data.total_count);
-        setIsSeriesDataLoading(false);
-      })
-      .catch(error => {
-        console.error("Error fetching series:", error);
-        setIsSeriesDataLoading(false);
-      });
-  }, [seriesFilter, currentPage, genre, year, audio, BASE]);
+    abortRef.current = abort;
+  }, [BASE, seriesFilter, genre, year, audio]);
 
+  useEffect(() => {
+    startStream();
+    return () => abortRef.current?.();
+  }, [startStream]);
+
+  // ── render ─────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* SEO SECTION */}
+      {/* SEO */}
       <SEO
         title={`Anime Series - ${SITENAME}`}
         description={`Browse the latest anime series in Tamil, Hindi, Telugu and English dubbed on ${SITENAME}. Stream episodes in HD quality.`}
@@ -67,32 +75,39 @@ export default function Series() {
         keywords="anime series, Tamil dubbed anime series, Hindi dubbed anime series, Telugu dubbed anime, watch anime episodes online"
         link={`https://${SITENAME}.com/series`}
       />
+
+      {/* Slim streaming progress bar */}
+      {isStreaming && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-bgColorSecondary overflow-hidden">
+          <div className="h-full bg-primaryBtn animate-loading-bar shadow-[0_0_8px] shadow-primaryBtn" />
+        </div>
+      )}
+
       <MoviesAndSeriesSections
         movieData={series}
-        isMovieDataLoading={isSeriesDataLoading}
+        isMovieDataLoading={isStreaming && series.length === 0}
+        isStreaming={isStreaming}
         dataType="series"
         sectionTitle="Browse Series"
         setMovieFilter={setSeriesFilter}
         movieFilterVal={seriesFilterVal}
         setMovieFilterVal={setSeriesFilterVal}
         genre={genre}
-        setGenre={(val) => { setGenre(val); setCurrentPage(1); }}
+        setGenre={(val) => { setGenre(val); }}
         year={year}
-        setYear={(val) => { setYear(val); setCurrentPage(1); }}
+        setYear={(val) => { setYear(val); }}
         audio={audio}
-        setAudio={(val) => { setAudio(val); setCurrentPage(1); }}
+        setAudio={(val) => { setAudio(val); }}
       />
 
-      {/* Call Pagination Component */}
-      <Pagination
-        currentPage={currentPage}
-        total={seriesDataForPageCount}
-        pagesNum={Math.ceil(seriesDataForPageCount / 20)}
-        onPageChange={(p) => {
-          setCurrentPage(p);
-        }}
-        limit={20}
-      />
+      {/* Stream status footer */}
+      {series.length > 0 && (
+        <p className="text-center text-xs text-secondaryTextColor py-6 opacity-60">
+          {isStreaming
+            ? `Loading… ${series.length} series so far`
+            : `${series.length} series loaded`}
+        </p>
+      )}
     </div>
   );
 }
