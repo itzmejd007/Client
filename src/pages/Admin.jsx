@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -404,6 +409,55 @@ const Admin = () => {
             if (editingSection?._id === id) setEditingSection(null);
         } catch (error) {
             alert("Error deleting section: " + error.message);
+        }
+    };
+
+    const handleReorderHomeSections = async (draggedIdx, targetIdx) => {
+        const reordered = [...homeSections];
+        const [draggedSec] = reordered.splice(draggedIdx, 1);
+        reordered.splice(targetIdx, 0, draggedSec);
+
+        const updatedSections = reordered.map((sec, index) => ({
+            ...sec,
+            position: index + 1
+        }));
+        setHomeSections(updatedSections);
+
+        try {
+            await axios.post(`${BASE}/api/home-sections/reorder`, {
+                section_ids: updatedSections.map(sec => sec._id)
+            });
+        } catch (error) {
+            alert("Failed to save new section order: " + (error.response?.data?.detail || error.message));
+            fetchHomeSections();
+        }
+    };
+
+    const handleReorderSectionItems = async (draggedIdx, targetIdx) => {
+        if (!editingSection) return;
+        const newItems = [...(editingSection.items || [])];
+        const [draggedItem] = newItems.splice(draggedIdx, 1);
+        newItems.splice(targetIdx, 0, draggedItem);
+
+        try {
+            await axios.put(`${BASE}/api/home-sections/${editingSection._id}`, {
+                title: editSecTitle,
+                section_type: editSecType,
+                media_type: editSecMediaType,
+                layout: editSecLayout,
+                limit: parseInt(editSecLimit),
+                enabled: editSecEnabled,
+                position: parseInt(editSecPosition),
+                items: newItems
+            });
+            
+            setEditingSection(prev => ({
+                ...prev,
+                items: newItems
+            }));
+            fetchHomeSections();
+        } catch (error) {
+            alert("Failed to save new items order: " + (error.response?.data?.detail || error.message));
         }
     };
 
@@ -1534,35 +1588,69 @@ const Admin = () => {
                             <div className="bg-bgColorSecondary p-8 rounded-[2rem] border border-secondaryTextColor/10">
                                 <h2 className="text-xl font-bold mb-6">Home Layout Order & Config</h2>
                                 <div className="space-y-4">
-                                    {homeSections.map(sec => (
-                                        <div key={sec._id} className={`p-4 rounded-xl border cursor-pointer transition-all ${editingSection?._id === sec._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor"}`} onClick={() => {
-                                            setEditingSection(sec);
-                                            setEditSecTitle(sec.title);
-                                            setEditSecType(sec.section_type);
-                                            setEditSecMediaType(sec.media_type || "both");
-                                            setEditSecLayout(sec.layout || "slider");
-                                            setEditSecLimit(sec.limit || 10);
-                                            setEditSecEnabled(sec.enabled);
-                                            setEditSecPosition(sec.position || 1);
-                                            setSelectedSecItems([]);
-                                            setSecItemResults([]);
-                                        }}>
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="bg-bgColor px-2 py-0.5 rounded text-[10px] font-mono font-bold text-primaryBtn">Pos {sec.position}</span>
-                                                        <p className="font-bold">{sec.title}</p>
+                                    {homeSections.map((sec, idx) => {
+                                        const isDragOver = idx === dragOverHomeIdx;
+                                        const isDragged = idx === draggedHomeIdx;
+                                        
+                                        return (
+                                            <div 
+                                                key={sec._id} 
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    setDraggedHomeIdx(idx);
+                                                    e.dataTransfer.effectAllowed = "move";
+                                                }}
+                                                onDragOver={(e) => {
+                                                    e.preventDefault();
+                                                    if (dragOverHomeIdx !== idx) {
+                                                        setDragOverHomeIdx(idx);
+                                                    }
+                                                }}
+                                                onDragEnd={() => {
+                                                    if (draggedHomeIdx !== null && dragOverHomeIdx !== null && draggedHomeIdx !== dragOverHomeIdx) {
+                                                        handleReorderHomeSections(draggedHomeIdx, dragOverHomeIdx);
+                                                    }
+                                                    setDraggedHomeIdx(null);
+                                                    setDragOverHomeIdx(null);
+                                                }}
+                                                className={`p-4 rounded-xl border transition-all ${
+                                                    isDragOver ? "border-primaryBtn bg-primaryBtn/15 scale-[1.01] shadow-md" : (editingSection?._id === sec._id ? "border-primaryBtn bg-primaryBtn/10" : "border-secondaryTextColor/10 hover:bg-bgColor")
+                                                } ${isDragged ? "opacity-30" : "cursor-pointer"}`}
+                                                onClick={() => {
+                                                    setEditingSection(sec);
+                                                    setEditSecTitle(sec.title);
+                                                    setEditSecType(sec.section_type);
+                                                    setEditSecMediaType(sec.media_type || "both");
+                                                    setEditSecLayout(sec.layout || "slider");
+                                                    setEditSecLimit(sec.limit || 10);
+                                                    setEditSecEnabled(sec.enabled);
+                                                    setEditSecPosition(sec.position || 1);
+                                                    setSelectedSecItems([]);
+                                                    setSecItemResults([]);
+                                                }}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="cursor-grab text-secondaryTextColor hover:text-primaryBtn transition-colors p-1" title="Drag to reorder" onClick={(e) => e.stopPropagation()}>
+                                                            <PiListFill className="text-sm" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="bg-bgColor px-2 py-0.5 rounded text-[10px] font-mono font-bold text-primaryBtn">Pos {sec.position}</span>
+                                                                <p className="font-bold">{sec.title}</p>
+                                                            </div>
+                                                            <p className="text-[10px] text-secondaryTextColor uppercase mt-1">
+                                                                {sec.section_type} • {sec.media_type} • {sec.layout} • limit {sec.limit} • {sec.enabled ? "Active" : "Inactive"}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-[10px] text-secondaryTextColor uppercase mt-1">
-                                                        {sec.section_type} • {sec.media_type} • {sec.layout} • limit {sec.limit} • {sec.enabled ? "Active" : "Inactive"}
-                                                    </p>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteHomeSection(sec._id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg">
+                                                        <PiTrashFill />
+                                                    </button>
                                                 </div>
-                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteHomeSection(sec._id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg">
-                                                    <PiTrashFill />
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                             
@@ -1671,20 +1759,51 @@ const Admin = () => {
                                             )}
 
                                             <div className="space-y-2 max-h-60 overflow-y-auto">
-                                                {(editingSection.items || []).map(item => (
-                                                    <div key={`${item.media_type}_${item.tmdb_id}_${item.title}`} className="flex justify-between items-center bg-bgColor p-3 rounded-xl border border-secondaryTextColor/5">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-14 bg-bgColorSecondary rounded overflow-hidden flex items-center justify-center border border-secondaryTextColor/10">
-                                                                <span className="text-[8px] font-bold text-secondaryTextColor uppercase">{item.media_type}</span>
+                                                {(editingSection.items || []).map((item, idx) => {
+                                                    const isDragOver = idx === dragOverIndex;
+                                                    const isDragged = idx === draggedIndex;
+
+                                                    return (
+                                                        <div 
+                                                            key={`${item.media_type}_${item.tmdb_id}_${item.title || idx}`}
+                                                            draggable
+                                                            onDragStart={(e) => {
+                                                                setDraggedIndex(idx);
+                                                                e.dataTransfer.effectAllowed = "move";
+                                                            }}
+                                                            onDragOver={(e) => {
+                                                                e.preventDefault();
+                                                                if (dragOverIndex !== idx) {
+                                                                    setDragOverIndex(idx);
+                                                                }
+                                                            }}
+                                                            onDragEnd={() => {
+                                                                if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                                                                    handleReorderSectionItems(draggedIndex, dragOverIndex);
+                                                                }
+                                                                setDraggedIndex(null);
+                                                                setDragOverIndex(null);
+                                                            }}
+                                                            className={`flex justify-between items-center bg-bgColor p-3 rounded-xl border transition-all ${
+                                                                isDragOver ? "border-primaryBtn bg-primaryBtn/15 scale-[1.01] shadow-md" : "border-secondaryTextColor/5 hover:border-secondaryTextColor/20"
+                                                            } ${isDragged ? "opacity-30" : ""}`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="cursor-grab text-secondaryTextColor hover:text-primaryBtn transition-colors p-1" title="Drag to reorder">
+                                                                    <PiListFill className="text-sm" />
+                                                                </div>
+                                                                <div className="w-10 h-14 bg-bgColorSecondary rounded overflow-hidden flex items-center justify-center border border-secondaryTextColor/10">
+                                                                    <span className="text-[8px] font-bold text-secondaryTextColor uppercase">{item.media_type}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs font-bold line-clamp-1">{item.title}</p>
+                                                                    <p className="text-[10px] text-secondaryTextColor">TMDB: {item.tmdb_id}</p>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-xs font-bold line-clamp-1">{item.title}</p>
-                                                                <p className="text-[10px] text-secondaryTextColor">TMDB: {item.tmdb_id}</p>
-                                                            </div>
+                                                            <button onClick={() => handleRemoveItemFromSection(item.tmdb_id, item.title)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
                                                         </div>
-                                                        <button onClick={() => handleRemoveItemFromSection(item.tmdb_id, item.title)} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><PiTrashFill /></button>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}

@@ -7,7 +7,7 @@
 // Portfolio: https://thiruxd.is-a.dev
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import HeroSlider from "../components/HomeHero";
 import HomeSections from "../components/HomeSections";
 import TrendingSlider from "../components/TrendingSlider";
@@ -16,7 +16,72 @@ import AdComponent from "../components/AdComponent";
 import { useSettings } from "../context/SettingsContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { streamNDJSON } from "../utils/ndjsonStream";
+import axios from "axios";
+
+function HomeSectionRow({ section, BASE, seeMoreLink }) {
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (section.section_type === "loading") {
+      setIsLoading(true);
+      return;
+    }
+
+    if (section.section_type === "recently_watched") {
+      try {
+        const localList = JSON.parse(localStorage.getItem("recently_watched") || "[]");
+        setItems(localList.slice(0, section.limit || 10));
+      } catch (e) {
+        console.error("Failed to parse recently watched:", e);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoading(true);
+    axios.get(`${BASE}/api/home-sections/${section._id}/items`)
+      .then((res) => {
+        if (active) {
+          setItems(res.data.items || []);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch section items:", err);
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [section, BASE]);
+
+  if (!isLoading && items.length === 0 && section.section_type !== "loading") return null;
+
+  return (
+    <>
+      {section.layout === "slider" ? (
+        <TrendingSlider
+          movieData={isLoading ? [] : items}
+          isMovieDataLoading={isLoading}
+          sectionTitle={section.title}
+          sectionSeeMoreButtonLink={seeMoreLink}
+          sectionId={section._id}
+        />
+      ) : (
+        <HomeSections
+          movieData={isLoading ? [] : items}
+          isMovieDataLoading={isLoading}
+          sectionTitle={section.title}
+          sectionSeeMoreButtonLink={seeMoreLink}
+          dataType={section._id}
+        />
+      )}
+    </>
+  );
+}
 
 export default function Home() {
   const { settings } = useSettings();
@@ -27,79 +92,54 @@ export default function Home() {
   const [isHeroLoading, setIsHeroLoading] = useState(true);
   const [sections, setSections] = useState([]);
   const [isSectionsLoading, setIsSectionsLoading] = useState(true);
-  const [isStreamDone, setIsStreamDone] = useState(false);
 
-  const abortRef = useRef(null);
-
-  const startStream = useCallback(() => {
-    if (abortRef.current) abortRef.current();
-
+  const loadHomeData = useCallback(() => {
     setHeroPopularMovies([]);
     setIsHeroLoading(true);
     setSections([]);
     setIsSectionsLoading(true);
-    setIsStreamDone(false);
 
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
 
-    const abort = streamNDJSON(
-      `${BASE}/api/home/stream`,
-      (item) => {
-        if (item.type === "hero") {
-          setHeroPopularMovies(item.data || []);
-          setIsHeroLoading(false);
-        } else if (item.type === "section") {
-          setSections((prev) => [...prev, item.data]);
-          setIsSectionsLoading(false);
-        } else if (item.type === "done") {
-          setIsSectionsLoading(false);
-          setIsStreamDone(true);
-        }
-      },
-      () => {
-        // Stream ended
-        setIsSectionsLoading(false);
-        setIsStreamDone(true);
-      },
-      (err) => {
-        console.error("[Home] Stream error:", err);
-        setIsSectionsLoading(false);
-        setIsStreamDone(true);
-      }
-    );
+    // 1. Fetch Hero popular movies
+    axios.get(`${BASE}/api/trending?page=1&page_size=10`)
+      .then((res) => {
+        setHeroPopularMovies(res.data.results || []);
+        setIsHeroLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch Hero popular movies:", err);
+        setIsHeroLoading(false);
+      });
 
-    abortRef.current = abort;
+    // 2. Fetch Section definitions
+    axios.get(`${BASE}/api/home-sections`)
+      .then((res) => {
+        // filter out disabled sections
+        const active = (res.data || []).filter(s => s.enabled !== false);
+        setSections(active);
+        setIsSectionsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch home sections list:", err);
+        setIsSectionsLoading(false);
+      });
   }, [BASE]);
 
   useEffect(() => {
-    startStream();
-    return () => abortRef.current?.();
-  }, [startStream]);
+    loadHomeData();
+  }, [loadHomeData]);
 
-  const getSectionItems = (section) => {
-    if (section.section_type === "recently_watched") {
-      try {
-        const localList = JSON.parse(localStorage.getItem("recently_watched") || "[]");
-        return localList.slice(0, section.limit || 10);
-      } catch (e) {
-        console.error("Failed to parse recently watched:", e);
-        return [];
-      }
-    }
-    return section.items || [];
-  };
-
-  // Mock loading sections shown while stream hasn't started delivering sections yet
+  // Mock loading sections shown while fetching section definitions
   const mockLoadingSections = [
-    { title: "Recently Watched", layout: "slider", _id: "loading-recent" },
-    { title: "Trending Now", layout: "slider", _id: "loading-trending" },
-    { title: "Latest Movies", layout: "grid", _id: "loading-movies" },
-    { title: "Latest Series", layout: "grid", _id: "loading-series" }
+    { title: "Recently Watched", layout: "slider", _id: "loading-recent", section_type: "loading" },
+    { title: "Trending Now", layout: "slider", _id: "loading-trending", section_type: "loading" },
+    { title: "Latest Movies", layout: "grid", _id: "loading-movies", section_type: "loading" },
+    { title: "Latest Series", layout: "grid", _id: "loading-series", section_type: "loading" }
   ];
 
-  // Once we have at least one real section, show real sections only
-  const activeSections = sections.length > 0 ? sections : (isSectionsLoading ? mockLoadingSections : []);
+  const activeSections = isSectionsLoading ? mockLoadingSections : sections;
 
   return (
     <div>
@@ -125,40 +165,12 @@ export default function Home() {
         />
       </div>
 
-      {/* Slim streaming progress bar — visible while sections are still arriving */}
-      {!isStreamDone && !isHeroLoading && (
-        <div className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-bgColorSecondary overflow-hidden">
-          <div className="h-full bg-primaryBtn animate-loading-bar shadow-[0_0_8px] shadow-primaryBtn" />
-        </div>
-      )}
-
       {activeSections.map((section, idx) => {
-        const isRealSection = sections.length > 0;
-        const isThisSectionLoading = !isRealSection;
-        const items = isRealSection ? getSectionItems(section) : [];
-        if (isRealSection && items.length === 0) return null;
-
         const seeMoreLink = section.media_type === "tv" ? "/Series" : "/Movies";
 
         return (
           <React.Fragment key={section._id || idx}>
-            {section.layout === "slider" ? (
-              <TrendingSlider
-                movieData={isThisSectionLoading ? [] : items}
-                isMovieDataLoading={isThisSectionLoading}
-                sectionTitle={section.title}
-                sectionSeeMoreButtonLink={seeMoreLink}
-                sectionId={section._id}
-              />
-            ) : (
-              <HomeSections
-                movieData={isThisSectionLoading ? [] : items}
-                isMovieDataLoading={isThisSectionLoading}
-                sectionTitle={section.title}
-                sectionSeeMoreButtonLink={seeMoreLink}
-                dataType={section._id}
-              />
-            )}
+            <HomeSectionRow section={section} BASE={BASE} seeMoreLink={seeMoreLink} />
             {idx === 0 && <AdComponent type="adHomeTrending" />}
             {idx === 1 && <AdComponent type="adHomeLatest" />}
           </React.Fragment>
