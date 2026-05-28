@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalAd from "./GlobalAd";
@@ -111,6 +116,20 @@ export default function Footer() {
               </button>
               <p className="uppercase">{SITENAME}. All Rights Reserved</p>
             </div>
+          </div>
+          {/* Developer Credits */}
+          <div className="flex items-center justify-center mt-4 pb-2">
+            <p className="text-xs text-secondaryTextColor/50">
+              Developed by{" "}
+              <a
+                href="https://telegram.me/ThiruXD"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primaryBtn/70 hover:text-primaryBtn transition-colors duration-300 font-semibold"
+              >
+                ThiruXD
+              </a>
+            </p>
           </div>
         </div>
       </section>
