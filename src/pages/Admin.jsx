@@ -161,7 +161,6 @@ const Admin = () => {
     const [newSecLayout, setNewSecLayout] = useState("slider");
     const [newSecLimit, setNewSecLimit] = useState(10);
     const [newSecEnabled, setNewSecEnabled] = useState(true);
-    const [newSecPosition, setNewSecPosition] = useState(1);
 
     // Edit Section Form
     const [editSecTitle, setEditSecTitle] = useState("");
@@ -170,7 +169,6 @@ const Admin = () => {
     const [editSecLayout, setEditSecLayout] = useState("slider");
     const [editSecLimit, setEditSecLimit] = useState(10);
     const [editSecEnabled, setEditSecEnabled] = useState(true);
-    const [editSecPosition, setEditSecPosition] = useState(1);
 
     // Items for top_release section
     const [selectedSecItems, setSelectedSecItems] = useState([]);
@@ -358,7 +356,6 @@ const Admin = () => {
                 layout: newSecLayout,
                 limit: parseInt(newSecLimit),
                 enabled: newSecEnabled,
-                position: parseInt(newSecPosition),
                 items: []
             });
             setNewSecTitle("");
@@ -367,7 +364,6 @@ const Admin = () => {
             setNewSecLayout("slider");
             setNewSecLimit(10);
             setNewSecEnabled(true);
-            setNewSecPosition(homeSections.length + 2);
             fetchHomeSections();
             alert("Home section created successfully!");
         } catch (error) {
@@ -391,7 +387,6 @@ const Admin = () => {
                 layout: editSecLayout,
                 limit: parseInt(editSecLimit),
                 enabled: editSecEnabled,
-                position: parseInt(editSecPosition),
                 items: editingSection.items || []
             });
             fetchHomeSections();
@@ -447,7 +442,6 @@ const Admin = () => {
                 layout: editSecLayout,
                 limit: parseInt(editSecLimit),
                 enabled: editSecEnabled,
-                position: parseInt(editSecPosition),
                 items: newItems
             });
             
@@ -495,7 +489,6 @@ const Admin = () => {
                 layout: editSecLayout,
                 limit: parseInt(editSecLimit),
                 enabled: editSecEnabled,
-                position: parseInt(editSecPosition),
                 items: updatedItems
             });
 
@@ -528,7 +521,6 @@ const Admin = () => {
                 layout: editSecLayout,
                 limit: parseInt(editSecLimit),
                 enabled: editSecEnabled,
-                position: parseInt(editSecPosition),
                 items: updatedItems
             });
 
@@ -553,7 +545,6 @@ const Admin = () => {
                 layout: editSecLayout,
                 limit: parseInt(editSecLimit),
                 enabled: editSecEnabled,
-                position: parseInt(editSecPosition),
                 items: updatedItems
             });
             setEditingSection(prev => ({ ...prev, items: updatedItems }));
@@ -1568,10 +1559,7 @@ const Admin = () => {
                                     <label className="text-xs font-bold text-secondaryTextColor uppercase">Limit</label>
                                     <input type="number" min="1" max="100" value={newSecLimit} onChange={e => setNewSecLimit(e.target.value)} required className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-bold text-secondaryTextColor uppercase">Position Order</label>
-                                    <input type="number" min="1" value={newSecPosition} onChange={e => setNewSecPosition(e.target.value)} required className="bg-bgColor p-4 rounded-xl border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
-                                </div>
+
                                 <div className="flex flex-col gap-2 justify-end">
                                     <label className="flex items-center gap-2 cursor-pointer p-4 bg-bgColor rounded-xl border border-secondaryTextColor/20">
                                         <input type="checkbox" checked={newSecEnabled} onChange={e => setNewSecEnabled(e.target.checked)} className="accent-primaryBtn" />
@@ -1691,10 +1679,7 @@ const Admin = () => {
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Limit</label>
                                             <input type="number" min="1" max="100" value={editSecLimit} onChange={e => setEditSecLimit(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
                                         </div>
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-secondaryTextColor">Position Order</label>
-                                            <input type="number" min="1" value={editSecPosition} onChange={e => setEditSecPosition(e.target.value)} className="bg-bgColor p-3 rounded-lg border border-secondaryTextColor/20 outline-none focus:border-primaryBtn" />
-                                        </div>
+
                                         <div className="flex items-center gap-2 p-3 bg-bgColor rounded-lg border border-secondaryTextColor/20 md:col-span-2">
                                             <input type="checkbox" id="editSecEnabled" checked={editSecEnabled} onChange={e => setEditSecEnabled(e.target.checked)} className="accent-primaryBtn" />
                                             <label htmlFor="editSecEnabled" className="text-xs font-bold text-secondaryTextColor uppercase cursor-pointer">Enabled</label>
