@@ -247,8 +247,9 @@ const Admin = () => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
-        abortControllerRef.current = new AbortController();
-        const signal = abortControllerRef.current.signal;
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        const signal = controller.signal;
 
         setIsFetchingExisting(true);
         try {
@@ -264,13 +265,18 @@ const Admin = () => {
             });
             
             const data = res.data;
-            setExistingContent(existingMediaType === "movie" ? (data.movies || []) : (data.tv_shows || []));
-            setExistingTotal(data.total_count || 0);
+            if (!signal.aborted) {
+                setExistingContent(existingMediaType === "movie" ? (data.movies || []) : (data.tv_shows || []));
+                setExistingTotal(data.total_count || 0);
+                setIsFetchingExisting(false);
+            }
         } catch (error) {
             if (error.name === 'AbortError') return;
             console.error("Failed to fetch existing content:", error);
+            if (!signal.aborted) {
+                setIsFetchingExisting(false);
+            }
         }
-        setIsFetchingExisting(false);
     }, [existingMediaType, existingPage, debouncedContentQuery, BASE]);
 
     // Handle Debounce for Search
@@ -989,21 +995,34 @@ const Admin = () => {
     const handleDeleteManualFile = async (file_id) => {
         if (!window.confirm("Purge this file from manual database?")) return;
         try {
-            await axios.delete(`${BASE}/api/admin/manual/files/${file_id}`);
+            try {
+                await axios.delete(`${BASE}/api/admin/manual/files/${file_id}`);
+            } catch (err) {
+                // Fallback for DELETE blocked by hosting/proxy environment
+                await axios.post(`${BASE}/api/admin/manual/files/${file_id}/delete`);
+            }
             fetchManualFiles();
             fetchAnalytics();
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            console.error(error); 
+            alert("Delete failed: " + (error.response?.data?.detail || error.message));
+        }
     };
 
     const handleBulkDelete = async () => {
         if (!selectedManualFiles.length || !window.confirm(`Delete ${selectedManualFiles.length} files permanently?`)) return;
         try {
-            await axios.delete(`${BASE}/api/admin/manual/bulk_delete`, { data: { file_ids: selectedManualFiles } });
+            try {
+                await axios.delete(`${BASE}/api/admin/manual/bulk_delete`, { data: { file_ids: selectedManualFiles } });
+            } catch (err) {
+                // Fallback for DELETE blocked by hosting/proxy environment
+                await axios.post(`${BASE}/api/admin/manual/bulk_delete/delete`, { file_ids: selectedManualFiles });
+            }
             setSelectedManualFiles([]);
             fetchManualFiles();
             fetchAnalytics();
         } catch (e) {
-            alert("Bulk delete failed: " + e.message);
+            alert("Bulk delete failed: " + (e.response?.data?.detail || e.message));
         }
     };
 
@@ -2403,8 +2422,8 @@ const Admin = () => {
                                             >
                                                 PING
                                             </button>
-                                            <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("movie"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>Movies</button>
-                                            <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("tv"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>TV</button>
+                                            <button onClick={() => { setExistingMediaType("movie"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>Movies</button>
+                                            <button onClick={() => { setExistingMediaType("tv"); setExistingPage(1); setExistingContent([]); }} className={`px-3 py-1 text-[10px] font-bold rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>TV</button>
                                         </div>
                                     </div>
                                     <div className="flex gap-2 mb-4">
@@ -2769,7 +2788,7 @@ const Admin = () => {
                                                                                             />
                                                                                         </div>
                                                                                         <div className="md:col-span-2 flex justify-end">
-                                                                                            <button onClick={() => handleUpdateEpisode(season.season_number, episode.episode_number, { title: episode.title, episode_backdrop: episode.episode_backdrop, manual_stream_url: episode.manual_stream_url })} className="px-4 py-2 bg-primaryBtn text-white text-[10px] font-black rounded-lg hover:shadow-lg transition-all">SAVE METADATA</button>
+                                                                                            <button onClick={() => handleUpdateEpisode(season.season_number, episode.episode_number, { title: episode.title, episode_backdrop: episode.episode_backdrop, manual_stream_url: episode.manual_stream_url, external_links: episode.external_links || [] })} className="px-4 py-2 bg-primaryBtn text-white text-[10px] font-black rounded-lg hover:shadow-lg transition-all">SAVE METADATA</button>
                                                                                         </div>
                                                                                     </div>
 
@@ -3032,8 +3051,8 @@ const Admin = () => {
                                                 <div className="flex justify-between items-end">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-secondaryTextColor">1. Find Database Entry</label>
                                                     <div className="flex gap-2 p-1 bg-bgColor rounded-lg border border-white/5">
-                                                        <button onClick={() => setExistingMediaType("movie")} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>MOVIES</button>
-                                                        <button onClick={() => setExistingMediaType("tv")} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>SERIES</button>
+                                                        <button onClick={() => { setExistingMediaType("movie"); setExistingPage(1); setExistingContent([]); }} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>MOVIES</button>
+                                                        <button onClick={() => { setExistingMediaType("tv"); setExistingPage(1); setExistingContent([]); }} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>SERIES</button>
                                                     </div>
                                                 </div>
                                                 <div className="relative">
@@ -3047,40 +3066,74 @@ const Admin = () => {
                                                     <PiMagnifyingGlassFill className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl text-secondaryTextColor" />
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2 mt-2">
-                                                    {existingContent.filter(m => m.title.toLowerCase().includes(existingContentQuery.toLowerCase())).slice(0, 10).map(target => (
-                                                        <div key={target._id} className="p-3 bg-bgColor hover:bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3 group cursor-pointer transition-all" onClick={() => {
-                                                            if (selectedManualFiles.length > 0) {
-                                                                handleBulkLink(target);
-                                                                return;
-                                                            }
-                                                            const qual = prompt("Quality (e.g. 1080p, 720p, 4K)?", linkingFile.detected?.quality || "1080p");
-                                                            if (!qual) return;
-                                                            const p = { 
-                                                                file_id: linkingFile._id, 
-                                                                tmdb_id: target.tmdb_id, 
-                                                                media_type: existingMediaType, 
-                                                                quality: qual, 
-                                                                title: target.title,
-                                                                doc_id: target._id || target.id
-                                                            };
-                                                            if (existingMediaType === "tv") {
-                                                                const s = prompt("Season Number?", linkingFile.detected?.season || "1");
-                                                                const ep = prompt("Episode Number?", linkingFile.detected?.episode || "1");
-                                                                if (!s || !ep) return;
-                                                                p.season = s; p.episode = ep;
-                                                            }
-                                                            handleLinkFile(p);
-                                                        }}
-                                                        >
-                                                            <img src={target.poster} className="w-10 h-14 object-cover rounded-lg group-hover:scale-95 transition-transform" />
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-xs font-black truncate">{target.title}</p>
-                                                                <p className="text-[10px] text-secondaryTextColor">{target.release_year}</p>
-                                                            </div>
-                                                            <PiPlusBold className="text-primaryBtn opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    {isFetchingExisting ? (
+                                                        <div className="col-span-full py-10 text-center text-secondaryTextColor font-bold text-xs animate-pulse">
+                                                            Searching Database...
                                                         </div>
-                                                    ))}
+                                                    ) : existingContent.length === 0 ? (
+                                                        <div className="col-span-full py-10 text-center text-secondaryTextColor font-bold text-xs bg-bgColor/30 border border-white/5 rounded-2xl">
+                                                            No matching media found in database.
+                                                        </div>
+                                                    ) : (
+                                                        existingContent.map(target => (
+                                                            <div key={target._id} className="p-3 bg-bgColor hover:bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3 group cursor-pointer transition-all" onClick={() => {
+                                                                if (selectedManualFiles.length > 0) {
+                                                                    handleBulkLink(target);
+                                                                    return;
+                                                                }
+                                                                const qual = prompt("Quality (e.g. 1080p, 720p, 4K)?", linkingFile.detected?.quality || "1080p");
+                                                                if (!qual) return;
+                                                                const p = { 
+                                                                    file_id: linkingFile._id, 
+                                                                    tmdb_id: target.tmdb_id, 
+                                                                    media_type: existingMediaType, 
+                                                                    quality: qual, 
+                                                                    title: target.title,
+                                                                    doc_id: target._id || target.id
+                                                                };
+                                                                if (existingMediaType === "tv") {
+                                                                    const s = prompt("Season Number?", linkingFile.detected?.season || "1");
+                                                                    const ep = prompt("Episode Number?", linkingFile.detected?.episode || "1");
+                                                                    if (!s || !ep) return;
+                                                                    p.season = s; p.episode = ep;
+                                                                }
+                                                                handleLinkFile(p);
+                                                            }}
+                                                            >
+                                                                <img src={target.poster} className="w-10 h-14 object-cover rounded-lg group-hover:scale-95 transition-transform" />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-black truncate">{target.title}</p>
+                                                                    <p className="text-[10px] text-secondaryTextColor">{target.release_year}</p>
+                                                                </div>
+                                                                <PiPlusBold className="text-primaryBtn opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
+                                                        ))
+                                                    )}
                                                 </div>
+                                                {/* Pagination for target database search */}
+                                                {existingTotal > 10 && (
+                                                    <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-white/5">
+                                                        <button 
+                                                            type="button"
+                                                            disabled={existingPage === 1 || isFetchingExisting} 
+                                                            onClick={() => setExistingPage(p => p - 1)} 
+                                                            className="p-3 bg-bgColor/50 rounded-xl disabled:opacity-30 border border-white/10 hover:border-primaryBtn/50 transition-all text-white"
+                                                        >
+                                                            <PiCaretRightBold className="rotate-180" />
+                                                        </button>
+                                                        <span className="flex items-center text-xs font-black w-24 justify-center bg-bgColor rounded-xl border border-white/10 uppercase tracking-widest text-secondaryTextColor">
+                                                            {existingPage} / {Math.ceil(existingTotal / 10)}
+                                                        </span>
+                                                        <button 
+                                                            type="button"
+                                                            disabled={existingPage >= Math.ceil(existingTotal / 10) || isFetchingExisting} 
+                                                            onClick={() => setExistingPage(p => p + 1)} 
+                                                            className="p-3 bg-bgColor/50 rounded-xl disabled:opacity-30 border border-white/10 hover:border-primaryBtn/50 transition-all text-white"
+                                                        >
+                                                            <PiCaretRightBold />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         {isBulkLinking && (

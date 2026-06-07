@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
@@ -1073,8 +1078,8 @@ const Admin = () => {
                                                 <div className="flex justify-between items-end">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-secondaryTextColor">1. Find Database Entry</label>
                                                     <div className="flex gap-2 p-1 bg-bgColor rounded-lg border border-white/5">
-                                                        <button onClick={() => setExistingMediaType("movie")} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>MOVIES</button>
-                                                        <button onClick={() => setExistingMediaType("tv")} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>SERIES</button>
+                                                        <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("movie"); }} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "movie" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>MOVIES</button>
+                                                        <button onClick={() => { if(isFetchingExisting) return; setExistingMediaType("tv"); }} className={`px-4 py-1 text-[10px] font-black rounded ${existingMediaType === "tv" ? "bg-primaryBtn text-white" : "text-secondaryTextColor"}`}>SERIES</button>
                                                     </div>
                                                 </div>
                                                 <div className="relative">

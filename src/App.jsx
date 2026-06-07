@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ReactGa from "react-ga";
@@ -42,7 +47,7 @@ const MaintenanceScreen = ({ message }) => (
   <div className="fixed inset-0 bg-bgColor z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
     <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primaryBtn/10 rounded-full blur-[100px] animate-pulse"></div>
     <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primaryBtn/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-    
+
     <div className="relative z-10 max-w-2xl">
       <div className="w-24 h-24 bg-primaryBtn/10 rounded-3xl flex items-center justify-center text-primaryBtn text-5xl mb-8 mx-auto shadow-2xl shadow-primaryBtn/20">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,7 +72,7 @@ function App() {
   const isMaintenance = settings.maintenanceMode && !isAdmin && window.location.pathname !== "/admin";
 
   ReactGa.initialize("G-JDFS7KRV40");
-  
+
   useEffect(() => {
     ReactGa.pageview(window.location.pathname + window.location.search);
   }, []);
@@ -83,7 +88,7 @@ function App() {
       <AdComponent type="adSocialBar" />
       <AdComponent type="adSmartlink" />
       <Nav />
-      <div className="px-3 md:px-10 pt-16 md:pt-20 pb-10">
+      <div className="px-3 md:px-10 pt-20 md:pt-20 pb-10">
         <AdComponent type="adBanner" />
         <Suspense fallback={<PageLoader />}>
           <Routes>

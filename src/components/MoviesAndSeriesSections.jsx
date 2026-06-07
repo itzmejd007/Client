@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import React from "react";
 import MovieCard from "./MovieCard";
 import MovieCardSkeleton, { SingleMovieCardSkeleton } from "./MovieCardSkeleton";

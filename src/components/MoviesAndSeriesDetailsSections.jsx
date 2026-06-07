@@ -1,4 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useSettings } from "../context/SettingsContext";
 import AdComponent from "./AdComponent";
 import Watch from "./Watch";

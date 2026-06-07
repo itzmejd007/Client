@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Author  : ThiruXD
+// GitHub  : https://github.com/ThiruXD
+// Portfolio: https://thiruxd.is-a.dev
+// ─────────────────────────────────────────────────────────────────────────────
 // src/pages/Collection.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -16,7 +21,7 @@ export default function Collection() {
 
   const [collection, setCollection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("updated:desc");
+  const [sortBy, setSortBy] = useState("custom");
   const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
@@ -136,6 +141,7 @@ export default function Collection() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-transparent text-[12px] font-bold text-white outline-none cursor-pointer p-0.5"
               >
+                <option value="custom" className="bg-bgColor text-white">Custom Order</option>
                 <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
                 <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
                 <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
@@ -155,6 +161,7 @@ export default function Collection() {
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-transparent text-[13px] font-black text-primaryTextColor outline-none cursor-pointer"
           >
+            <option value="custom" className="bg-bgColor text-white">Custom Order</option>
             <option value="updated:desc" className="bg-bgColor text-white">Recently Added</option>
             <option value="rating:desc" className="bg-bgColor text-white">Top Rated</option>
             <option value="year:desc" className="bg-bgColor text-white">Newest First</option>
