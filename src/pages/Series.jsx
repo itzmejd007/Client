@@ -68,12 +68,12 @@ export default function Series() {
     <div>
       {/* SEO */}
       <SEO
-        title={`Anime Series - ${SITENAME}`}
-        description={`Browse the latest anime series in Tamil, Hindi, Telugu and English dubbed on ${SITENAME}. Stream episodes in HD quality.`}
+        title={`Tamil Dubbed Anime Series | Watch Free Online HD - ${SITENAME}`}
+        description={`Watch Tamil, Hindi, Telugu and English dubbed anime series online free. Stream HD anime episodes and discover the latest releases on ${SITENAME}.`}
         name={SITENAME}
         type="website"
-        keywords="anime series, Tamil dubbed anime series, Hindi dubbed anime series, Telugu dubbed anime, watch anime episodes online"
-        link={`https://${SITENAME}.com/series`}
+        keywords="Tamil dubbed anime, anime series, watch anime online, Tamil anime episodes, Hindi dubbed anime, Telugu dubbed anime"
+        link={`https://www.animetoon.in/series`}
       />
 
       {/* Slim streaming progress bar */}
