@@ -68,7 +68,7 @@ export default function Series() {
     <div>
       {/* SEO */}
       <SEO
-        title={`Tamil Dubbed Anime Series | Watch Free Online HD - ${SITENAME}`}
+        ttitle={`Tamil Dubbed Anime Series | Watch Free Online HD - ${SITENAME}`}
         description={`Watch Tamil, Hindi, Telugu and English dubbed anime series online free. Stream HD anime episodes and discover the latest releases on ${SITENAME}.`}
         name={SITENAME}
         type="website"
