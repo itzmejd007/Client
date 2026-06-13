@@ -1,0 +1,9 @@
+User-agent: *
+
+Allow: /
+
+Disallow: /admin
+Disallow: /similarMov/
+Disallow: /similarSeries/
+
+Sitemap: https://www.animetoon.in/sitemap.xml
