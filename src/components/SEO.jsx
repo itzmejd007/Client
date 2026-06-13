@@ -24,6 +24,11 @@ export default function SEO({
       <meta property="og:type" content={type} />
       <meta property="og:title" content={displayTitle} />
       <meta property="og:description" content={description} />
+      <meta property="og:url" content={link} />
+      <meta
+        name="robots"
+        content="index, follow, max-image-preview:large"
+      />
       {image && <meta property="og:image" content={image} />}
       {/* End Facebook tags */}
       {/* Twitter tags */}
