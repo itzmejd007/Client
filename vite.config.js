@@ -16,10 +16,10 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'web-app-manifest-192x192.png', 'web-app-manifest-512x512.png'],
       manifest: {
-        name: 'AnimeToon – Tamil Dubbed Anime',
-        short_name: 'AnimeToon',
-        description: 'Watch & download Tamil dubbed anime free. Tamil, Hindi, Telugu, Kannada, Malayalam multi audio anime in HD 480p 720p 1080p.',
-        theme_color: '#000000',
+      name: 'AnimeToon – Tamil Dubbed Anime Watch & Download',
+      short_name: 'AnimeToon',
+      description: 'Watch & download Tamil dubbed anime free 480p 720p 1080p. Latest episodes in Tamil, Hindi, Telugu, Kannada, Malayalam on AnimeToon.',
+      theme_color: '#000000',
         icons: [
           {
             src: 'web-app-manifest-192x192.png',
