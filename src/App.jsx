@@ -6,6 +6,13 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ReactGa from "react-ga";
+const RedirectSeries = lazyWithRetry(() =>
+  import("./pages/RedirectSeries")
+);
+
+const RedirectMovie = lazyWithRetry(() =>
+  import("./pages/RedirectMovie")
+);
 
 if ('scrollRestoration' in window.history) {
   window.history.scrollRestoration = 'manual';
@@ -95,8 +102,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/watchlist" element={<Watchlist />} />
-            <Route path="mov/:movieID/:slug" element={<MovieDetails />} />
-            <Route path="ser/:seriesID/:slug" element={<TvDetails />} />
+            <Route path="/mov/:movieID" element={<RedirectMovie />} />
+            <Route path="/mov/:movieID/:slug" element={<MovieDetails />} />
+            <Route path="/ser/:seriesID" element={<RedirectSeries />} />
+            <Route path="/ser/:seriesID/:slug" element={<TvDetails />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/series" element={<Series />} />
             <Route path="/collections" element={<Collections />} />
