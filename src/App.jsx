@@ -95,8 +95,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/watchlist" element={<Watchlist />} />
-            <Route path="mov/:movieID/:slug?" element={<MovieDetails />} />
-            <Route path="ser/:seriesID/:slug?" element={<TvDetails />} />
+            <Route path="mov/:movieID/:slug" element={<MovieDetails />} />
+            <Route path="ser/:seriesID/:slug" element={<TvDetails />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/series" element={<Series />} />
             <Route path="/collections" element={<Collections />} />
