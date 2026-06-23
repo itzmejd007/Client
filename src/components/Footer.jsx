@@ -122,12 +122,12 @@ export default function Footer() {
             <p className="text-xs text-secondaryTextColor/50">
               Developed by{" "}
               <a
-                href="https://telegram.me/ThiruXD"
+                href="https://telegram.me/OsiRis_XBot"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primaryBtn/70 hover:text-primaryBtn transition-colors duration-300 font-semibold"
               >
-                ThiruXD
+                OsiRisX
               </a>
             </p>
           </div>
