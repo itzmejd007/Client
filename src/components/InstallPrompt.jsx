@@ -108,7 +108,7 @@ const InstallPrompt = () => {
         return (
           <div className="text-left space-y-2 text-sm text-gray-400">
             <p>Firefox on Linux doesn't support one-click installation.</p>
-            <p>For the best experience, we recommend using <span className="text-white font-bold">Chrome or Edge</span> to install "FilmRockers" as a desktop app.</p>
+            <p>For the best experience, we recommend using <span className="text-white font-bold">Chrome or Edge</span> to install "AnimeToon" as a desktop app.</p>
           </div>
         );
       }
@@ -125,7 +125,7 @@ const InstallPrompt = () => {
 
     return (
       <p className="text-gray-400 font-medium">
-        Install "FilmRockers" on your device for a smoother experience and easier access to movies and TV shows.
+        Install "AnimeToon" on your device for a smoother experience and easier access to movies and TV shows.
       </p>
     );
   };
