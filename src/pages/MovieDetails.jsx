@@ -31,11 +31,9 @@ export default function MovieDetails() {
     const timer = setTimeout(scrollToTop, 50);
 
     setDetailsIsLoading(true);
-
-    const titleParam = slug ? decodeURIComponent(slug) : undefined;
-
+ 
     axios
-      .get(`${BASE}/api/id/${movieID}`, { params: { title: titleParam } })
+      .get(`${BASE}/api/id/${movieID}`)
       .then((response) => {
         setMovieDetail(response.data);
         setDetailsIsLoading(false);
@@ -46,8 +44,8 @@ export default function MovieDetails() {
       });
 
     // Increment View Count
-    axios.post(`${BASE}/api/view/movie/${movieID}`, null, { params: { title: titleParam } }).catch(() => { });
-  }, [movieID, slug, BASE]);
+    axios.post(`${BASE}/api/view/movie/${movieID}`).catch(() => { });
+  }, [movieID, BASE]);
 
   // Fetch Similar Movies
   useEffect(() => {

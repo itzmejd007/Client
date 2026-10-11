@@ -18,6 +18,12 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
+const DEFAULT_FALLBACK_SECTIONS = [
+  { _id: "default-trending", title: "Trending Now", layout: "slider", section_type: "trending", media_type: "both", limit: 10, enabled: true },
+  { _id: "default-series", title: "Latest Anime Series", layout: "grid", section_type: "latest", media_type: "tv", limit: 12, enabled: true },
+  { _id: "default-movies", title: "Latest Movies", layout: "grid", section_type: "latest", media_type: "movie", limit: 12, enabled: true },
+];
+
 function HomeSectionRow({ section, BASE, seeMoreLink }) {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,16 +47,57 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
 
     let active = true;
     setIsLoading(true);
+
+    const fallbackFetch = () => {
+      if (section.section_type === "trending" || section._id === "default-trending") {
+        axios.get(`${BASE}/api/trending?page=1&page_size=${section.limit || 10}`)
+          .then((res) => { if (active) { setItems(res.data.results || []); setIsLoading(false); } })
+          .catch(() => { if (active) setIsLoading(false); });
+      } else if (section.media_type === "tv" || section._id === "default-series") {
+        axios.get(`${BASE}/api/tvshows?sort_by=updated_on:desc&page=1&page_size=${section.limit || 12}`)
+          .then((res) => {
+            if (active) {
+              const tvs = (res.data.tv_shows || []).map(t => ({ ...t, media_type: "tv" }));
+              setItems(tvs);
+              setIsLoading(false);
+            }
+          })
+          .catch(() => { if (active) setIsLoading(false); });
+      } else if (section.media_type === "movie" || section._id === "default-movies") {
+        axios.get(`${BASE}/api/movies?sort_by=updated_on:desc&page=1&page_size=${section.limit || 12}`)
+          .then((res) => {
+            if (active) {
+              const movs = (res.data.movies || []).map(m => ({ ...m, media_type: "movie" }));
+              setItems(movs);
+              setIsLoading(false);
+            }
+          })
+          .catch(() => { if (active) setIsLoading(false); });
+      } else {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    if (section._id && section._id.startsWith("default-")) {
+      fallbackFetch();
+      return () => { active = false; };
+    }
+
     axios.get(`${BASE}/api/home-sections/${section._id}/items`)
       .then((res) => {
         if (active) {
-          setItems(res.data.items || []);
-          setIsLoading(false);
+          const fetchedItems = res.data.items || [];
+          if (fetchedItems.length > 0) {
+            setItems(fetchedItems);
+            setIsLoading(false);
+          } else {
+            fallbackFetch();
+          }
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch section items:", err);
-        if (active) setIsLoading(false);
+        console.error("Failed to fetch section items, using fallback:", err);
+        fallbackFetch();
       });
 
     return () => {
@@ -118,11 +165,16 @@ export default function Home() {
       .then((res) => {
         // filter out disabled sections
         const active = (res.data || []).filter(s => s.enabled !== false);
-        setSections(active);
+        if (active.length > 0) {
+          setSections(active);
+        } else {
+          setSections(DEFAULT_FALLBACK_SECTIONS);
+        }
         setIsSectionsLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch home sections list:", err);
+        console.error("Failed to fetch home sections list, using fallback:", err);
+        setSections(DEFAULT_FALLBACK_SECTIONS);
         setIsSectionsLoading(false);
       });
   }, [BASE]);

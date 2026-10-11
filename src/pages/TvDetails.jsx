@@ -39,7 +39,7 @@ export default function TvDetails() {
     setDetailsIsLoading(true);
  
      axios
-       .get(`${BASE}/api/id/${seriesID}`, { params: { title: titleParam } })
+       .get(`${BASE}/api/id/${seriesID}`)
       .then((response) => {
         const sortedSeasons = (response.data.seasons || []).sort(
           (a, b) => a.season_number - b.season_number
@@ -59,8 +59,8 @@ export default function TvDetails() {
       });
 
     // Increment View Count
-    axios.post(`${BASE}/api/view/tv/${seriesID}`, null, { params: { title: titleParam } }).catch(() => { });
-  }, [seriesID, slug, BASE]);
+    axios.post(`${BASE}/api/view/tv/${seriesID}`).catch(() => { });
+  }, [seriesID, BASE]);
 
   // Fetch Similar Series
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function TvDetails() {
     const params = { season_number: seasonNumber };
 
     axios
-      .get(`${BASE}/api/id/${seriesID}`, { params: { ...params, title: titleParam } })
+      .get(`${BASE}/api/id/${seriesID}`, { params })
       .then((response) => {
         setEpisodes(response.data.episodes || []);
         setIsEpisodesLoading(false);
@@ -103,7 +103,7 @@ export default function TvDetails() {
         setEpisodes([]);
         setIsEpisodesLoading(false);
       });
-  }, [seasonNumber, seriesID, titleParam, BASE]);
+  }, [seasonNumber, seriesID, BASE]);
 
   return (
     <div>
