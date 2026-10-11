@@ -21,7 +21,7 @@ if ('scrollRestoration' in window.history) {
 // Components
 import Nav from "./components/Nav";
 import Footer from "./components/Footer";
-import InstallPrompt from "./components/InstallPrompt";
+import AdBlockDetector from "./components/AdBlockDetector";
 import AdComponent from "./components/AdComponent";
 
 import { lazyWithRetry } from "./utils/lazyWithRetry";
@@ -83,7 +83,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <InstallPrompt />
+      <AdBlockDetector />
       <AdComponent type="adPopup" />
       <AdComponent type="adSocialBar" />
       <AdComponent type="adSmartlink" />
