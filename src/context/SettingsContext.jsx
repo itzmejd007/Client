@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 
 const SettingsContext = createContext();
@@ -47,11 +47,18 @@ export const SettingsProvider = ({ children }) => {
         useShortenerExternal: localStorage.getItem("useShortenerExternal") !== "false",
         showQuality: localStorage.getItem("showQuality") !== "false",
         showSize: localStorage.getItem("showSize") !== "false",
+        maintenanceMode: localStorage.getItem("maintenanceMode") === "true",
+        maintenanceMessage: localStorage.getItem("maintenanceMessage") || "",
     });
+
+    const [isBackendConnected, setIsBackendConnected] = useState(null); // null = checking, true = up, false = down
+    const [isCheckingBackend, setIsCheckingBackend] = useState(true);
+    const checkingRef = useRef(false);
 
     const BASE = import.meta.env.VITE_BASE_URL;
 
     const applyStyles = useCallback((data) => {
+        if (!data) return;
         if (data.buttonColor) document.documentElement.style.setProperty('--color-primary', data.buttonColor);
         if (data.buttonHoverColor) document.documentElement.style.setProperty('--color-primary-hover', data.buttonHoverColor);
 
@@ -74,9 +81,53 @@ export const SettingsProvider = ({ children }) => {
         }
     }, []);
 
-    const fetchSettings = useCallback(async () => {
+    const checkBackendConnection = useCallback(async () => {
+        if (!BASE || BASE.trim() === "") {
+            setIsBackendConnected(false);
+            setIsCheckingBackend(false);
+            return false;
+        }
+
         try {
-            const res = await axios.get(`${BASE}/api/settings`);
+            // First try ping endpoint with short timeout
+            const pingRes = await axios.get(`${BASE}/api/ping`, { timeout: 5000 });
+            if (pingRes.status >= 200 && pingRes.status < 400) {
+                setIsBackendConnected(true);
+                setIsCheckingBackend(false);
+                return true;
+            }
+        } catch {
+            // If /api/ping fails or 404s, try /api/settings as fallback
+            try {
+                const settingsRes = await axios.get(`${BASE}/api/settings`, { timeout: 5000 });
+                if (settingsRes.status >= 200 && settingsRes.status < 400) {
+                    setIsBackendConnected(true);
+                    setIsCheckingBackend(false);
+                    return true;
+                }
+            } catch {
+                // Both failed -> backend is definitely unreachable
+            }
+        }
+
+        setIsBackendConnected(false);
+        setIsCheckingBackend(false);
+        return false;
+    }, [BASE]);
+
+    const fetchSettings = useCallback(async () => {
+        if (checkingRef.current) return;
+        checkingRef.current = true;
+
+        if (!BASE || BASE.trim() === "") {
+            setIsBackendConnected(false);
+            setIsCheckingBackend(false);
+            checkingRef.current = false;
+            return;
+        }
+
+        try {
+            const res = await axios.get(`${BASE}/api/settings`, { timeout: 6000 });
             const data = res.data;
             if (data) {
                 setSettings(prev => {
@@ -91,27 +142,83 @@ export const SettingsProvider = ({ children }) => {
                 });
                 applyStyles(data);
             }
+            setIsBackendConnected(true);
+            setIsCheckingBackend(false);
         } catch (error) {
-            console.warn("Failed to fetch settings from backend, using local cache.", error);
+            console.warn("Failed to fetch settings from backend:", error?.message || error);
+            // Double-check with ping to verify if backend is completely down
+            const alive = await checkBackendConnection();
+            if (!alive) {
+                setIsBackendConnected(false);
+            }
+            setIsCheckingBackend(false);
+        } finally {
+            checkingRef.current = false;
         }
-    }, [BASE, applyStyles]);
+    }, [BASE, applyStyles, checkBackendConnection]);
 
+    const retryConnection = useCallback(async () => {
+        setIsCheckingBackend(true);
+        const alive = await checkBackendConnection();
+        if (alive) {
+            await fetchSettings();
+        }
+        return alive;
+    }, [checkBackendConnection, fetchSettings]);
+
+    // Initial check & load
     useEffect(() => {
-        // Initial style application
         applyStyles(settings);
         fetchSettings();
     }, [fetchSettings, applyStyles]);
 
+    // Dynamic Title Update
     useEffect(() => {
-        // Dynamic Title Update
         if (settings.siteName) {
-            // document.title = settings.siteName; // We could do this, but SEO component handles it too.
-            // However, for parts without SEO component or initial load:
             if (!document.title.includes(settings.siteName)) {
-                // Optionally update if needed
+                // document.title = settings.siteName;
             }
         }
     }, [settings.siteName]);
+
+    // Auto-reconnect poll when backend is unreachable
+    useEffect(() => {
+        if (isBackendConnected === false) {
+            const interval = setInterval(async () => {
+                const alive = await checkBackendConnection();
+                if (alive) {
+                    fetchSettings();
+                }
+            }, 8000);
+            return () => clearInterval(interval);
+        }
+    }, [isBackendConnected, checkBackendConnection, fetchSettings]);
+
+    // Global Axios Response Interceptor for live connection dropouts
+    useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                const url = error.config?.url || "";
+                if (BASE && url.startsWith(BASE)) {
+                    // Check if server is unreachable (network error or gateway drop)
+                    const isNetworkErr = !error.response;
+                    const isGatewayErr = error.response && [502, 503, 504].includes(error.response.status);
+                    const isSilentCall = url.includes("/api/view/") || url.includes("/api/ping");
+
+                    if ((isNetworkErr || isGatewayErr) && !isSilentCall) {
+                        // Mark disconnected so maintenance mode protects user experience
+                        setIsBackendConnected(false);
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
+    }, [BASE]);
 
     const updateSettings = async (newSettings, persistToBackend = false) => {
         setSettings(prev => {
@@ -136,7 +243,14 @@ export const SettingsProvider = ({ children }) => {
     };
 
     return (
-        <SettingsContext.Provider value={{ settings, updateSettings, fetchSettings }}>
+        <SettingsContext.Provider value={{
+            settings,
+            updateSettings,
+            fetchSettings,
+            isBackendConnected,
+            isCheckingBackend,
+            retryConnection
+        }}>
             {children}
         </SettingsContext.Provider>
     );
