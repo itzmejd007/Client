@@ -155,7 +155,7 @@ export const VideoJS = ({ options, onReady }) => {
             disablePictureInPicture
             onLoadedMetadata={handleLoadedMetadata}
             onError={(e) => {
-              if (e.target.error?.code !== 4) setError(true);
+              setError(true);
             }}
           />
           

@@ -33,7 +33,6 @@ export default function WatchTrailer(props) {
                 const name = q.name.toLowerCase();
                 const type = name.endsWith(".mp4") ? "video/mp4" : 
                              name.endsWith(".webm") ? "video/webm" : 
-                             name.endsWith(".mkv") ? "video/x-matroska" : 
                              undefined;
 
                 return {
@@ -67,7 +66,6 @@ export default function WatchTrailer(props) {
                     const name = q.name.toLowerCase();
                     const type = name.endsWith(".mp4") ? "video/mp4" : 
                                  name.endsWith(".webm") ? "video/webm" : 
-                                 name.endsWith(".mkv") ? "video/x-matroska" : 
                                  undefined;
 
                     return {
