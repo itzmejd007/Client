@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdComponent from "./AdComponent";
 import { VideoJS } from "./VideoJS";
+import { requestStrictAdBlockCheck } from "./AdBlockDetector";
 
 export default function WatchTrailer(props) {
   const [sources, setSources] = useState([]);
@@ -16,9 +17,10 @@ export default function WatchTrailer(props) {
   useEffect(() => {
     const fetchData = async () => {
       if (props.isWatchMoviePopupOpen || props.isWatchEpisodePopupOpen) {
-        try {
-          let videoSources = [];
-          let selectedPoster = "";
+        requestStrictAdBlockCheck("stream this anime", async () => {
+          try {
+            let videoSources = [];
+            let selectedPoster = "";
 
           if (props.popUpType === "movie") {
             const manualUrl = props.id.manual_stream_url;
@@ -86,6 +88,7 @@ export default function WatchTrailer(props) {
         } catch (error) {
           console.error("Error processing data:", error);
         }
+      });
       }
     };
 

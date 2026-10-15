@@ -113,15 +113,6 @@ const MaintenanceScreen = ({ message, isServerDown = false, onRetry }) => {
           )}
         </div>
 
-        {/* Footer Admin Link */}
-        <div className="pt-4 border-t border-white/5 flex items-center justify-center text-xs text-gray-500">
-          <a
-            href="/admin"
-            className="hover:text-purple-400 transition-colors underline decoration-dotted underline-offset-4"
-          >
-            Admin Portal Access
-          </a>
-        </div>
       </div>
     </div>
   );

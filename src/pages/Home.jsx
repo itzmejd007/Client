@@ -19,9 +19,9 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 const DEFAULT_FALLBACK_SECTIONS = [
-  { _id: "default-trending", title: "Trending Now", layout: "slider", section_type: "trending", media_type: "both", limit: 10, enabled: true },
-  { _id: "default-series", title: "Latest Anime Series", layout: "grid", section_type: "latest", media_type: "tv", limit: 12, enabled: true },
-  { _id: "default-movies", title: "Latest Movies", layout: "grid", section_type: "latest", media_type: "movie", limit: 12, enabled: true },
+  { _id: "default-trending", title: "Trending Now", layout: "slider", section_type: "trending", media_type: "both", limit: 14, enabled: true },
+  { _id: "default-series", title: "Latest Anime Series", layout: "slider", section_type: "latest", media_type: "tv", limit: 14, enabled: true },
+  { _id: "default-movies", title: "Latest Movies", layout: "slider", section_type: "latest", media_type: "movie", limit: 14, enabled: true },
 ];
 
 function HomeSectionRow({ section, BASE, seeMoreLink }) {
@@ -37,7 +37,7 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
     if (section.section_type === "recently_watched") {
       try {
         const localList = JSON.parse(localStorage.getItem("recently_watched") || "[]");
-        setItems(localList.slice(0, section.limit || 10));
+        setItems(localList.slice(0, section.limit || 14));
       } catch (e) {
         console.error("Failed to parse recently watched:", e);
       }
@@ -50,11 +50,11 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
 
     const fallbackFetch = () => {
       if (section.section_type === "trending" || section._id === "default-trending") {
-        axios.get(`${BASE}/api/trending?page=1&page_size=${section.limit || 10}`)
+        axios.get(`${BASE}/api/trending?page=1&page_size=${section.limit || 14}`)
           .then((res) => { if (active) { setItems(res.data.results || []); setIsLoading(false); } })
           .catch(() => { if (active) setIsLoading(false); });
       } else if (section.media_type === "tv" || section._id === "default-series") {
-        axios.get(`${BASE}/api/tvshows?sort_by=updated_on:desc&page=1&page_size=${section.limit || 12}`)
+        axios.get(`${BASE}/api/tvshows?sort_by=updated_on:desc&page=1&page_size=${section.limit || 14}`)
           .then((res) => {
             if (active) {
               const tvs = (res.data.tv_shows || []).map(t => ({ ...t, media_type: "tv" }));
@@ -64,7 +64,7 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
           })
           .catch(() => { if (active) setIsLoading(false); });
       } else if (section.media_type === "movie" || section._id === "default-movies") {
-        axios.get(`${BASE}/api/movies?sort_by=updated_on:desc&page=1&page_size=${section.limit || 12}`)
+        axios.get(`${BASE}/api/movies?sort_by=updated_on:desc&page=1&page_size=${section.limit || 14}`)
           .then((res) => {
             if (active) {
               const movs = (res.data.movies || []).map(m => ({ ...m, media_type: "movie" }));
@@ -109,23 +109,13 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
 
   return (
     <>
-      {section.layout === "slider" ? (
-        <TrendingSlider
-          movieData={isLoading ? [] : items}
-          isMovieDataLoading={isLoading}
-          sectionTitle={section.title}
-          sectionSeeMoreButtonLink={seeMoreLink}
-          sectionId={section._id}
-        />
-      ) : (
-        <HomeSections
-          movieData={isLoading ? [] : items}
-          isMovieDataLoading={isLoading}
-          sectionTitle={section.title}
-          sectionSeeMoreButtonLink={seeMoreLink}
-          dataType={section._id}
-        />
-      )}
+      <TrendingSlider
+        movieData={isLoading ? [] : items}
+        isMovieDataLoading={isLoading}
+        sectionTitle={section.title}
+        sectionSeeMoreButtonLink={seeMoreLink}
+        sectionId={section._id}
+      />
     </>
   );
 }
@@ -205,6 +195,9 @@ export default function Home() {
         keywords="watch movies online, watch hd movies, watch full movies, streaming movies online, free streaming movie, watch movies free, watch hd movies online, watch series online, watch hd series free, free tv series, free movies online, tv online, tv links, tv links movies, free tv shows, watch tv shows online, watch tv shows online free, free hd movies, New Movie Releases, Top Movies of the Year, Watch Movies Online, Streaming Services, Movie Reviews, Upcoming Films, Best Movie Scenes, Classic Movies, HD Movie Streaming, Film Trailers, Action Movies, Drama Films, Comedy Movies, Sci-Fi Films, Horror Movie Picks, Family-Friendly Movies, Award-Winning Films, Movie Recommendations, Cinematic Experiences, Behind-the-Scenes, Director Spotlights, Actor Interviews, Film Festivals, Cult Classics, Top Box Office Hits, Celebrity News, Movie Soundtracks, Oscar-Winning Movies, Movie Trivia, Exclusive Film Content, Best Cinematography, Must-Watch Movies, Film Industry News, Filmmaking Tips, Top Movie Blogs, Latest Movie Gossip, Interactive Movie Quizzes, Red Carpet Moments, IMDb Ratings, Movie Fan Communities, fmovies, fmovies.to, fmovies to, fmovies is, fmovie, free movies, online movie, movie online, free movies online, watch movies online free, free hd movies, watch movies online"
         link={`https://${SITENAME}.com`}
       />
+
+      {/* Semantic H1 for SEO without affecting UI design */}
+      <h1 className="sr-only">{SITENAME} — Watch Anime Online in Tamil, Hindi, Telugu & English Dubbed</h1>
 
       {/* HEADER - Hero and boxoffice */}
       <div className="col-span-1 lg:col-span-2">

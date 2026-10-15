@@ -41,6 +41,9 @@ const Watchlist = lazyWithRetry(() => import("./pages/Watchlist"));
 const NotFoundPage = lazyWithRetry(() => import("./pages/NotFound"));
 const Collections = lazyWithRetry(() => import("./pages/Collections"));
 const Collection = lazyWithRetry(() => import("./pages/Collection"));
+const ContentDelivery = lazyWithRetry(() => import("./pages/ContentDelivery"));
+
+import FloatingTelegram from "./components/FloatingTelegram";
 
 // Professional Loading Placeholder
 const PageLoader = () => (
@@ -84,9 +87,9 @@ function App() {
   return (
     <BrowserRouter>
       <AdBlockDetector />
-      <AdComponent type="adPopup" />
+      {/* Non-intrusive social bar for monetization without redirect disruption */}
       <AdComponent type="adSocialBar" />
-      <AdComponent type="adSmartlink" />
+      <FloatingTelegram />
       <Nav />
       <div className="px-3 md:px-10 pt-20 md:pt-20 pb-10">
         <AdComponent type="adBanner" />
@@ -95,6 +98,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/content-delivery" element={<ContentDelivery />} />
             <Route path="/mov/:movieID" element={<RedirectMovie />} />
             <Route path="/mov/:movieID/:slug" element={<MovieDetails />} />
             <Route path="/ser/:seriesID" element={<RedirectSeries />} />

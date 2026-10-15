@@ -5,14 +5,17 @@ import { PiTelegramLogo } from "react-icons/pi";
 import axios from "axios";
 import { Button } from "@nextui-org/button";
 import Spinner from "./svg/Spinner";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { addToRecentlyWatched } from "../utils/watchHistory";
+import { requestStrictAdBlockCheck } from "./AdBlockDetector";
 
 const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
   const { settings } = useSettings();
-  const USERNAME = settings.tgUsername || import.meta.env.VITE_TG_USERNAME;
-  const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
-  const API_KEY = settings.shortenerApiKey || import.meta.env.VITE_API_KEY;
+  const navigate = useNavigate();
+  const rawUsername = settings?.tgUsername || import.meta.env.VITE_TG_USERNAME || "AnimeToonX_bot";
+  const USERNAME = String(rawUsername).trim().replace(/^@/, "");
+  const API_URL = settings?.shortenerApiUrl || import.meta.env.VITE_API_URL;
+  const API_KEY = settings?.shortenerApiKey || import.meta.env.VITE_API_KEY;
 
   const [shortenedUrls, setShortenedUrls] = useState({});
   const [loading, setLoading] = useState({});
@@ -41,23 +44,36 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
 
 
   const handleButtonClick = async (originalUrl, quality) => {
-    addToRecentlyWatched(movieData);
-    setLoading((prev) => ({ ...prev, [quality]: true }));
-    let shortUrl = originalUrl;
+    // Strict AdBlock verification: forces blocker off for Telegram files with NO cancel button
+    requestStrictAdBlockCheck("access Telegram anime files", async () => {
+      addToRecentlyWatched(movieData);
+      setLoading((prev) => ({ ...prev, [quality]: true }));
+      let shortUrl = originalUrl;
 
-    const useShortener = settings.useShortenerTelegram !== false && !movieData.disable_shortener;
+      const useShortener = settings?.useShortenerTelegram !== false && !movieData.disable_shortener;
 
-    try {
-      if (useShortener && API_KEY && API_URL) {
-        shortUrl = await shortenUrl(originalUrl);
+      try {
+        if (useShortener && API_KEY && API_URL) {
+          shortUrl = await shortenUrl(originalUrl);
+        }
+        setShortenedUrls((prev) => ({ ...prev, [originalUrl]: shortUrl }));
+      } catch (error) {
+        console.error("Error processing URL:", error);
+      } finally {
+        setLoading((prev) => ({ ...prev, [quality]: false }));
+
+        // Route to Content Delivery Page for monetization & 10s countdown
+        const params = new URLSearchParams({
+          url: shortUrl,
+          title: movieData.title || "Anime File",
+          quality: quality || "",
+          type: "Telegram",
+          poster: movieData.backdrop || movieData.poster || ""
+        });
+
+        navigate(`/content-delivery?${params.toString()}`);
       }
-      setShortenedUrls((prev) => ({ ...prev, [originalUrl]: shortUrl }));
-    } catch (error) {
-      console.error("Error processing URL:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, [quality]: false }));
-      window.open(shortUrl, "_blank", "noopener noreferrer");
-    }
+    });
   };
 
   const renderQualityButtons = (qualityDetails) =>

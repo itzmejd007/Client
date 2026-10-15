@@ -4,11 +4,14 @@ import { Select, SelectItem } from "@nextui-org/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@nextui-org/popover";
 import { Button } from "@nextui-org/button";
 import { FaCloudDownloadAlt, FaPlay } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import Spinner from "./svg/Spinner";
 import { useSettings } from "../context/SettingsContext";
 import { addToRecentlyWatched } from "../utils/watchHistory";
+import { requestStrictAdBlockCheck } from "./AdBlockDetector";
 
 const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => {
+  const navigate = useNavigate();
   const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL;
   const API_URL = settings.shortenerApiUrl || import.meta.env.VITE_API_URL;
@@ -89,25 +92,45 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => 
   };
 
   const handleButtonClick = async (id, name, quality) => {
-    addToRecentlyWatched(movieData);
-    setLoading((prev) => ({ ...prev, [quality]: true }));
-    const rawUrl = generateUrl(id, name);
+    const actionDesc = btnType === "Download" ? "download this anime file" : "open in external player";
     
-    // Determine which shortener toggle to check
-    const shortenerToggle = btnType === "Download" ? settings.useShortenerDownload : settings.useShortenerPlayer;
-    const useShortener = shortenerToggle !== false && !movieData.disable_shortener;
+    // Strict AdBlock verification: forces blocker off for downloads with NO cancel button
+    requestStrictAdBlockCheck(actionDesc, async () => {
+      addToRecentlyWatched(movieData);
+      setLoading((prev) => ({ ...prev, [quality]: true }));
+      const rawUrl = generateUrl(id, name);
+      
+      // Determine which shortener toggle to check
+      const shortenerToggle = btnType === "Download" ? settings.useShortenerDownload : settings.useShortenerPlayer;
+      const useShortener = shortenerToggle !== false && !movieData.disable_shortener;
 
-    let finalUrl = rawUrl;
-    try {
-      if (useShortener && API_KEY && API_URL) {
-        finalUrl = await shortenUrl(rawUrl);
+      let finalUrl = rawUrl;
+      try {
+        if (useShortener && API_KEY && API_URL) {
+          finalUrl = await shortenUrl(rawUrl);
+        }
+      } catch (error) {
+        console.error("Error shortening URL:", error);
       }
-    } catch (error) {
-      console.error("Error shortening URL:", error);
-    }
 
-    setLoading((prev) => ({ ...prev, [quality]: false }));
-    window.open(finalUrl, "_blank", "noopener noreferrer");
+      setLoading((prev) => ({ ...prev, [quality]: false }));
+
+      // Find size if available
+      const qObj = movieData.telegram?.find((item) => item.quality === quality) || qualities?.find((item) => item.quality === quality);
+      const sizeVal = qObj?.size || "";
+
+      // Route to Content Delivery Page for monetization & 10s countdown
+      const params = new URLSearchParams({
+        url: finalUrl,
+        title: movieData.title || "Anime File",
+        quality: quality || "",
+        type: btnType || "Download",
+        poster: movieData.backdrop || movieData.poster || "",
+        size: sizeVal
+      });
+
+      navigate(`/content-delivery?${params.toString()}`);
+    });
   };
 
   const renderMovieButtons = () =>

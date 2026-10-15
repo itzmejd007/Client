@@ -12,7 +12,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MoviesAndSeriesSections from "../components/MoviesAndSeriesSections";
 import SEO from "../components/SEO";
-import { useSettings } from "../context/SettingsContext";
+import axios from "axios";
 import { streamNDJSON, buildQueryString } from "../utils/ndjsonStream";
 
 export default function Series() {
@@ -45,13 +45,36 @@ export default function Series() {
       year:    year  !== "all" ? year  : undefined,
     });
 
+    let itemsLoaded = 0;
+
     const abort = streamNDJSON(
       `${BASE}/api/tvshows/stream${qs}`,
-      (item) => setSeries((prev) => [...prev, item]),
-      () => setIsStreaming(false),
+      (item) => {
+        itemsLoaded++;
+        setSeries((prev) => [...prev, item]);
+      },
+      () => {
+        if (itemsLoaded === 0) {
+          axios.get(`${BASE}/api/tvshows?page=1&page_size=60${qs ? `&${qs.replace(/^\?/, '')}` : ''}`)
+            .then(res => {
+              const list = (res.data?.tv_shows || []).map(t => ({ ...t, media_type: "tv" }));
+              setSeries(list);
+            })
+            .catch(e => console.error("[Series] REST fallback failed:", e))
+            .finally(() => setIsStreaming(false));
+        } else {
+          setIsStreaming(false);
+        }
+      },
       (err) => {
-        console.error("[Series] Stream error:", err);
-        setIsStreaming(false);
+        console.warn("[Series] Stream failed, using REST API fallback:", err);
+        axios.get(`${BASE}/api/tvshows?page=1&page_size=60${qs ? `&${qs.replace(/^\?/, '')}` : ''}`)
+          .then(res => {
+            const list = (res.data?.tv_shows || []).map(t => ({ ...t, media_type: "tv" }));
+            setSeries(list);
+          })
+          .catch(e => console.error("[Series] REST fallback failed:", e))
+          .finally(() => setIsStreaming(false));
       }
     );
 
@@ -82,6 +105,9 @@ export default function Series() {
           <div className="h-full bg-primaryBtn animate-loading-bar shadow-[0_0_8px] shadow-primaryBtn" />
         </div>
       )}
+
+      {/* Semantic H1 for SEO without affecting UI design */}
+      <h1 className="sr-only">Browse Anime TV Series Online with Multi-Audio Dubs - {SITENAME}</h1>
 
       <MoviesAndSeriesSections
         movieData={series}

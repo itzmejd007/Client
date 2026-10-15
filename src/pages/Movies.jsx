@@ -13,6 +13,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import MoviesAndSeriesSections from "../components/MoviesAndSeriesSections";
 import SEO from "../components/SEO";
 import { useSettings } from "../context/SettingsContext";
+import axios from "axios";
 import { streamNDJSON, buildQueryString } from "../utils/ndjsonStream";
 
 export default function Movies() {
@@ -47,16 +48,40 @@ export default function Movies() {
       year:    year  !== "all" ? year  : undefined,
     });
 
+    let itemsLoaded = 0;
+
     const abort = streamNDJSON(
       `${BASE}/api/movies/stream${qs}`,
-      // onItem – push each card as it arrives (batch in 10s for perf)
-      (item) => setMovies((prev) => [...prev, item]),
+      // onItem – push each card as it arrives
+      (item) => {
+        itemsLoaded++;
+        setMovies((prev) => [...prev, item]);
+      },
       // onDone
-      () => setIsStreaming(false),
-      // onError – fall back to empty state, not a blocking spinner
+      () => {
+        if (itemsLoaded === 0) {
+          // Fallback if stream was empty
+          axios.get(`${BASE}/api/movies?page=1&page_size=60${qs ? `&${qs.replace(/^\?/, '')}` : ''}`)
+            .then(res => {
+              const list = (res.data?.movies || []).map(m => ({ ...m, media_type: "movie" }));
+              setMovies(list);
+            })
+            .catch(e => console.error("[Movies] REST fallback failed:", e))
+            .finally(() => setIsStreaming(false));
+        } else {
+          setIsStreaming(false);
+        }
+      },
+      // onError – fall back to standard REST API immediately
       (err) => {
-        console.error("[Movies] Stream error:", err);
-        setIsStreaming(false);
+        console.warn("[Movies] Stream failed, using REST API fallback:", err);
+        axios.get(`${BASE}/api/movies?page=1&page_size=60${qs ? `&${qs.replace(/^\?/, '')}` : ''}`)
+          .then(res => {
+            const list = (res.data?.movies || []).map(m => ({ ...m, media_type: "movie" }));
+            setMovies(list);
+          })
+          .catch(e => console.error("[Movies] REST fallback failed:", e))
+          .finally(() => setIsStreaming(false));
       }
     );
 
@@ -87,6 +112,9 @@ export default function Movies() {
           <div className="h-full bg-primaryBtn animate-loading-bar shadow-[0_0_8px] shadow-primaryBtn" />
         </div>
       )}
+
+      {/* Semantic H1 for SEO without affecting UI design */}
+      <h1 className="sr-only">Browse Full Anime Movies Online in HD - {SITENAME}</h1>
 
       <MoviesAndSeriesSections
         movieData={movies}
