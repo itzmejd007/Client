@@ -7,7 +7,6 @@ import {
   FaShieldAlt, 
   FaCheckCircle, 
   FaClock, 
-  FaArrowDown, 
   FaFilm, 
   FaLock, 
   FaExclamationTriangle,
@@ -43,6 +42,23 @@ export default function ContentDelivery() {
   const destinationRef = useRef(null);
   const adBoxRef = useRef(null);
 
+  // Helper to determine the actual Adsterra redirect URL
+  const getAdsterraRedirectUrl = () => {
+    // 1. Check if an explicit Direct Link / Smartlink was configured in Admin Panel
+    if (settings?.adSmartlink) {
+      const match = settings.adSmartlink.match(/https?:\/\/[^\s"']+/);
+      if (match && match[0]) return match[0];
+    }
+
+    // 2. Extract key from Adsterra adPopup script if available
+    const popupCode = settings?.adPopup || "";
+    const keyMatch = popupCode.match(/[a-f0-9]{32}/i);
+    const key = keyMatch ? keyMatch[0] : "73396f53e4d0e2635a379ba01777a0aa";
+
+    // 3. Official Adsterra direct monetization gateway
+    return `https://www.profitablecpmrate.com/f9vkv98v?key=${key}`;
+  };
+
   // ── Track Tab Blur & Focus for 5-Second Verification ────────────────────────
   useEffect(() => {
     const handleWindowBlur = () => {
@@ -52,7 +68,7 @@ export default function ContentDelivery() {
 
     const handleWindowFocus = () => {
       // User returned back to our page
-      if (leaveTimestampRef.current && (hasClickedAd || isAdVerified === false)) {
+      if (leaveTimestampRef.current && (hasClickedAd || !isAdVerified)) {
         const timeAwayMs = Date.now() - leaveTimestampRef.current;
         const timeAwaySec = timeAwayMs / 1000;
         leaveTimestampRef.current = null;
@@ -96,27 +112,14 @@ export default function ContentDelivery() {
     };
   }, [hasClickedAd, isAdVerified]);
 
-  // Handle clicking on an Ad / Sponsor Card
+  // Handle clicking on an Ad / Sponsor Card -> Opens real Adsterra redirect ad
   const handleAdInteraction = () => {
     setHasClickedAd(true);
     leaveTimestampRef.current = Date.now();
     setVerificationError("");
 
-    // If adSmartlink is configured, open in new tab
-    if (settings?.adSmartlink && settings?.showAds) {
-      try {
-        const smartMatch = settings.adSmartlink.match(/https?:\/\/[^\s"']+/);
-        if (smartMatch && smartMatch[0]) {
-          window.open(smartMatch[0], "_blank", "noopener noreferrer");
-          return;
-        }
-      } catch {
-        // ignore smartlink error
-      }
-    }
-
-    // Fallback: If no smartlink or ad script popup, open adsterra high-cpm sponsor tab
-    window.open("https://www.google.com", "_blank", "noopener noreferrer");
+    const adUrl = getAdsterraRedirectUrl();
+    window.open(adUrl, "_blank", "noopener noreferrer");
   };
 
   // Handle "Get Link" click -> Trigger download or Telegram redirect
@@ -124,7 +127,6 @@ export default function ContentDelivery() {
     if (!targetUrl || !isAdVerified) return;
     setHasStartedDownload(true);
 
-    // Trigger target action
     if (contentType === "Telegram" || targetUrl.startsWith("https://t.me")) {
       window.open(targetUrl, "_blank", "noopener noreferrer");
     } else if (contentType === "MX Player" || targetUrl.startsWith("intent:")) {
@@ -144,6 +146,9 @@ export default function ContentDelivery() {
 
   return (
     <div className="min-h-screen bg-bgColor text-primaryTextColor pt-24 pb-20 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col items-center">
+      {/* ── Active Redirect / Popunder Ad Injection on Content Delivery Page ── */}
+      <AdComponent type="adPopup" />
+
       {/* Intermediate delivery page should have noindex to protect SEO health */}
       <SEO
         title={`Secure Content Gateway - ${title} | ${settings?.siteName || "AnimeToon"}`}
@@ -233,7 +238,7 @@ export default function ContentDelivery() {
             </div>
 
             <p className="text-xs sm:text-sm text-gray-200 font-medium leading-relaxed mb-4">
-              Click any ad below, stay on the ad page for at least <span className="text-yellow-400 font-bold">5 seconds</span>, and return here to unlock your download button.
+              Click any ad below, stay on the ad page for at least <span className="text-yellow-400 font-bold">5 seconds</span>, and return here to unlock your download link.
             </p>
 
             {/* 3 Step Visual Guide */}
@@ -287,7 +292,7 @@ export default function ContentDelivery() {
           </AnimatePresence>
 
           {/* ─────────────────────────────────────────────────────────────
-              INTERACTIVE SPONSOR AD BOX (CLICK DETECTOR)
+              INTERACTIVE SPONSOR AD BOX (CLICK TO TRIGGER ADSTERRA REDIRECT)
               ───────────────────────────────────────────────────────────── */}
           <div
             ref={adBoxRef}
@@ -310,7 +315,7 @@ export default function ContentDelivery() {
               </span>
             </div>
 
-            {/* Ad Container */}
+            {/* Ad Container with Native & Banner ad components */}
             <div className="w-full min-h-[140px] flex items-center justify-center bg-black/40 rounded-xl overflow-hidden pointer-events-auto">
               <AdComponent type="adInFeed" />
               <AdComponent type="adBanner" />
