@@ -9,7 +9,10 @@ import {
   FaClock, 
   FaArrowDown, 
   FaFilm, 
-  FaTv 
+  FaLock, 
+  FaExclamationTriangle,
+  FaExternalLinkAlt,
+  FaHandPointer
 } from "react-icons/fa";
 import { PiTelegramLogo } from "react-icons/pi";
 import SEO from "../components/SEO";
@@ -29,53 +32,97 @@ export default function ContentDelivery() {
   const poster = searchParams.get("poster") || "";
   const size = searchParams.get("size") || "";
 
-  // 10-Second Wait State
-  const INITIAL_COUNTDOWN = 10;
-  const [countdown, setCountdown] = useState(INITIAL_COUNTDOWN);
-  const [isTimerFinished, setIsTimerFinished] = useState(false);
-  const [isReadyToGetLink, setIsReadyToGetLink] = useState(false);
+  // ── Ad Verification State & Timers ──────────────────────────────────────────
+  const [hasClickedAd, setHasClickedAd] = useState(false);
+  const [isAdVerified, setIsAdVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [hasStartedDownload, setHasStartedDownload] = useState(false);
 
+  const leaveTimestampRef = useRef(null);
   const destinationRef = useRef(null);
+  const adBoxRef = useRef(null);
 
-  // Countdown timer logic
+  // ── Track Tab Blur & Focus for 5-Second Verification ────────────────────────
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setIsTimerFinished(true);
-    }
-  }, [countdown]);
+    const handleWindowBlur = () => {
+      // User switched away to the ad page / clicked out
+      leaveTimestampRef.current = Date.now();
+    };
 
-  // Handle "Continue" click -> Smooth scroll to destination section
-  const handleContinueClick = () => {
-    setIsReadyToGetLink(true);
-    setTimeout(() => {
-      if (destinationRef.current) {
-        destinationRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    const handleWindowFocus = () => {
+      // User returned back to our page
+      if (leaveTimestampRef.current && (hasClickedAd || isAdVerified === false)) {
+        const timeAwayMs = Date.now() - leaveTimestampRef.current;
+        const timeAwaySec = timeAwayMs / 1000;
+        leaveTimestampRef.current = null;
+
+        if (timeAwaySec < 5) {
+          const roundedSec = Math.max(1, Math.floor(timeAwaySec));
+          setVerificationError(
+            `You only waited ${roundedSec} second${roundedSec === 1 ? "" : "s"}! You must stay on the sponsor page for at least 5 seconds to unlock the download link. Please click the ad again and wait 5 seconds.`
+          );
+          setVerificationSuccess(false);
+        } else {
+          // Stayed 5 seconds or more -> Verification Successful!
+          setIsAdVerified(true);
+          setVerificationError("");
+          setVerificationSuccess(true);
+          setTimeout(() => {
+            if (destinationRef.current) {
+              destinationRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 300);
+        }
       }
-    }, 100);
-  };
+    };
 
-  // Handle "Get Link" click -> Trigger download or redirect
-  const handleGetLinkClick = () => {
-    if (!targetUrl) return;
-    setHasStartedDownload(true);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handleWindowBlur();
+      } else if (document.visibilityState === "visible") {
+        handleWindowFocus();
+      }
+    };
 
-    // If an adSmartlink is configured, open in background/new tab once
-    if (settings.adSmartlink && settings.showAds) {
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [hasClickedAd, isAdVerified]);
+
+  // Handle clicking on an Ad / Sponsor Card
+  const handleAdInteraction = () => {
+    setHasClickedAd(true);
+    leaveTimestampRef.current = Date.now();
+    setVerificationError("");
+
+    // If adSmartlink is configured, open in new tab
+    if (settings?.adSmartlink && settings?.showAds) {
       try {
-        const smartUrlMatch = settings.adSmartlink.match(/https?:\/\/[^\s"']+/);
-        if (smartUrlMatch && smartUrlMatch[0]) {
-          window.open(smartUrlMatch[0], "_blank", "noopener noreferrer");
+        const smartMatch = settings.adSmartlink.match(/https?:\/\/[^\s"']+/);
+        if (smartMatch && smartMatch[0]) {
+          window.open(smartMatch[0], "_blank", "noopener noreferrer");
+          return;
         }
       } catch {
         // ignore smartlink error
       }
     }
+
+    // Fallback: If no smartlink or ad script popup, open adsterra high-cpm sponsor tab
+    window.open("https://www.google.com", "_blank", "noopener noreferrer");
+  };
+
+  // Handle "Get Link" click -> Trigger download or Telegram redirect
+  const handleGetLinkClick = () => {
+    if (!targetUrl || !isAdVerified) return;
+    setHasStartedDownload(true);
 
     // Trigger target action
     if (contentType === "Telegram" || targetUrl.startsWith("https://t.me")) {
@@ -95,13 +142,11 @@ export default function ContentDelivery() {
     }
   };
 
-  const progressPercent = Math.round(((INITIAL_COUNTDOWN - countdown) / INITIAL_COUNTDOWN) * 100);
-
   return (
     <div className="min-h-screen bg-bgColor text-primaryTextColor pt-24 pb-20 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col items-center">
       {/* Intermediate delivery page should have noindex to protect SEO health */}
       <SEO
-        title={`Secure Content Gateway - ${title} | ${settings.siteName || "AnimeToon"}`}
+        title={`Secure Content Gateway - ${title} | ${settings?.siteName || "AnimeToon"}`}
         description={`Secure content link gateway for ${title}. Fast anime streaming and downloads.`}
         link={window.location.href}
         type="website"
@@ -123,12 +168,12 @@ export default function ContentDelivery() {
       </div>
 
       {/* Top Banner Ad Slot for Viewability */}
-      <div className="w-full my-3 flex justify-center">
+      <div className="w-full my-2 flex justify-center">
         <AdComponent type="adBanner" />
       </div>
 
       {/* Main Delivery Glassmorphic Card */}
-      <div className="w-full bg-[#12131b]/90 border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-purple-950/20 backdrop-blur-xl relative overflow-hidden">
+      <div className="w-full bg-[#12131b]/95 border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-purple-950/20 backdrop-blur-xl relative overflow-hidden">
         {/* Ambient Glow */}
         <div className="absolute -top-24 -left-24 w-52 h-52 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-52 h-52 bg-primaryBtn/20 rounded-full blur-3xl pointer-events-none" />
@@ -169,121 +214,152 @@ export default function ContentDelivery() {
             </h1>
 
             <p className="text-xs text-gray-400">
-              High speed cloud link with verified file integrity. Free direct access provided by AnimeToon.
+              High speed direct cloud access verified by AnimeToon. Please complete the quick sponsor verification below to generate your download link.
             </p>
           </div>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
-            STAGE 1: 10-SECOND COUNTDOWN & VIEWABILITY SECTION
+            STAGE 1: AD CLICK & 5-SECOND VERIFICATION INSTRUCTIONS
             ───────────────────────────────────────────────────────────── */}
         <div className="py-8 flex flex-col items-center text-center">
-          {!isTimerFinished ? (
-            <div className="flex flex-col items-center">
-              {/* Radial Progress Timer */}
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center mb-4">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="50%"
-                    cy="50%"
-                    r="42%"
-                    stroke="rgba(255, 255, 255, 0.1)"
-                    strokeWidth="8"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="50%"
-                    cy="50%"
-                    r="42%"
-                    stroke="url(#purpleGradient)"
-                    strokeWidth="8"
-                    strokeDasharray={264}
-                    strokeDashoffset={264 - (264 * progressPercent) / 100}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    className="transition-all duration-1000 ease-linear"
-                  />
-                  <defs>
-                    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#805ad5" />
-                      <stop offset="100%" stopColor="#ec4899" />
-                    </linearGradient>
-                  </defs>
-                </svg>
+          {/* Prominent Verification Notice in English */}
+          <div className="w-full max-w-xl bg-purple-950/40 border-2 border-primaryBtn/40 rounded-2xl p-5 mb-6 text-center shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping" />
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-purple-300">
+                Sponsor Verification Required
+              </h2>
+            </div>
 
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                    {countdown}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold text-gray-400">Seconds</span>
-                </div>
+            <p className="text-xs sm:text-sm text-gray-200 font-medium leading-relaxed mb-4">
+              Click any ad below, stay on the ad page for at least <span className="text-yellow-400 font-bold">5 seconds</span>, and return here to unlock your download button.
+            </p>
+
+            {/* 3 Step Visual Guide */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] sm:text-xs">
+              <div className="bg-black/40 border border-white/10 rounded-xl p-2.5 flex items-center sm:flex-col gap-2 justify-center">
+                <span className="w-5 h-5 rounded-full bg-primaryBtn text-white font-black text-[10px] flex items-center justify-center shrink-0">1</span>
+                <span className="text-gray-300 font-semibold">Click Any Ad Below</span>
               </div>
+              <div className="bg-black/40 border border-white/10 rounded-xl p-2.5 flex items-center sm:flex-col gap-2 justify-center">
+                <span className="w-5 h-5 rounded-full bg-yellow-500/30 text-yellow-300 font-black text-[10px] flex items-center justify-center shrink-0">2</span>
+                <span className="text-gray-300 font-semibold">Stay 5 Seconds on Ad</span>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-xl p-2.5 flex items-center sm:flex-col gap-2 justify-center">
+                <span className="w-5 h-5 rounded-full bg-green-500/30 text-green-300 font-black text-[10px] flex items-center justify-center shrink-0">3</span>
+                <span className="text-gray-300 font-semibold">Return & Get Link</span>
+              </div>
+            </div>
+          </div>
 
-              <div className="space-y-1">
-                <h3 className="text-base sm:text-lg font-black text-white flex items-center justify-center gap-2">
-                  <FaClock className="text-primaryBtn animate-spin text-sm" />
-                  Generating Your Secure Link...
-                </h3>
-                <p className="text-xs text-gray-400 max-w-sm">
-                  Please wait {countdown} seconds while we prepare the high-speed download server.
+          {/* Verification Status Alerts */}
+          <AnimatePresence>
+            {verificationError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="w-full max-w-xl mb-6 p-4 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs sm:text-sm font-semibold flex items-center gap-3 text-left shadow-lg"
+              >
+                <FaExclamationTriangle className="text-2xl text-red-400 shrink-0" />
+                <div>
+                  <p className="font-bold text-red-200 mb-0.5">Verification Incomplete!</p>
+                  <p>{verificationError}</p>
+                </div>
+              </motion.div>
+            )}
+
+            {verificationSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="w-full max-w-xl mb-6 p-4 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs sm:text-sm font-semibold flex items-center gap-3 text-left shadow-lg"
+              >
+                <FaCheckCircle className="text-2xl text-green-400 shrink-0" />
+                <div>
+                  <p className="font-bold text-green-200 mb-0.5">Verification Successful!</p>
+                  <p>You stayed on the sponsor page for 5+ seconds. Your download button is now unlocked below!</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ─────────────────────────────────────────────────────────────
+              INTERACTIVE SPONSOR AD BOX (CLICK DETECTOR)
+              ───────────────────────────────────────────────────────────── */}
+          <div
+            ref={adBoxRef}
+            onClick={handleAdInteraction}
+            className={`w-full max-w-xl rounded-2xl border-2 transition-all p-4 cursor-pointer relative group ${
+              isAdVerified
+                ? "border-green-500/40 bg-green-950/10"
+                : "border-primaryBtn/50 bg-[#171822] hover:border-primaryBtn hover:shadow-[0_0_25px_rgba(128,90,213,0.3)]"
+            }`}
+          >
+            {/* Click to verify banner bar */}
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-primaryBtn flex items-center gap-1.5">
+                <FaHandPointer className="animate-bounce" />
+                Click Ad Below to Verify (5 Seconds)
+              </span>
+
+              <span className="text-[10px] font-bold text-gray-400 group-hover:text-white flex items-center gap-1 transition-colors">
+                Open Sponsor <FaExternalLinkAlt className="text-[9px]" />
+              </span>
+            </div>
+
+            {/* Ad Container */}
+            <div className="w-full min-h-[140px] flex items-center justify-center bg-black/40 rounded-xl overflow-hidden pointer-events-auto">
+              <AdComponent type="adInFeed" />
+              <AdComponent type="adBanner" />
+              {/* Fallback visual banner if ads blocked or loading */}
+              <div className="py-6 px-4 text-center">
+                <p className="text-xs sm:text-sm font-black text-white group-hover:text-purple-300 transition-colors flex items-center justify-center gap-2">
+                  <FaExternalLinkAlt className="text-primaryBtn" />
+                  Click Here to Open Sponsor Ad
+                </p>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Stay for 5 seconds on the opened page, then return here.
                 </p>
               </div>
             </div>
-          ) : (
-            /* Timer Finished -> Shows "Continue" Button */
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col items-center w-full max-w-md"
-            >
-              <div className="w-14 h-14 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center text-green-400 text-2xl mb-4 shadow-lg shadow-green-500/20">
-                <FaCheckCircle />
+
+            {/* Interactive verification pulse button */}
+            {!isAdVerified && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-primaryBtn hover:opacity-95 text-white flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <FaHandPointer />
+                  Click to Open Ad & Wait 5 Seconds
+                </button>
               </div>
-
-              <h3 className="text-lg sm:text-xl font-black text-white mb-1">
-                Your Link is Ready!
-              </h3>
-              <p className="text-xs text-gray-300 mb-6">
-                Click the continue button below to scroll down and reveal your direct access link.
-              </p>
-
-              {/* Continue Button */}
-              <button
-                onClick={handleContinueClick}
-                className="w-full py-4 px-8 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-primaryBtn via-purple-600 to-pink-600 hover:opacity-95 text-white shadow-xl shadow-purple-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer"
-              >
-                <span>Continue to Link</span>
-                <FaArrowDown className="animate-bounce" />
-              </button>
-            </motion.div>
-          )}
-
-          {/* Adsterra Middle Ad Placement for Maximum Duration & Viewability */}
-          <div className="w-full my-6 flex justify-center">
-            <AdComponent type="adInFeed" />
+            )}
           </div>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
-            STAGE 2: DESTINATION SECTION (REVEALED BY CONTINUE CLICK)
+            STAGE 2: DESTINATION LINK SECTION (LOCKED / UNLOCKED)
             ───────────────────────────────────────────────────────────── */}
         <div ref={destinationRef} id="get-link-destination" className="pt-8 border-t border-white/10">
           <div className="flex flex-col items-center text-center">
-            <h4 className="text-xs font-extrabold uppercase tracking-widest text-primaryBtn mb-2">
+            <h4 className="text-xs font-extrabold uppercase tracking-widest text-primaryBtn mb-3">
               Destination Link
             </h4>
 
-            {isReadyToGetLink ? (
+            {isAdVerified ? (
               <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-md flex flex-col items-center"
               >
-                {/* Final Action Button: "Get Link" */}
+                {/* UNLOCKED: "Get Link / Download" Button */}
                 <button
                   onClick={handleGetLinkClick}
-                  className="w-full py-4 px-8 rounded-full font-black text-sm uppercase tracking-wider bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white shadow-xl shadow-green-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer"
+                  className="w-full py-4 px-8 rounded-full font-black text-sm uppercase tracking-wider bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white shadow-xl shadow-green-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer"
                 >
                   {contentType === "Telegram" ? (
                     <>
@@ -293,23 +369,37 @@ export default function ContentDelivery() {
                   ) : (
                     <>
                       <FaDownload className="text-base" />
-                      <span>Get Link / Download</span>
+                      <span>Get Link / Download Now</span>
                     </>
                   )}
                 </button>
 
                 {hasStartedDownload && (
-                  <p className="mt-3 text-xs text-green-400 font-semibold flex items-center gap-1.5">
-                    <FaCheckCircle /> Link opened! You can now return back to the site.
+                  <p className="mt-3 text-xs text-green-400 font-semibold flex items-center gap-1.5 animate-in fade-in">
+                    <FaCheckCircle /> Action initiated! You can now return back to the site.
                   </p>
                 )}
               </motion.div>
             ) : (
-              <p className="text-xs text-gray-500 italic">
-                {isTimerFinished
-                  ? "Click the 'Continue to Link' button above to unlock your link."
-                  : "Please wait for the 10-second timer to finish."}
-              </p>
+              /* LOCKED BUTTON: User must click ad & wait 5 seconds */
+              <div className="w-full max-w-md flex flex-col items-center">
+                <button
+                  onClick={() => {
+                    handleAdInteraction();
+                    if (adBoxRef.current) {
+                      adBoxRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                  }}
+                  className="w-full py-4 px-8 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider bg-white/10 hover:bg-white/15 border border-white/20 text-gray-300 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                >
+                  <FaLock className="text-yellow-400" />
+                  <span>Click Ad Above & Wait 5s to Unlock</span>
+                </button>
+
+                <p className="text-[11px] text-gray-400 mt-2 italic">
+                  Complete the 5-second sponsor visit to activate this download button.
+                </p>
+              </div>
             )}
 
             {/* Return to website link */}

@@ -15,7 +15,7 @@ export default function RedirectMovie() {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
 
-        navigate(`/mov/${movieID}/${slug}`, {
+        navigate(`/mov/${res.data._id || movieID}/${slug}`, {
           replace: true,
         });
       })

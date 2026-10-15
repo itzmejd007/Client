@@ -15,7 +15,7 @@ export default function RedirectSeries() {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
 
-        navigate(`/ser/${seriesID}/${slug}`, {
+        navigate(`/ser/${res.data._id || seriesID}/${slug}`, {
           replace: true,
         });
       })

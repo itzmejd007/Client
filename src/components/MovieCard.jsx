@@ -35,8 +35,8 @@ const MovieCard = ({ movie }) => {
       <Link
         to={
             movie.media_type === "movie"
-                ? `/mov/${movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
-                : `/ser/${movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
+                ? `/mov/${movie._id || movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
+                : `/ser/${movie._id || movie.tmdb_id}/${movie.slug || slugify(movie.title)}`
         }
         className="rounded-t-2xl"
       >

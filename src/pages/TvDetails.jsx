@@ -39,7 +39,12 @@ export default function TvDetails() {
     setDetailsIsLoading(true);
  
      axios
-       .get(`${BASE}/api/id/${seriesID}`)
+       .get(`${BASE}/api/id/${seriesID}`, {
+         params: {
+           slug: slug || undefined,
+           title: slug ? decodeURIComponent(slug).replace(/-/g, " ") : undefined
+         }
+       })
       .then((response) => {
         const sortedSeasons = (response.data.seasons || []).sort(
           (a, b) => a.season_number - b.season_number

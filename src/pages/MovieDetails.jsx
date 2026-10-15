@@ -33,7 +33,12 @@ export default function MovieDetails() {
     setDetailsIsLoading(true);
  
     axios
-      .get(`${BASE}/api/id/${movieID}`)
+      .get(`${BASE}/api/id/${movieID}`, {
+        params: {
+          slug: slug || undefined,
+          title: slug ? decodeURIComponent(slug).replace(/-/g, " ") : undefined
+        }
+      })
       .then((response) => {
         setMovieDetail(response.data);
         setDetailsIsLoading(false);
