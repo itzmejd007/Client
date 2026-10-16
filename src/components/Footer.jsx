@@ -17,9 +17,6 @@ export default function Footer() {
 
   return (
     <>
-      {/* Footer Ad Placement */}
-      <GlobalAd placement="footer" />
-
       <section className="relative pt-10 border-t-2 border-btnColor xxl:container m-auto">
         {/* TOP OF FOOTER */}
         <div className="flex flex-col items-start justify-between w-11/12 gap-6 m-auto md:flex-row ">

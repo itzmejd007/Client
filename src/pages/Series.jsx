@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MoviesAndSeriesSections from "../components/MoviesAndSeriesSections";
 import SEO from "../components/SEO";
+import { useSettings } from "../context/SettingsContext";
 import axios from "axios";
 import { streamNDJSON, buildQueryString } from "../utils/ndjsonStream";
 
@@ -51,7 +52,7 @@ export default function Series() {
       `${BASE}/api/tvshows/stream${qs}`,
       (item) => {
         itemsLoaded++;
-        setSeries((prev) => [...prev, item]);
+        setSeries((prev) => [...prev, { ...item, media_type: "tv" }]);
       },
       () => {
         if (itemsLoaded === 0) {
@@ -91,7 +92,7 @@ export default function Series() {
     <div>
       {/* SEO */}
       <SEO
-        ttitle={`Tamil Dubbed Anime Series | Watch Free Online HD - ${SITENAME}`}
+        title={`Tamil Dubbed Anime Series | Watch Free Online HD - ${SITENAME}`}
         description={`Watch Tamil, Hindi, Telugu and English dubbed anime series online free. Stream HD anime episodes and discover the latest releases on ${SITENAME}.`}
         name={SITENAME}
         type="website"

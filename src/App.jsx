@@ -87,8 +87,6 @@ function App() {
   return (
     <BrowserRouter>
       <AdBlockDetector />
-      {/* Non-intrusive social bar for monetization without redirect disruption */}
-      <AdComponent type="adSocialBar" />
       <FloatingTelegram />
       <Nav />
       <div className="px-3 md:px-10 pt-20 md:pt-20 pb-10">
@@ -104,7 +102,9 @@ function App() {
             <Route path="/ser/:seriesID" element={<RedirectSeries />} />
             <Route path="/ser/:seriesID/:slug" element={<TvDetails />} />
             <Route path="/movies" element={<Movies />} />
+            <Route path="/Movies" element={<Movies />} />
             <Route path="/series" element={<Series />} />
+            <Route path="/Series" element={<Series />} />
             <Route path="/collections" element={<Collections />} />
             <Route path="/collection/:id" element={<Collection />} />
             <Route path="*" element={<NotFoundPage />} />

@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { addToRecentlyWatched } from "../utils/watchHistory";
 import { requestStrictAdBlockCheck } from "./AdBlockDetector";
 
-const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
+const TelegramButton = ({ movieData, seasonNumber, episodeNumber, episodeData }) => {
   const { settings } = useSettings();
   const navigate = useNavigate();
   const rawUsername = settings?.tgUsername || import.meta.env.VITE_TG_USERNAME || "AnimeToonX_bot";
@@ -76,8 +76,15 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
     });
   };
 
-  const renderQualityButtons = (qualityDetails) =>
-    (qualityDetails || []).map(({ quality, size, id }, index) => (
+  const renderQualityButtons = (qualityDetails) => {
+    if (!qualityDetails || qualityDetails.length === 0) {
+      return (
+        <div className="py-2 px-3 text-center text-xs text-secondaryTextColor font-medium">
+          Telegram links coming soon for this episode
+        </div>
+      );
+    }
+    return qualityDetails.map(({ quality, size, id }, index) => (
       <Button
         key={index}
         onClick={() =>
@@ -87,7 +94,7 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
           )
         }
         size="sm"
-        className="bg-primaryBtn rounded-full"
+        className="bg-primaryBtn rounded-full shadow-md"
         isLoading={loading[quality]}
         spinner={<Spinner />}
       >
@@ -96,11 +103,12 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
         {settings.showSize !== false && size ? size : ""}
       </Button>
     ));
+  };
 
   const renderSeasonButtons = () =>
-    movieData.seasons.map((season, seasonIndex) => {
+    (movieData.seasons || []).map((season, seasonIndex) => {
       const availableQualities = new Set();
-      season.episodes.forEach((episode) => {
+      (season.episodes || []).forEach((episode) => {
         episode.telegram?.forEach(({ quality }) =>
           availableQualities.add(quality)
         );
@@ -144,8 +152,22 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber }) => {
     });
 
   const getEpisodeQualityDetails = () => {
-    const season = movieData.seasons?.find(s => s.season_number === parseInt(seasonNumber));
-    const episode = season?.episodes?.find(e => e.episode_number === parseInt(episodeNumber));
+    if (episodeData?.telegram && episodeData.telegram.length > 0) {
+      return episodeData.telegram;
+    }
+    const season = movieData.seasons?.find(s => String(s.season_number) === String(seasonNumber));
+    if (!season) return [];
+    const eps = season.episodes || [];
+    // 1. Direct match
+    let episode = eps.find(e => String(e.episode_number) === String(episodeNumber) || e.episode_number === parseInt(episodeNumber));
+    // 2. Relative index fallback
+    if (!episode && eps.length > 0) {
+      const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+      const epNum = parseInt(episodeNumber);
+      if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
+        episode = sortedEps[epNum - 1];
+      }
+    }
     return episode?.telegram || [];
   };
 

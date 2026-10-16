@@ -42,6 +42,12 @@ const GlobalAd = ({ placement = 'header' }) => {
                 adCode = null;
         }
 
+        // Filter out popunder/redirect scripts on regular pages
+        const isContentDelivery = typeof window !== 'undefined' && window.location.pathname.startsWith('/content-delivery');
+        if (!isContentDelivery && adCode && (adCode.includes('effectivegatecpm') || adCode.includes('profitablecpmrate') || adCode.includes('73396f53e4d0e2635a379ba01777a0aa') || placement === 'popup' || placement === 'header')) {
+            adCode = "";
+        }
+
         if (adCode) {
             setAdHtml(adCode);
         } else {

@@ -185,9 +185,6 @@ export default function Nav() {
 
   return (
     <>
-      {/* Header Ad Placement */}
-      <GlobalAd placement="header" />
-
       <div className="fixed flex items-center justify-between gap-3 z-20 bg-bgColor/60 backdrop-blur-md top-0 left-0 right-0 py-4 px-5 md:px-10 text-primaryTextColor">
 
         {/* LOGO / TITLE (Visible on all screens) */}

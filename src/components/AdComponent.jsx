@@ -43,13 +43,17 @@ const AdComponent = ({ type, className = "" }) => {
     const showAds = settings?.showAds !== false; // Active if enabled
 
     const isOverlay = ["adPopup", "adSocialBar", "adSmartlink"].includes(type);
+    const isContentDelivery = typeof window !== "undefined" && window.location.pathname.startsWith("/content-delivery");
 
     useEffect(() => {
         if (!showAds || !adCode) return;
 
-        // 1. For Overlay / Popunder / Redirect scripts:
-        // Mount to body so Adsterra popunder click listeners work globally on the page
+        // Overlay / Popunder / Redirect scripts MUST ONLY run on /content-delivery
         if (isOverlay) {
+            if (!isContentDelivery) {
+                return; // Absolutely prohibited on normal browsing pages
+            }
+
             const overlayContainer = document.createElement("div");
             overlayContainer.id = `ad-overlay-${type}`;
             overlayContainer.style.cssText = "position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none;";

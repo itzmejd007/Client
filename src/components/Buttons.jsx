@@ -10,7 +10,7 @@ import { useSettings } from "../context/SettingsContext";
 import { addToRecentlyWatched } from "../utils/watchHistory";
 import { requestStrictAdBlockCheck } from "./AdBlockDetector";
 
-const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => {
+const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber, episodeData }) => {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL;
@@ -21,27 +21,48 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => 
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [selectedQuality, setSelectedQuality] = useState(null);
   const [episodes, setEpisodes] = useState([]);
-  const [qualities, setQualities] = useState([]);
+  const [qualities, setQualities] = useState(() => {
+    if (episodeData?.telegram && episodeData.telegram.length > 0) {
+      return episodeData.telegram;
+    }
+    return [];
+  });
   const [loading, setLoading] = useState({});
 
   useEffect(() => {
+    // If episodeData was passed directly with qualities, use them immediately
+    if (episodeData?.telegram && episodeData.telegram.length > 0) {
+      setQualities(episodeData.telegram);
+      return;
+    }
+
     if (seasonNumber && episodeNumber) {
       setSelectedSeason(seasonNumber);
       setSelectedEpisode(episodeNumber);
       const season = movieData.seasons?.find(
-        (s) => s.season_number === parseInt(seasonNumber)
+        (s) => String(s.season_number) === String(seasonNumber)
       );
       if (season) {
-        const episode = season.episodes?.find(
-          (e) => e.episode_number === parseInt(episodeNumber)
+        const eps = season.episodes || [];
+        // 1. Direct match by episode_number (e.g. 25 or 1)
+        let episode = eps.find(
+          (e) => String(e.episode_number) === String(episodeNumber) || e.episode_number === parseInt(episodeNumber)
         );
+        // 2. Relative index match (e.g. S2 Ep 1 matches index 0 where episode_number is 25)
+        if (!episode && eps.length > 0) {
+          const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+          const epNum = parseInt(episodeNumber);
+          if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
+            episode = sortedEps[epNum - 1];
+          }
+        }
         if (episode) {
           setQualities(episode.telegram || []);
         }
       }
     } else if (selectedSeason) {
       const season = movieData.seasons?.find(
-        (s) => s.season_number === parseInt(selectedSeason)
+        (s) => String(s.season_number) === String(selectedSeason)
       );
       if (season) {
         setEpisodes(season.episodes || []);
@@ -49,13 +70,21 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => 
         setQualities([]);
       }
     }
-  }, [selectedSeason, seasonNumber, episodeNumber, movieData.seasons]);
+  }, [selectedSeason, seasonNumber, episodeNumber, movieData.seasons, episodeData]);
 
   useEffect(() => {
     if (!seasonNumber && !episodeNumber && selectedEpisode) {
-      const episode = episodes.find(
-        (e) => e.episode_number === parseInt(selectedEpisode)
+      const eps = episodes || [];
+      let episode = eps.find(
+        (e) => String(e.episode_number) === String(selectedEpisode) || e.episode_number === parseInt(selectedEpisode)
       );
+      if (!episode && eps.length > 0) {
+        const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+        const epNum = parseInt(selectedEpisode);
+        if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
+          episode = sortedEps[epNum - 1];
+        }
+      }
       if (episode) {
         setQualities(episode.telegram || []);
         setSelectedQuality("");
@@ -149,13 +178,20 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => 
       </Button>
     ));
 
-  const renderEpisodeButtons = () =>
-    qualities?.map((q, i) => (
+  const renderEpisodeButtons = () => {
+    if (!qualities || qualities.length === 0) {
+      return (
+        <div className="py-2 px-3 text-center text-xs text-secondaryTextColor font-medium">
+          Download links coming soon for this episode
+        </div>
+      );
+    }
+    return qualities.map((q, i) => (
       <Button
         key={i}
         onClick={() => handleButtonClick(q.id, q.name, q.quality)}
         size="sm"
-        className="bg-primaryBtn rounded-full text-bgColor font-medium"
+        className="bg-primaryBtn rounded-full text-bgColor font-medium shadow-md"
         isLoading={loading[q.quality]}
         spinner={<Spinner />}
       >
@@ -164,6 +200,7 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber }) => 
         {settings.showSize !== false && q.size ? q.size : ""}
       </Button>
     ));
+  };
 
   const renderShowSelectors = () => (
     <div className="px-1 py-2 flex flex-col gap-2">

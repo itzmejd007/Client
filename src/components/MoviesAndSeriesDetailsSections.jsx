@@ -343,6 +343,8 @@ export default function MoviesAndSeriesDetailsSections(props) {
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const paginatedEpisodes = sortedEpisodes.slice(startIndex, startIndex + itemsPerPage);
 
+                const isAbsoluteNumbering = sortedEpisodes.length > 0 && sortedEpisodes[0].episode_number > 1 && sortedEpisodes[0].episode_number !== 1;
+
                 return (
                   <>
                     {/* Desktop Grid Layout */}
@@ -350,6 +352,11 @@ export default function MoviesAndSeriesDetailsSections(props) {
                       {!props.isEpisodesLoading ? (
                         paginatedEpisodes.map((eps, index) => {
                           const thumbnailSrc = eps.episode_backdrop || props.movieData.backdrop;
+                          const relativeEpNumber = startIndex + index + 1;
+                          const epBadge = isAbsoluteNumbering 
+                            ? `S${String(props.seasonNumber).padStart(2, "0")} E${String(relativeEpNumber).padStart(2, "0")} (Ep ${eps.episode_number})`
+                            : `S${String(props.seasonNumber).padStart(2, "0")} E${String(eps.episode_number).padStart(2, "0")}`;
+
                           return (
                             <div
                               key={index}
@@ -378,7 +385,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
 
                               {/* Top-left Pill Badge (SXX EXX format) */}
                               <div className="absolute top-3 left-3 bg-black/60 dark:bg-black/60 bg-black/50 backdrop-blur-md text-white text-[10px] sm:text-xs font-semibold px-2.5 py-0.5 rounded-full border border-white/10 dark:border-white/10 z-[2]">
-                                S{String(props.seasonNumber).padStart(2, "0")} E{String(eps.episode_number).padStart(2, "0")}
+                                {epBadge}
                               </div>
 
                               {/* Bottom-left Episode Title */}
@@ -409,6 +416,11 @@ export default function MoviesAndSeriesDetailsSections(props) {
                       {!props.isEpisodesLoading ? (
                         paginatedEpisodes.map((eps, index) => {
                           const thumbnailSrc = eps.episode_backdrop || props.movieData.backdrop;
+                          const relativeEpNumber = startIndex + index + 1;
+                          const epBadge = isAbsoluteNumbering 
+                            ? `S${String(props.seasonNumber).padStart(2, "0")} E${String(relativeEpNumber).padStart(2, "0")} (Ep ${eps.episode_number})`
+                            : `S${String(props.seasonNumber).padStart(2, "0")} E${String(eps.episode_number).padStart(2, "0")}`;
+
                           return (
                             <div
                               key={index}
@@ -437,7 +449,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                               {/* Right details */}
                               <div className="flex-1 flex flex-col justify-center min-w-0 text-left">
                                 <span className="text-secondaryTextColor font-medium text-[10px] tracking-wider mb-0.5">
-                                  S{String(props.seasonNumber).padStart(2, "0")} E{String(eps.episode_number).padStart(2, "0")}
+                                  {epBadge}
                                 </span>
                                 <h3 className="text-primaryTextColor font-bold text-xs sm:text-sm line-clamp-3 break-all group-hover:text-otherColor transition-colors duration-300">
                                   {eps.title}
@@ -569,121 +581,137 @@ export default function MoviesAndSeriesDetailsSections(props) {
                 </svg>
               </button>
 
-              <div className="flex flex-col gap-5 text-center mt-2">
-                <div>
-                  <span className="text-otherColor font-black text-xs uppercase tracking-wider block mb-1">
-                    Season {props.seasonNumber} • Episode {selectedEpisode.episode_number}
-                  </span>
-                  <h2 className="text-primaryTextColor font-black text-lg md:text-xl px-4 line-clamp-2">
-                    {selectedEpisode.title}
-                  </h2>
-                </div>
+              {(() => {
+                const allEps = (props.episodes || []).slice().sort((a, b) => a.episode_number - b.episode_number);
+                const isAbs = allEps.length > 0 && allEps[0].episode_number > 1;
+                const idx = allEps.findIndex(e => e.episode_number === selectedEpisode.episode_number);
+                const relNum = idx !== -1 ? idx + 1 : selectedEpisode.episode_number;
+                const epHeaderBadge = isAbs && selectedEpisode.episode_number !== relNum
+                  ? `Season ${props.seasonNumber} • Episode ${relNum} (Ep ${selectedEpisode.episode_number})`
+                  : `Season ${props.seasonNumber} • Episode ${selectedEpisode.episode_number}`;
 
-                {/* Modal Episode Backdrop Preview */}
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-bgColorSecondary/50 border border-white/5">
-                  <img
-                    src={selectedEpisode.episode_backdrop || props.movieData.backdrop}
-                    alt={selectedEpisode.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/30" />
-                </div>
+                return (
+                  <div className="flex flex-col gap-5 text-center mt-2">
+                    <div>
+                      <span className="text-otherColor font-black text-xs uppercase tracking-wider block mb-1">
+                        {epHeaderBadge}
+                      </span>
+                      <h2 className="text-primaryTextColor font-black text-lg md:text-xl px-4 line-clamp-2">
+                        {selectedEpisode.title}
+                      </h2>
+                    </div>
 
-                {/* Action Buttons Grid in Popup */}
-                <div className="flex flex-col gap-3 mt-2">
-                  <button
-                    onClick={() => {
-                      addToRecentlyWatched(props.movieData);
-                      props.setEpisodeNumber(selectedEpisode.episode_number);
-                      setIsActionPopupOpen(false);
-                      setIsWatchEpisodePopupOpen(true);
-                    }}
-                    className="flex items-center justify-center gap-2 bg-otherColor hover:bg-otherColor/90 text-bgColor text-xs font-black uppercase tracking-wider rounded-full py-3 px-6 shadow-lg shadow-otherColor/20 transition-all cursor-pointer w-full font-bold"
-                  >
-                    <BiPlay className="text-lg shrink-0" />
-                    Stream / Play Episode
-                  </button>
-
-                  <div className="grid grid-cols-2 gap-3 w-full">
-                    {settings.showDownloadButton !== false && (
-                      <DownloadButton
-                        movieData={props.movieData}
-                        btnType="Download"
-                        seasonNumber={props.seasonNumber}
-                        episodeNumber={selectedEpisode.episode_number}
+                    {/* Modal Episode Backdrop Preview */}
+                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-bgColorSecondary/50 border border-white/5">
+                      <img
+                        src={selectedEpisode.episode_backdrop || props.movieData.backdrop}
+                        alt={selectedEpisode.title}
+                        className="w-full h-full object-cover"
                       />
-                    )}
+                      <div className="absolute inset-0 bg-black/30" />
+                    </div>
 
-                    {settings.showTelegramButton !== false && (
-                      <TelegramButton
-                        movieData={props.movieData}
-                        seasonNumber={props.seasonNumber}
-                        episodeNumber={selectedEpisode.episode_number}
-                      />
-                    )}
-                  </div>
+                    {/* Action Buttons Grid in Popup */}
+                    <div className="flex flex-col gap-3 mt-2">
+                      <button
+                        onClick={() => {
+                          addToRecentlyWatched(props.movieData);
+                          props.setEpisodeNumber(selectedEpisode.episode_number);
+                          setIsActionPopupOpen(false);
+                          setIsWatchEpisodePopupOpen(true);
+                        }}
+                        className="flex items-center justify-center gap-2 bg-otherColor hover:bg-otherColor/90 text-bgColor text-xs font-black uppercase tracking-wider rounded-full py-3 px-6 shadow-lg shadow-otherColor/20 transition-all cursor-pointer w-full font-bold"
+                      >
+                        <BiPlay className="text-lg shrink-0" />
+                        Stream / Play Episode
+                      </button>
 
-                  {(() => {
-                    const hasExternalLinks = settings.showExternalLinks !== false && selectedEpisode.external_links?.length > 0;
-                    if (hasExternalLinks) {
-                      return (
-                        <div className="grid grid-cols-2 gap-3 w-full">
-                          {/* MX Player Button (visible on mobile/tablet, hidden on desktop md:hidden) */}
-                          <div className="md:hidden col-span-1">
-                            <DownloadButton
-                              movieData={props.movieData}
-                              btnType="MX Player"
-                              seasonNumber={props.seasonNumber}
-                              episodeNumber={selectedEpisode.episode_number}
-                            />
-                          </div>
-                          
-                          {/* Links Button */}
-                          <div className="col-span-1 md:col-span-2">
-                            <Popover placement="bottom" showArrow={true}>
-                              <PopoverTrigger>
-                                <button className="flex items-center justify-center gap-1.5 w-full py-2 bg-otherColor/10 text-otherColor border-2 border-otherColor rounded-full font-black text-[9px] uppercase tracking-wider hover:bg-otherColor hover:text-bgColor transition-all">
-                                  <PiGlobeBold className="text-xs shrink-0" />
-                                  Links
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent className="bg-bgColorSecondary dark:bg-btnColor border border-secondaryTextColor/20 p-2 min-w-[160px] max-w-[calc(100vw-2rem)] shadow-2xl overflow-hidden">
-                                <div className="flex flex-col gap-1 w-full overflow-hidden">
-                                  <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-secondaryTextColor font-bold">Links</p>
-                                  {selectedEpisode.external_links.map((link, idx) => (
-                                    <a
-                                      key={idx}
-                                      href={link.url}
-                                      onClick={(e) => handleExternalLinkClick(e, link.url)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group w-full"
-                                    >
-                                      <span className="font-medium break-all line-clamp-2">{link.name || `Link ${idx + 1}`}</span>
-                                      <PiGlobeBold className="text-otherColor opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
-                                    </a>
-                                  ))}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="md:hidden w-full">
+                      <div className="grid grid-cols-2 gap-3 w-full">
+                        {settings.showDownloadButton !== false && (
                           <DownloadButton
                             movieData={props.movieData}
-                            btnType="MX Player"
+                            btnType="Download"
                             seasonNumber={props.seasonNumber}
                             episodeNumber={selectedEpisode.episode_number}
+                            episodeData={selectedEpisode}
                           />
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-              </div>
+                        )}
+
+                        {settings.showTelegramButton !== false && (
+                          <TelegramButton
+                            movieData={props.movieData}
+                            seasonNumber={props.seasonNumber}
+                            episodeNumber={selectedEpisode.episode_number}
+                            episodeData={selectedEpisode}
+                          />
+                        )}
+                      </div>
+
+                      {(() => {
+                        const hasExternalLinks = settings.showExternalLinks !== false && selectedEpisode.external_links?.length > 0;
+                        if (hasExternalLinks) {
+                          return (
+                            <div className="grid grid-cols-2 gap-3 w-full">
+                              {/* MX Player Button (visible on mobile/tablet, hidden on desktop md:hidden) */}
+                              <div className="md:hidden col-span-1">
+                                <DownloadButton
+                                  movieData={props.movieData}
+                                  btnType="MX Player"
+                                  seasonNumber={props.seasonNumber}
+                                  episodeNumber={selectedEpisode.episode_number}
+                                  episodeData={selectedEpisode}
+                                />
+                              </div>
+                              
+                              {/* Links Button */}
+                              <div className="col-span-1 md:col-span-2">
+                                <Popover placement="bottom" showArrow={true}>
+                                  <PopoverTrigger>
+                                    <button className="flex items-center justify-center gap-1.5 w-full py-2 bg-otherColor/10 text-otherColor border-2 border-otherColor rounded-full font-black text-[9px] uppercase tracking-wider hover:bg-otherColor hover:text-bgColor transition-all">
+                                      <PiGlobeBold className="text-xs shrink-0" />
+                                      Links
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="bg-bgColorSecondary dark:bg-btnColor border border-secondaryTextColor/20 p-2 min-w-[160px] max-w-[calc(100vw-2rem)] shadow-2xl overflow-hidden">
+                                    <div className="flex flex-col gap-1 w-full overflow-hidden">
+                                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider text-secondaryTextColor font-bold">Links</p>
+                                      {selectedEpisode.external_links.map((link, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={link.url}
+                                          onClick={(e) => handleExternalLinkClick(e, link.url)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-otherColor/10 rounded-xl text-xs text-primaryTextColor transition-all group w-full"
+                                        >
+                                          <span className="font-medium break-all line-clamp-2">{link.name || `Link ${idx + 1}`}</span>
+                                          <PiGlobeBold className="text-otherColor opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="md:hidden w-full">
+                              <DownloadButton
+                                movieData={props.movieData}
+                                btnType="MX Player"
+                                seasonNumber={props.seasonNumber}
+                                episodeNumber={selectedEpisode.episode_number}
+                                episodeData={selectedEpisode}
+                              />
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                  </div>
+                );
+              })()}
             </motion.div>
           </div>
         )}

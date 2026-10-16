@@ -211,7 +211,7 @@ export default function Home() {
       </div>
 
       {activeSections.map((section, idx) => {
-        const seeMoreLink = section.media_type === "tv" ? "/Series" : "/Movies";
+        const seeMoreLink = section.media_type === "tv" ? "/series" : "/movies";
 
         return (
           <React.Fragment key={section._id || idx}>

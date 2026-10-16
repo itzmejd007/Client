@@ -33,9 +33,7 @@ export default function WatchTrailer(props) {
             } else {
               videoSources = (props.id.telegram || []).map((q) => {
                 const name = q.name.toLowerCase();
-                const type = name.endsWith(".mp4") ? "video/mp4" : 
-                             name.endsWith(".webm") ? "video/webm" : 
-                             undefined;
+                const type = name.endsWith(".webm") ? "video/webm" : "video/mp4";
 
                 return {
                   src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
@@ -47,13 +45,21 @@ export default function WatchTrailer(props) {
             selectedPoster = props.id.backdrop;
           } else if (props.popUpType === "episode") {
             const season = (props.id.seasons || []).find(
-              (season) => season.season_number === props.seasonNumber
+              (season) => String(season.season_number) === String(props.seasonNumber)
             );
 
             if (season) {
-              const episode = season.episodes.find(
-                (ep) => ep.episode_number === props.episodeNumber
+              const eps = season.episodes || [];
+              let episode = eps.find(
+                (ep) => String(ep.episode_number) === String(props.episodeNumber) || ep.episode_number === parseInt(props.episodeNumber)
               );
+              if (!episode && eps.length > 0) {
+                const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+                const epNum = parseInt(props.episodeNumber);
+                if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
+                  episode = sortedEps[epNum - 1];
+                }
+              }
 
               if (episode) {
                 const manualUrl = episode.manual_stream_url;
@@ -66,9 +72,7 @@ export default function WatchTrailer(props) {
                 } else {
                   videoSources = (episode.telegram || []).map((q) => {
                     const name = q.name.toLowerCase();
-                    const type = name.endsWith(".mp4") ? "video/mp4" : 
-                                 name.endsWith(".webm") ? "video/webm" : 
-                                 undefined;
+                    const type = name.endsWith(".webm") ? "video/webm" : "video/mp4";
 
                     return {
                       src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
