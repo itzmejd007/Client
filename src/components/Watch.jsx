@@ -44,47 +44,66 @@ export default function WatchTrailer(props) {
             }
             selectedPoster = props.id.backdrop;
           } else if (props.popUpType === "episode") {
-            const season = (props.id.seasons || []).find(
-              (season) => String(season.season_number) === String(props.seasonNumber)
-            );
-
-            if (season) {
-              const eps = season.episodes || [];
-              let episode = eps.find(
+            let episode = null;
+            // 1. Direct check in props.episodes
+            if (props.episodes && props.episodes.length > 0) {
+              episode = props.episodes.find(
                 (ep) => String(ep.episode_number) === String(props.episodeNumber) || ep.episode_number === parseInt(props.episodeNumber)
               );
-              if (!episode && eps.length > 0) {
-                const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+              if (!episode) {
+                const sortedEps = props.episodes.slice().sort((a, b) => a.episode_number - b.episode_number);
                 const epNum = parseInt(props.episodeNumber);
                 if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
                   episode = sortedEps[epNum - 1];
                 }
               }
+            }
 
-              if (episode) {
-                const manualUrl = episode.manual_stream_url;
-                if (manualUrl) {
-                  videoSources = [{
-                    src: manualUrl,
-                    type: manualUrl.endsWith(".mp4") ? "video/mp4" : undefined,
-                    label: "Manual Stream"
-                  }];
-                } else {
-                  videoSources = (episode.telegram || []).map((q) => {
-                    const name = q.name.toLowerCase();
-                    const type = name.endsWith(".webm") ? "video/webm" : "video/mp4";
+            // 2. Fallback check in props.id.seasons
+            if (!episode) {
+              const season = (props.id.seasons || []).find(
+                (season) => String(season.season_number) === String(props.seasonNumber)
+              );
 
-                    return {
-                      src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
-                      type: type,
-                      label: q.quality || `Quality`,
-                    };
-                  });
+              if (season) {
+                const eps = season.episodes || [];
+                episode = eps.find(
+                  (ep) => String(ep.episode_number) === String(props.episodeNumber) || ep.episode_number === parseInt(props.episodeNumber)
+                );
+                if (!episode && eps.length > 0) {
+                  const sortedEps = eps.slice().sort((a, b) => a.episode_number - b.episode_number);
+                  const epNum = parseInt(props.episodeNumber);
+                  if (!isNaN(epNum) && epNum >= 1 && epNum <= sortedEps.length) {
+                    episode = sortedEps[epNum - 1];
+                  }
                 }
-                selectedPoster = episode.episode_backdrop;
               }
             }
+
+            if (episode) {
+              const manualUrl = episode.manual_stream_url;
+              if (manualUrl) {
+                videoSources = [{
+                  src: manualUrl,
+                  type: manualUrl.endsWith(".mp4") ? "video/mp4" : undefined,
+                  label: "Manual Stream"
+                }];
+              } else {
+                videoSources = (episode.telegram || []).map((q) => {
+                  const name = q.name.toLowerCase();
+                  const type = name.endsWith(".webm") ? "video/webm" : "video/mp4";
+
+                  return {
+                    src: `${BASE}/stream/${q.id}/${encodeURIComponent(q.name)}`,
+                    type: type,
+                    label: q.quality || `Quality`,
+                  };
+                });
+              }
+              selectedPoster = episode.episode_backdrop;
+            }
           }
+
 
           setSources(videoSources);
           setPoster(selectedPoster);

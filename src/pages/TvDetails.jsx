@@ -93,9 +93,25 @@ export default function TvDetails() {
   useEffect(() => {
     if (!seriesID || seasonNumber === undefined) return;
 
+    // Fast-path: Check if season episodes are already present in seriesDetail
+    if (seriesDetail?.seasons?.length > 0) {
+      const currentSeason = seriesDetail.seasons.find(
+        (s) => String(s.season_number) === String(seasonNumber)
+      );
+      if (currentSeason?.episodes?.length > 0) {
+        setEpisodes(currentSeason.episodes);
+        setIsEpisodesLoading(false);
+        return;
+      }
+    }
+
     setIsEpisodesLoading(true);
 
-    const params = { season_number: seasonNumber };
+    const params = {
+      season_number: seasonNumber,
+      slug: slug || undefined,
+      title: slug ? decodeURIComponent(slug).replace(/-/g, " ") : (seriesDetail?.title || undefined),
+    };
 
     axios
       .get(`${BASE}/api/id/${seriesID}`, { params })
@@ -108,7 +124,7 @@ export default function TvDetails() {
         setEpisodes([]);
         setIsEpisodesLoading(false);
       });
-  }, [seasonNumber, seriesID, BASE]);
+  }, [seasonNumber, seriesID, slug, seriesDetail, BASE]);
 
   return (
     <div>

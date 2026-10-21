@@ -84,26 +84,33 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber, episodeData })
         </div>
       );
     }
-    return qualityDetails.map(({ quality, size, id }, index) => (
-      <Button
-        key={index}
-        onClick={() =>
-          handleButtonClick(
-            `https://t.me/${USERNAME}?start=get_${id}`,
-            quality
-          )
-        }
-        size="sm"
-        className="bg-primaryBtn rounded-full shadow-md"
-        isLoading={loading[quality]}
-        spinner={<Spinner />}
-      >
-        {settings.showQuality !== false ? quality : ""}
-        {settings.showQuality !== false && settings.showSize !== false && size ? " | " : ""}
-        {settings.showSize !== false && size ? size : ""}
-      </Button>
-    ));
+    return qualityDetails.map(({ quality, size, id }, index) => {
+      const qClean = (quality || "HD").replace(/\s+/g, "");
+      // Construct deep link that strictly stays under Telegram's 64-character limit
+      let botUrl = `https://t.me/${USERNAME}?start=get_${id}`;
+      if (movieData?.tmdb_id && seasonNumber && episodeNumber !== undefined && episodeNumber !== null) {
+        botUrl = `https://t.me/${USERNAME}?start=file_${movieData.tmdb_id}_${seasonNumber}_${episodeNumber}_${qClean}`;
+      } else if (movieData?.media_type === "movie" && movieData?.tmdb_id) {
+        botUrl = `https://t.me/${USERNAME}?start=file_${movieData.tmdb_id}_${qClean}`;
+      }
+
+      return (
+        <Button
+          key={index}
+          onClick={() => handleButtonClick(botUrl, quality)}
+          size="sm"
+          className="bg-primaryBtn rounded-full shadow-md"
+          isLoading={loading[quality]}
+          spinner={<Spinner />}
+        >
+          {settings.showQuality !== false ? quality : ""}
+          {settings.showQuality !== false && settings.showSize !== false && size ? " | " : ""}
+          {settings.showSize !== false && size ? size : ""}
+        </Button>
+      );
+    });
   };
+
 
   const renderSeasonButtons = () =>
     (movieData.seasons || []).map((season, seasonIndex) => {
@@ -182,7 +189,7 @@ const TelegramButton = ({ movieData, seasonNumber, episodeNumber, episodeData })
         <div className="px-1 py-2 flex gap-1 flex-wrap flex-col">
           {movieData.media_type === "movie"
             ? renderQualityButtons(movieData.telegram || [])
-            : (seasonNumber && episodeNumber)
+            : (seasonNumber && episodeNumber !== undefined && episodeNumber !== null)
               ? renderQualityButtons(getEpisodeQualityDetails())
               : renderSeasonButtons()}
         </div>

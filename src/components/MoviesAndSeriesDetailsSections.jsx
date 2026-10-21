@@ -547,6 +547,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
           popUpType="episode"
           seasonNumber={props.seasonNumber}
           episodeNumber={props.episodeNumber}
+          episodes={props.episodes}
         />
       )}
 
