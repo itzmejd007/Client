@@ -80,11 +80,23 @@ export default function MovieDetails() {
       <ToastContainer style={{ fontSize: "0.8rem" }} />
 
       <SEO
-        title={movieDetail.title ? `${movieDetail.title} - ${SITENAME}` : SITENAME}
-        description={movieDetail.description || `Watch ${movieDetail.title || "movies"} online free on ${SITENAME}.`}
+        title={movieDetail.title ? `${movieDetail.title} Tamil Dubbed Anime Movie - Watch & Download HD | ${SITENAME}` : `Tamil Dubbed Anime Movies - ${SITENAME}`}
+        description={`Watch and download ${movieDetail.title || "movie"} Tamil dubbed anime movie online in HD 1080p, 720p with multi-audio (Tamil, Telugu, Hindi, English). Fast streaming and direct Telegram downloads on ${SITENAME} - Best anime streaming website.`}
         name={SITENAME}
         type="video.movie"
-        keywords={movieDetail.genres ? movieDetail.genres.join(", ") : "watch movies online, watch hd movies"}
+        mediaType="movie"
+        rating={movieDetail.rating}
+        genres={movieDetail.genres || []}
+        keywords={[
+          `${movieDetail.title || "movie"} tamil dubbed`,
+          `${movieDetail.title || "movie"} tamil dubbed movie`,
+          `watch ${movieDetail.title || "movie"} in tamil`,
+          `${movieDetail.title || "movie"} anime download`,
+          "tamil dubbed anime movies",
+          "regional anime dubs",
+          "best anime streaming website",
+          ...(movieDetail.genres || [])
+        ].join(", ")}
         link={window.location.href}
         image={movieDetail.backdrop || movieDetail.poster}
       />

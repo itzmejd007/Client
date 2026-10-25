@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useSettings } from "../context/SettingsContext";
+import { canTriggerRedirectAd, recordRedirectAd } from "../utils/adManager";
 
 /**
  * Safely parses and injects HTML + executable scripts into a target container.
@@ -43,6 +44,7 @@ const AdComponent = ({ type, className = "" }) => {
     const showAds = settings?.showAds !== false; // Active if enabled
 
     const isOverlay = ["adPopup", "adSocialBar", "adSmartlink"].includes(type);
+    const isRedirectAd = ["adPopup", "adSmartlink"].includes(type);
     const isContentDelivery = typeof window !== "undefined" && window.location.pathname.startsWith("/content-delivery");
 
     useEffect(() => {
@@ -52,6 +54,15 @@ const AdComponent = ({ type, className = "" }) => {
         if (isOverlay) {
             if (!isContentDelivery) {
                 return; // Absolutely prohibited on normal browsing pages
+            }
+
+            // Frequency Cap Check: Limit intrusive redirect/popunder ads to 2-3 times per user
+            if (isRedirectAd && !canTriggerRedirectAd()) {
+                return;
+            }
+
+            if (isRedirectAd) {
+                recordRedirectAd();
             }
 
             const overlayContainer = document.createElement("div");

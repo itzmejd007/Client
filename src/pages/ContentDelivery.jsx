@@ -17,6 +17,7 @@ import { PiTelegramLogo } from "react-icons/pi";
 import SEO from "../components/SEO";
 import AdComponent from "../components/AdComponent";
 import { useSettings } from "../context/SettingsContext";
+import { canTriggerRedirectAd, recordRedirectAd, getRemainingRedirectAds } from "../utils/adManager";
 
 export default function ContentDelivery() {
   const [searchParams] = useSearchParams();
@@ -32,10 +33,11 @@ export default function ContentDelivery() {
   const size = searchParams.get("size") || "";
 
   // ── Ad Verification State & Timers ──────────────────────────────────────────
+  const isCappedInitially = !canTriggerRedirectAd();
   const [hasClickedAd, setHasClickedAd] = useState(false);
-  const [isAdVerified, setIsAdVerified] = useState(false);
+  const [isAdVerified, setIsAdVerified] = useState(isCappedInitially);
   const [verificationError, setVerificationError] = useState("");
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(isCappedInitially);
   const [hasStartedDownload, setHasStartedDownload] = useState(false);
 
   const leaveTimestampRef = useRef(null);
@@ -114,6 +116,17 @@ export default function ContentDelivery() {
 
   // Handle clicking on an Ad / Sponsor Card -> Opens real Adsterra redirect ad
   const handleAdInteraction = () => {
+    if (!canTriggerRedirectAd()) {
+      setIsAdVerified(true);
+      setVerificationSuccess(true);
+      setVerificationError("");
+      if (destinationRef.current) {
+        destinationRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    recordRedirectAd();
     setHasClickedAd(true);
     leaveTimestampRef.current = Date.now();
     setVerificationError("");

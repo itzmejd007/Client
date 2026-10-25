@@ -1,9 +1,9 @@
 User-agent: *
-
 Allow: /
 
 Disallow: /admin
 Disallow: /similarMov/
 Disallow: /similarSeries/
 
-Sitemap: https://www.animetoon.in/sitemap.xml
+Sitemap: https://animetoon.in/sitemap.xml
+Sitemap: https://api.animetoon.in/sitemap.xml

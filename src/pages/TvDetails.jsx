@@ -132,11 +132,25 @@ export default function TvDetails() {
 
       {/* SEO SECTION */}
       <SEO
-        title={seriesDetail.title ? `${seriesDetail.title} - ${SITENAME}` : SITENAME}
-        description={seriesDetail.description || `Watch ${seriesDetail.title || "series"} online free on ${SITENAME}.`}
+        title={seriesDetail.title ? `${seriesDetail.title} Tamil Dubbed Anime All Episodes - Watch & Download HD | ${SITENAME}` : `Tamil Dubbed Anime Series - ${SITENAME}`}
+        description={`Watch and download ${seriesDetail.title || "anime"} Tamil dubbed full episodes online in HD 1080p, 720p with multi-audio (Tamil, Telugu, Hindi, English). Fast streaming and direct Telegram downloads on ${SITENAME} - Best anime streaming website.`}
         name={SITENAME}
         type="video.tv_show"
-        keywords={seriesDetail.genres ? seriesDetail.genres.join(", ") : "watch series online, watch hd series"}
+        mediaType="tv"
+        rating={seriesDetail.rating}
+        genres={seriesDetail.genres || []}
+        keywords={[
+          `${seriesDetail.title || "anime"} tamil dubbed`,
+          `${seriesDetail.title || "anime"} tamil dubbed anime`,
+          `watch ${seriesDetail.title || "anime"} in tamil`,
+          `${seriesDetail.title || "anime"} episodes download tamil`,
+          `${seriesDetail.title || "anime"} cartoon series tamil`,
+          "tamil dubbed anime",
+          "tamil dubbed cartoons",
+          "regional anime dubs",
+          "best anime streaming website",
+          ...(seriesDetail.genres || [])
+        ].join(", ")}
         link={window.location.href}
         image={seriesDetail.backdrop || seriesDetail.poster}
       />

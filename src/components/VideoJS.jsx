@@ -58,7 +58,7 @@ const QualitySelector = ({ sources, currentSrc, onQualityChange }) => {
 };
 
 // ─── Main VideoJS Component ───
-export const VideoJS = ({ options, onReady }) => {
+export const VideoJS = ({ options, onReady, onEnded }) => {
   const [currentSource, setCurrentSource] = useState(options.sources?.[0] || {});
   const [error, setError] = useState(false);
   const videoRef = React.useRef(null);
@@ -154,6 +154,10 @@ export const VideoJS = ({ options, onReady }) => {
             crossOrigin="anonymous"
             disablePictureInPicture
             onLoadedMetadata={handleLoadedMetadata}
+            onEnded={(e) => {
+              if (options?.onEnded) options.onEnded(e);
+              if (onEnded) onEnded(e);
+            }}
             onError={(e) => {
               setError(true);
             }}

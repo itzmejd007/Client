@@ -325,7 +325,7 @@ const DownloadButton = ({ movieData, btnType, seasonNumber, episodeNumber, episo
       <PopoverContent className="bg-btnColor max-w-[calc(100vw-2rem)] shadow-2xl">
         {movieData.media_type === "movie"
           ? <div className="px-1 py-2 flex gap-1 flex-wrap justify-center">{renderMovieButtons()}</div>
-          : (seasonNumber && episodeNumber)
+          : (seasonNumber !== undefined && seasonNumber !== null && episodeNumber !== undefined && episodeNumber !== null)
             ? <div className="px-1 py-2 flex gap-1 flex-wrap justify-center">{renderEpisodeButtons()}</div>
             : renderShowSelectors()}
       </PopoverContent>
