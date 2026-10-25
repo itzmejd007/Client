@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://api.animetoon.in/sitemap.xml"
+    },
+    {
+      "source": "/api/sitemap.xml",
+      "destination": "https://api.animetoon.in/sitemap.xml"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
