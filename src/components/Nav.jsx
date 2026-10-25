@@ -12,6 +12,7 @@ import { BiHomeAlt2, BiSolidMovie, BiStar, BiLibrary } from "react-icons/bi";
 
 import { BsTv } from "react-icons/bs";
 import { PiHeartFill } from "react-icons/pi";
+import { FaShieldAlt } from "react-icons/fa";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalAd from "./GlobalAd";
@@ -410,16 +411,17 @@ export default function Nav() {
                 >
                   <div className="flex flex-col gap-2">
                     {[
-                      { icon: BiHomeAlt2, name: "Home" },
-                      { icon: BiSolidMovie, name: "Movies" },
-                      { icon: BsTv, name: "Series" },
-                      { icon: BiLibrary, name: "Collections" },
-                      { icon: PiHeartFill, name: "Watchlist" },
+                      { icon: BiHomeAlt2, name: "Home", path: "/" },
+                      { icon: BiSolidMovie, name: "Movies", path: "/movies" },
+                      { icon: BsTv, name: "Series", path: "/series" },
+                      { icon: BiLibrary, name: "Collections", path: "/collections" },
+                      { icon: PiHeartFill, name: "Watchlist", path: "/watchlist" },
+                      { icon: FaShieldAlt, name: "DMCA", path: "/dmca" },
                     ].map((navItem, index) => {
                       return (
                         <Link
                           key={index}
-                          to={navItem.name === "Home" ? "/" : navItem.name.toLowerCase()}
+                          to={navItem.path}
                           className={
                             navStatus === navItem.name
                               ? "flex items-center gap-4 p-3 rounded-xl bg-otherColor/10 text-otherColor transition-all"

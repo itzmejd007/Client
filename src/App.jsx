@@ -42,6 +42,7 @@ const NotFoundPage = lazyWithRetry(() => import("./pages/NotFound"));
 const Collections = lazyWithRetry(() => import("./pages/Collections"));
 const Collection = lazyWithRetry(() => import("./pages/Collection"));
 const ContentDelivery = lazyWithRetry(() => import("./pages/ContentDelivery"));
+const DMCA = lazyWithRetry(() => import("./pages/DMCA"));
 
 import FloatingTelegram from "./components/FloatingTelegram";
 
@@ -107,6 +108,7 @@ function App() {
             <Route path="/Series" element={<Series />} />
             <Route path="/collections" element={<Collections />} />
             <Route path="/collection/:id" element={<Collection />} />
+            <Route path="/dmca" element={<DMCA />} />
             <Route path="*" element={<NotFoundPage />} />
             <Route path="/similarMov/:movieID" element={<SimilarMov />} />
             <Route path="/similarSeries/:seriesID" element={<SimilarSeries />} />

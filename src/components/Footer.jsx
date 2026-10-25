@@ -95,23 +95,34 @@ export default function Footer() {
               </Link>
               <Link
                 to="/series"
-                className="ftransition-all duration-300 ease-in-out hover:text-primaryTextColor"
+                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
               >
                 <li>series</li>
+              </Link>
+              <Link
+                to="/collections"
+                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
+              >
+                <li>collections</li>
+              </Link>
+              <Link
+                to="/dmca"
+                className="transition-all duration-300 ease-in-out text-otherColor font-semibold hover:underline"
+              >
+                <li>DMCA Disclaimer</li>
               </Link>
             </ul>
           </div>
         </div>
-        <div className="border-t-2 border-btnColor  py-6  mt-5 ">
-          <div className="flex flex-col gap-5 items-center  justify-center md:items-center w-11/12 m-auto sm:text-center  sm:flex-row sm:items-start">
+        <div className="border-t-2 border-btnColor py-6 mt-5">
+          <div className="flex flex-col gap-3 items-center justify-between w-11/12 m-auto sm:text-center sm:flex-row">
             {/* BOTTOM FOOTER LEFT */}
-            <div className="flex items-center gap-1 text-sm text-secondaryTextColor md:text-md">
-              <button className="relative text-sm w-4 h-4 rounded-full border-2 border-secondaryTextColor p-2">
-                <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                  C
-                </p>
-              </button>
-              <p className="uppercase">{SITENAME}. All Rights Reserved</p>
+            <div className="flex items-center gap-2 text-sm text-secondaryTextColor md:text-md flex-wrap justify-center sm:justify-start">
+              <span className="uppercase font-medium">&copy; {new Date().getFullYear()} {SITENAME}. All Rights Reserved</span>
+              <span className="text-white/20">•</span>
+              <Link to="/dmca" className="hover:text-otherColor transition-colors underline underline-offset-2">
+                DMCA Notice
+              </Link>
             </div>
           </div>
           {/* Developer Credits */}
