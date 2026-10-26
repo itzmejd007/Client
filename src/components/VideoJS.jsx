@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPlayer, usePlayer } from '@videojs/react';
 import { videoFeatures, VideoSkin, Video } from '@videojs/react/video';
 import '@videojs/react/video/skin.css';
-import { MdSettings } from 'react-icons/md';
+import { MdSettings, MdCheck } from 'react-icons/md';
+import { FiX } from 'react-icons/fi';
 
 // Create a single player instance (must be outside component)
 const Player = createPlayer({ features: videoFeatures });
@@ -12,48 +13,89 @@ const QualitySelector = ({ sources, currentSrc, onQualityChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const controlsVisible = usePlayer((s) => s.controlsVisible);
 
-  // Hide menu when controls hide
-  useEffect(() => {
-    if (!controlsVisible) setIsOpen(false);
-  }, [controlsVisible]);
-
   if (!sources || sources.length <= 1) return null;
 
   return (
-    <div
-      className={`vjsx-quality ${controlsVisible ? 'vjsx-quality--visible' : ''}`}
-    >
-      {/* Dropdown menu */}
-      <div className={`vjsx-quality-menu ${isOpen ? 'vjsx-quality-menu--open' : ''}`}>
-        <div className="vjsx-quality-header">Quality</div>
-        {sources.map((source, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => {
-              onQualityChange(source);
-              setIsOpen(false);
-            }}
-            className={`vjsx-quality-item ${
-              currentSrc === source.src ? 'vjsx-quality-item--active' : ''
-            }`}
-          >
-            <span>{source.label || `Quality ${i + 1}`}</span>
-            {currentSrc === source.src && <span className="vjsx-quality-dot" />}
-          </button>
-        ))}
+    <>
+      {/* Gear Trigger Button — cleanly positioned inside player controls */}
+      <div
+        className={`vjsx-quality-trigger ${controlsVisible || isOpen ? 'vjsx-quality-trigger--visible' : ''}`}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen((prev) => !prev);
+          }}
+          className={`vjsx-quality-btn ${isOpen ? 'vjsx-quality-btn--active' : ''}`}
+          aria-label="Video Quality Settings"
+          title="Change Quality"
+        >
+          <MdSettings />
+        </button>
       </div>
 
-      {/* Gear trigger */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`vjsx-quality-btn ${isOpen ? 'vjsx-quality-btn--active' : ''}`}
-        aria-label="Quality"
-      >
-        <MdSettings />
-      </button>
-    </div>
+      {/* Responsive In-Player Quality Sheet / Modal (Works in non-fullscreen vertical mode & fullscreen) */}
+      {isOpen && (
+        <div
+          className="vjsx-quality-overlay"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+        >
+          <div
+            className="vjsx-quality-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="vjsx-quality-header">
+              <div className="flex items-center gap-1.5">
+                <MdSettings className="text-pink-500 text-sm" />
+                <span className="font-bold text-xs uppercase tracking-wider text-white">
+                  Video Quality
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="vjsx-quality-close-btn"
+                aria-label="Close"
+              >
+                <FiX size={14} />
+              </button>
+            </div>
+
+            {/* Quality Options List */}
+            <div className="vjsx-quality-list">
+              {sources.map((source, i) => {
+                const isActive = currentSrc === source.src;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      onQualityChange(source);
+                      setIsOpen(false);
+                    }}
+                    className={`vjsx-quality-option ${isActive ? 'vjsx-quality-option--active' : ''}`}
+                  >
+                    <span className="font-semibold text-xs tracking-wide">
+                      {source.label || `Quality ${i + 1}`}
+                    </span>
+                    {isActive ? (
+                      <span className="vjsx-quality-active-badge">
+                        <MdCheck size={14} />
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -158,12 +200,12 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
               if (options?.onEnded) options.onEnded(e);
               if (onEnded) onEnded(e);
             }}
-            onError={(e) => {
+            onError={() => {
               setError(true);
             }}
           />
           
-          {/* Quality selector — moved inside VideoSkin so it's visible in fullscreen */}
+          {/* Quality selector — responsive in both non-fullscreen vertical mode and fullscreen */}
           <QualitySelector
             sources={options.sources}
             currentSrc={currentSource.src}
@@ -206,22 +248,22 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
           }
 
           /* ═══════════════════════════════════════
-             Theme — orange accent
+             Theme — pink accent
              ═══════════════════════════════════════ */
           .vjsx-skin {
-            --media-primary-color: #ff8c00;
+            --media-primary-color: #ff2a85;
             --media-border-radius: 0;
           }
           .vjsx-skin .media-slider__fill {
-            background: linear-gradient(90deg, #ff8c00, #ff4500) !important;
+            background: linear-gradient(90deg, #ff2a85, #ec4899) !important;
           }
           .vjsx-skin .media-slider__thumb {
             background: #fff !important;
-            box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+            box-shadow: 0 0 8px rgba(255, 42, 133, 0.8);
           }
 
           /* ═══════════════════════════════════════
-             Hide PiP, Cast & Mute buttons (CSS only, no JS polling)
+             Hide PiP, Cast & Mute buttons
              ═══════════════════════════════════════ */
           .vjsx-skin .media-button--pip,
           .vjsx-skin .media-button--cast,
@@ -230,141 +272,184 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
           }
 
           /* ═══════════════════════════════════════
-             Quality Selector — responsive for all viewports
+             Quality Trigger Button
+             Positioned in player controls area
              ═══════════════════════════════════════ */
-          .vjsx-quality {
+          .vjsx-quality-trigger {
             position: absolute;
             z-index: 50;
-            /* Mobile default: above the wrapped 2-row control bar */
-            bottom: 6rem;
-            right: 1rem;
+            bottom: 3.25rem;
+            right: 0.75rem;
             opacity: 0;
             pointer-events: none;
             transition: opacity 200ms ease;
           }
-          .vjsx-quality--visible {
+          .vjsx-quality-trigger--visible {
             opacity: 1;
             pointer-events: auto;
           }
 
-          /* Desktop: single-row control bar, sit safely above it */
           @media (min-width: 672px) {
-            .vjsx-quality {
-              bottom: 4rem;
-              right: 1.5rem;
+            .vjsx-quality-trigger {
+              bottom: 3.5rem;
+              right: 1.25rem;
             }
           }
 
-          /* Fullscreen: adjust for full viewport */
-          :fullscreen .vjsx-quality,
-          :-webkit-full-screen .vjsx-quality {
-            bottom: 6.5rem;
+          :fullscreen .vjsx-quality-trigger,
+          :-webkit-full-screen .vjsx-quality-trigger {
+            bottom: 4.5rem;
             right: 1.5rem;
-          }
-          @media (min-width: 672px) {
-            :fullscreen .vjsx-quality,
-            :-webkit-full-screen .vjsx-quality {
-              bottom: 4.5rem;
-              right: 2rem;
-            }
           }
 
           .vjsx-quality-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
-            border: none;
+            width: 38px;
+            height: 38px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.9);
             cursor: pointer;
             transition: all 200ms;
-            font-size: 26px !important;
+            font-size: 20px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
           }
           .vjsx-quality-btn:hover {
             color: #fff;
-            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 42, 133, 0.8);
+            background: rgba(255, 42, 133, 0.2);
+            transform: scale(1.05);
           }
           .vjsx-quality-btn--active {
-            color: #ff8c00 !important;
+            color: #ff2a85 !important;
+            border-color: #ff2a85 !important;
+            background: rgba(255, 42, 133, 0.25) !important;
             transform: rotate(90deg);
           }
 
-          .vjsx-quality-menu {
+          /* ═══════════════════════════════════════
+             Quality Selection Modal / Overlay
+             Fixes vertical non-fullscreen clipping!
+             ═══════════════════════════════════════ */
+          .vjsx-quality-overlay {
             position: absolute;
-            bottom: calc(100% + 0.5rem);
-            right: 0;
-            min-width: 140px;
-            max-width: calc(100vw - 2rem);
-            padding: 0.375rem;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(16px) saturate(1.5);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 0.875rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            scale: 0.85;
-            pointer-events: none;
-            transform-origin: bottom right;
-            transition: opacity 150ms, scale 150ms;
-          }
-          .vjsx-quality-menu--open {
-            opacity: 1;
-            scale: 1;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
             pointer-events: auto;
+            animation: vjsxFadeIn 150ms ease-out;
           }
 
-          /* On small screens, flip menu to open left if near right edge */
-          @media (max-width: 400px) {
-            .vjsx-quality-menu {
-              right: auto;
-              left: 0;
-              transform-origin: bottom left;
-            }
+          @keyframes vjsxFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
+          .vjsx-quality-modal {
+            width: 100%;
+            max-width: 240px;
+            max-height: calc(100% - 16px);
+            display: flex;
+            flex-direction: column;
+            background: rgba(13, 14, 22, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 8px 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 42, 133, 0.25);
+            overflow: hidden;
+            animation: vjsxScaleIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+          }
+
+          @keyframes vjsxScaleIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
           }
 
           .vjsx-quality-header {
-            padding: 6px 10px 8px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(255, 255, 255, 0.3);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 4px;
+            flex-shrink: 0;
           }
 
-          .vjsx-quality-item {
+          .vjsx-quality-close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 120ms;
+          }
+          .vjsx-quality-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+          }
+
+          .vjsx-quality-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+            max-height: 180px;
+            padding-right: 2px;
+          }
+
+          .vjsx-quality-list::-webkit-scrollbar {
+            width: 3px;
+          }
+          .vjsx-quality-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+          }
+
+          .vjsx-quality-option {
             display: flex;
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            padding: 10px 12px;
-            border: none;
-            border-radius: 8px;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
+            padding: 7px 10px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.85);
             cursor: pointer;
             transition: all 120ms;
+            text-align: left;
           }
-          .vjsx-quality-item:hover {
-            background: rgba(255, 255, 255, 0.06);
+          .vjsx-quality-option:hover {
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
+            border-color: rgba(255, 255, 255, 0.1);
           }
-          .vjsx-quality-item--active {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            font-weight: 600;
+          .vjsx-quality-option--active {
+            background: rgba(255, 42, 133, 0.18) !important;
+            border-color: rgba(255, 42, 133, 0.5) !important;
+            color: #ff2a85 !important;
+            font-weight: 700;
           }
 
-          .vjsx-quality-dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #ff8c00;
-            box-shadow: 0 0 6px rgba(255, 140, 0, 0.7);
+          .vjsx-quality-active-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff2a85;
           }
 
           /* ═══════════════════════════════════════
@@ -411,8 +496,8 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
           .vjsx-error-hint {
             font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.35);
-            background: rgba(255, 140, 0, 0.05);
-            border: 1px solid rgba(255, 140, 0, 0.1);
+            background: rgba(255, 42, 133, 0.05);
+            border: 1px solid rgba(255, 42, 133, 0.15);
             border-radius: 0.75rem;
             padding: 0.5rem 0.75rem;
             margin-bottom: 1rem;
@@ -420,7 +505,7 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
             line-height: 1.5;
           }
           .vjsx-error-hint strong {
-            color: #ff8c00;
+            color: #ff2a85;
           }
           .vjsx-error-actions {
             display: flex;

@@ -1,147 +1,141 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Author  : ThiruXD
-// GitHub  : https://github.com/ThiruXD
-// Portfolio: https://thiruxd.is-a.dev
+// Author  : ThiruXD / AnimeToon
+// Component: AniAbyss-inspired Anime Platform Footer
 // ─────────────────────────────────────────────────────────────────────────────
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import GlobalAd from "./GlobalAd";
+import { Link } from "react-router-dom";
+import { FaShieldAlt } from "react-icons/fa";
+import { PiTelegramLogo } from "react-icons/pi";
 import { useSettings } from "../context/SettingsContext";
 
 export default function Footer() {
   const { settings } = useSettings();
-  const TG_URL = settings.telegramUrl;
-  const SITENAME = settings.siteName;
-
-  const location = useLocation();
+  const TG_URL = settings?.telegramUrl || "https://t.me/AnimeToonXYZ";
+  const SITENAME = settings?.siteName || "AnimeToon";
 
   return (
-    <>
-      <section className="relative pt-10 border-t-2 border-btnColor xxl:container m-auto">
+    <footer className="relative pt-10 pb-20 md:pb-8 border-t border-white/[0.08] bg-[#07070b]/90 backdrop-blur-2xl text-zinc-400 mt-12 w-full">
+      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-10">
+        
         {/* TOP OF FOOTER */}
-        <div className="flex flex-col items-start justify-between w-11/12 gap-6 m-auto md:flex-row ">
-          {/* LEFT */}
-          <div className="p-0 w-full md:w-1/3 lg:p-6">
-            <div className="flex items-center text-secondaryTextColor uppercase gap-4 mb-4 font-bold text-2xl">
-              <a href="/" className="-space-y-1">
-                <p className="text-2xl text-otherColor">{SITENAME}</p>
-              </a>
-            </div>
-            <p className="text-sm text-secondaryTextColor lg:text-md">
-              This site does not store any file on the server, it only links
-              to media files which are hosted on Telegram.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 pb-8 border-b border-white/[0.06]">
+          
+          {/* LEFT: BRAND INFO */}
+          <div className="space-y-3">
+            <Link to="/" className="inline-block">
+              <span className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(255,42,133,0.8)]"></span>
+                {SITENAME}
+              </span>
+            </Link>
+            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm">
+              Watch and explore your favorite anime in Hindi Dubbed, Tamil Dubbed, Multi Audio, and English Subbed with high speed streaming in HD.
             </p>
-            <div className="flex items-center gap-3 mt-6 ">
-              <a
-                href={TG_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <svg
-                  width="100"
-                  height="100"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="cursor-pointer w-8"
+            <p className="text-[11px] text-zinc-300 leading-normal">
+              Disclaimer: This site does not host or store any video files on its servers. All media is indexed from third-party hosting services including Telegram.
+            </p>
+
+            {/* Telegram Community Button */}
+            {TG_URL && (
+              <div className="pt-2">
+                <a
+                  href={TG_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2AABEE]/15 hover:bg-[#2AABEE]/25 text-[#2AABEE] hover:text-white border border-[#2AABEE]/30 text-xs font-bold transition-all active:scale-95 shadow-sm"
                 >
-                  <path
-                    d="M12,24c6.629,0 12,-5.371 12,-12c0,-6.629 -5.371,-12 -12,-12c-6.629,0 -12,5.371 -12,12c0,6.629 5.371,12 12,12zM5.491,11.74l11.57,-4.461c0.537,-0.194 1.006,0.131 0.832,0.943l0.001,-0.001l-1.97,9.281c-0.146,0.658 -0.537,0.818 -1.084,0.508l-3,-2.211l-1.447,1.394c-0.16,0.16 -0.295,0.295 -0.605,0.295l0.213,-3.053l5.56,-5.023c0.242,-0.213 -0.054,-0.333 -0.373,-0.121l-6.871,4.326l-2.962,-0.924c-0.643,-0.204 -0.657,-0.643 0.136,-0.953z"
-                    fill="var(--color-primary)"
-                  />
-                </svg>
-
-
-              </a>
-
-            </div>
+                  <PiTelegramLogo className="text-base" />
+                  <span>Join Telegram Channel</span>
+                </a>
+              </div>
+            )}
           </div>
-          {/* MIDDLE */}
-          <div className="p-0 w-full text-primaryTextColor md:w-1/3 lg:p-6 ">
-            <button className="border-b-2 border-otherColor text-xl cursor-default mb-5 md:text-2xl">
-              What we have
-            </button>
+
+          {/* MIDDLE: ANIME CATEGORIES (Replaces old KDrama/TV labels with anime-tailored tags) */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-zinc-300">
+              Anime Categories
+            </h3>
             <div className="flex gap-2 flex-wrap">
-              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
-                <h1 className="">Movies</h1>
-              </div>
-              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
-                <h1 className="">TV shows</h1>
-              </div>
-              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
-                <h1 className="">Anime</h1>
-              </div>
-              <div className="text-sm px-6 py-1 rounded-full bg-otherColor text-bgColor lg:text-md">
-                <h1 className="">K-Drama</h1>
-              </div>
+              {[
+                "Anime Series",
+                "Anime Movies",
+                "Hindi Dubbed",
+                "Tamil Dubbed",
+                "English Subbed",
+                "Multi Audio",
+                "Top Airing",
+                "Action Anime",
+              ].map((category, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs px-3 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-zinc-300 transition-colors"
+                >
+                  {category}
+                </span>
+              ))}
             </div>
           </div>
-          {/* RIGHT */}
-          <div className="p-0 w-full text-primaryTextColor md:w-1/3 lg:p-6">
-            <button className="border-b-2 border-otherColor text-xl cursor-default mb-5 md:text-2xl">
-              Quick Menu
-            </button>
-            <ul className="capitalize text-secondaryTextColor flex flex-col space-y-4 text-sm lg:text-md">
-              <Link
-                to="/"
-                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
-              >
-                <li>home</li>
-              </Link>
-              <Link
-                to="/movies"
-                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
-              >
-                <li>movies</li>
-              </Link>
-              <Link
-                to="/series"
-                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
-              >
-                <li>series</li>
-              </Link>
-              <Link
-                to="/collections"
-                className="transition-all duration-300 ease-in-out hover:text-primaryTextColor"
-              >
-                <li>collections</li>
-              </Link>
-              <Link
-                to="/dmca"
-                className="transition-all duration-300 ease-in-out text-otherColor font-semibold hover:underline"
-              >
-                <li>DMCA Disclaimer</li>
-              </Link>
+
+          {/* RIGHT: QUICK MENU & DMCA LINK */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-zinc-300">
+              Quick Navigation
+            </h3>
+            <ul className="grid grid-cols-2 gap-2.5 text-xs sm:text-sm font-medium">
+              <li>
+                <Link to="/" className="hover:text-white transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/series" className="hover:text-white transition-colors">
+                  Anime Series
+                </Link>
+              </li>
+              <li>
+                <Link to="/movies" className="hover:text-white transition-colors">
+                  Anime Movies
+                </Link>
+              </li>
+              <li>
+                <Link to="/collections" className="hover:text-white transition-colors">
+                  Collections
+                </Link>
+              </li>
+              <li>
+                <Link to="/watchlist" className="hover:text-white transition-colors">
+                  Watchlist
+                </Link>
+              </li>
+              {/* Highlighted DMCA Policy Link */}
+              <li className="col-span-2 pt-1">
+                <Link
+                  to="/dmca"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 border border-red-500/20 text-xs font-bold transition-all"
+                >
+                  <FaShieldAlt className="text-xs text-red-400" />
+                  <span>DMCA Copyright Notice</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="border-t-2 border-btnColor py-6 mt-5">
-          <div className="flex flex-col gap-3 items-center justify-between w-11/12 m-auto sm:text-center sm:flex-row">
-            {/* BOTTOM FOOTER LEFT */}
-            <div className="flex items-center gap-2 text-sm text-secondaryTextColor md:text-md flex-wrap justify-center sm:justify-start">
-              <span className="uppercase font-medium">&copy; {new Date().getFullYear()} {SITENAME}. All Rights Reserved</span>
-              <span className="text-white/20">•</span>
-              <Link to="/dmca" className="hover:text-otherColor transition-colors underline underline-offset-2">
-                DMCA Notice
-              </Link>
-            </div>
+
+        {/* BOTTOM COPYRIGHT BAR */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-300">
+          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+            <span>&copy; {new Date().getFullYear()} <strong className="text-zinc-200">{SITENAME}</strong>. All rights reserved.</span>
+            <span className="text-zinc-700">•</span>
+            <Link to="/dmca" className="hover:text-pink-400 underline underline-offset-4 transition-colors">
+              DMCA Takedown Policy
+            </Link>
           </div>
-          {/* Developer Credits */}
-          <div className="flex items-center justify-center mt-4 pb-2">
-            <p className="text-xs text-secondaryTextColor/50">
-              Developed by{" "}
-              <a
-                href="https://telegram.me/OsiRis_XBot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primaryBtn/70 hover:text-primaryBtn transition-colors duration-300 font-semibold"
-              >
-                OsiRisX
-              </a>
-            </p>
+          <div className="text-[11px] text-zinc-300">
+            High Quality Anime Streaming Experience
           </div>
         </div>
-      </section>
-
-    </>
+      </div>
+    </footer>
   );
 }

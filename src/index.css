@@ -15,8 +15,8 @@
     --color-text-secondary: 75 85 99;
     /* #4B5563 (gray-600) */
 
-    --color-primary: #50B498;
-    --color-primary-hover: #2ca0a0;
+    --color-primary: #ff2a85;
+    --color-primary-hover: #e01b70;
 
     /* Default Structural theme */
     --radius-base: 0.5rem;
@@ -25,16 +25,16 @@
   }
 
   .dark {
-    --color-bg: 0 0 0;
-    /* #000000 */
-    --color-bg-secondary: 51 51 51;
-    /* #333333 */
-    --color-btn: 31 31 31;
-    /* #1f1f1f */
+    --color-bg: 8 8 12;
+    /* #08080c (deep obsidian dark) */
+    --color-bg-secondary: 18 19 28;
+    /* #12131c */
+    --color-btn: 15 16 24;
+    /* #0f1018 */
     --color-text-primary: 255 255 255;
     /* #ffffff */
-    --color-text-secondary: 255 255 255;
-    /* #FFFFFF opacity handled in tailwind config or roughly 178 178 178 */
+    --color-text-secondary: 161 161 170;
+    /* #a1a1aa (zinc-400) */
   }
 
   /* Global Structural Themes */
@@ -110,12 +110,24 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-body {
+html, body {
   background: rgb(var(--color-bg));
   color: rgb(var(--color-text-primary));
+  overflow-x: hidden !important;
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root, .App {
+  overflow-x: hidden !important;
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
 }
 
 /* Mask */
@@ -442,4 +454,20 @@ body {
 .animate-loading-bar {
   width: 100%;
   animation: loading-bar 2s infinite ease-in-out;
+}
+
+/* Custom Scrollbar for Dropdowns and Modals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 42, 133, 0.4);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 42, 133, 0.7);
 }

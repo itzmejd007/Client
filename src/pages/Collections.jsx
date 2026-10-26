@@ -1,126 +1,235 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Author  : ThiruXD
-// GitHub  : https://github.com/ThiruXD
-// Portfolio: https://thiruxd.is-a.dev
+// Author  : ThiruXD / AnimeToon
+// Component: Collections Page (Manual Admin Curated + Auto-Detected Franchises)
 // ─────────────────────────────────────────────────────────────────────────────
-// src/pages/Collections.jsx
-// src/pages/Collections.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import SEO from "../components/SEO";
 import { useSettings } from "../context/SettingsContext";
-import { FiSearch } from "react-icons/fi";
-import Pagination from "../components/Pagination";
+import { FiSearch, FiLayers, FiCheckCircle } from "react-icons/fi";
+import { HiSparkles } from "react-icons/hi";
+import { detectFranchiseCollections } from "../utils/franchiseCollections";
 
 export default function Collections() {
   const { settings } = useSettings();
   const BASE = import.meta.env.VITE_BASE_URL;
-  const SITENAME = settings.siteName;
+  const SITENAME = settings?.siteName || "AnimeToon";
 
-  const [collections, setCollections] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("updated_on:desc");
+  const [manualCollections, setManualCollections] = useState([]);
+  const [autoCollections, setAutoCollections] = useState([]);
+  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'manual' | 'auto'
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const limit = 12;
-
-  // Reset to first page when search query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setIsLoading(true);
-    axios.get(`${BASE}/api/collections`, {
-      params: {
-        page: currentPage,
-        page_size: limit,
-        sort_by: sortBy,
-        query: searchQuery
-      }
-    })
-      .then(res => {
-        setCollections(res.data.collections || []);
-        setTotalCount(res.data.total_count || 0);
+
+    // 1. Fetch manual collections from API
+    const fetchManual = axios.get(`${BASE}/api/collections?page=1&page_size=100`);
+
+    // 2. Fetch movies and series to auto-detect franchises
+    const fetchTv = axios.get(`${BASE}/api/tvshows?page=1&page_size=200`).catch(() => ({ data: { tv_shows: [] } }));
+    const fetchMov = axios.get(`${BASE}/api/movies?page=1&page_size=200`).catch(() => ({ data: { movies: [] } }));
+
+    Promise.all([fetchManual, fetchTv, fetchMov])
+      .then(([manualRes, tvRes, movRes]) => {
+        const manual = (manualRes.data?.collections || []).map((col) => ({
+          ...col,
+          isAuto: false,
+        }));
+        setManualCollections(manual);
+
+        const allItems = [
+          ...(tvRes.data?.tv_shows || []).map((t) => ({ ...t, media_type: "tv" })),
+          ...(movRes.data?.movies || []).map((m) => ({ ...m, media_type: "movie" })),
+        ];
+
+        const detected = detectFranchiseCollections(allItems);
+        setAutoCollections(detected);
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error("Error fetching collections", err);
+      .catch((err) => {
+        console.error("Error loading collections:", err);
         setIsLoading(false);
       });
-  }, [BASE, sortBy, currentPage, searchQuery]);
+  }, [BASE]);
+
+  // Combine and filter collections
+  const filteredCollections = useMemo(() => {
+    let list = [];
+    if (activeTab === "manual") {
+      list = manualCollections;
+    } else if (activeTab === "auto") {
+      list = autoCollections;
+    } else {
+      list = [...manualCollections, ...autoCollections];
+    }
+
+    if (!searchQuery.trim()) return list;
+
+    const q = searchQuery.toLowerCase();
+    return list.filter(
+      (c) =>
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.description && c.description.toLowerCase().includes(q))
+    );
+  }, [manualCollections, autoCollections, activeTab, searchQuery]);
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-8">
       <SEO
-        title={`Collections - ${SITENAME}`}
-        description={`Browse our curated collections of movies and series on ${SITENAME}.`}
+        title={`Anime Collections & Franchises - ${SITENAME}`}
+        description={`Explore curated anime collections and auto-detected franchise universes like Naruto, Ben 10, Dragon Ball, One Piece, and more on ${SITENAME}.`}
         name={SITENAME}
         type="website"
       />
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <h1 className="text-2xl md:text-3xl font-black text-primaryTextColor flex items-center gap-2 relative z-10 w-fit">
-          Curated Collections
-          <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-primaryBtn rounded-full blur-sm opacity-50 mix-blend-screen"></span>
-          <span className="absolute -bottom-2 left-0 w-1/3 h-1 bg-primaryBtn rounded-full"></span>
-        </h1>
 
-        {/* Search Input */}
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4 border-b border-white/[0.08]">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-6 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,42,133,0.8)] inline-block" />
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Anime Collections & Franchises
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-zinc-400">
+            Curated anthologies, movie sagas & complete universe franchises
+          </p>
+        </div>
+
+        {/* Search Bar */}
         <div className="relative flex items-center w-full md:max-w-xs">
           <input
             type="text"
             placeholder="Search collections..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full py-2.5 pl-4 pr-10 rounded-xl bg-bgColorSecondary text-primaryTextColor placeholder-secondaryTextColor outline-none border border-secondaryTextColor/10 focus:border-primaryBtn/50 transition-all text-sm font-medium shadow-md"
+            className="w-full py-2 pl-9 pr-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white placeholder-zinc-400 outline-none border border-white/10 focus:border-pink-500/70 text-xs font-medium shadow-md transition-all"
           />
-          <FiSearch className="absolute right-3.5 text-secondaryTextColor pointer-events-none" size={18} />
+          <FiSearch className="absolute left-3 text-zinc-400 pointer-events-none" size={15} />
         </div>
       </div>
 
+      {/* Filter Tabs: All, Manual, Auto Franchises */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setActiveTab("all")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
+            activeTab === "all"
+              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
+              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
+          }`}
+        >
+          <FiLayers size={14} />
+          <span>All Collections ({manualCollections.length + autoCollections.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("auto")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
+            activeTab === "auto"
+              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
+              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
+          }`}
+        >
+          <HiSparkles size={14} className="text-amber-400" />
+          <span>Auto Franchises ({autoCollections.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("manual")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
+            activeTab === "manual"
+              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
+              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
+          }`}
+        >
+          <FiCheckCircle size={14} className="text-emerald-400" />
+          <span>Curated ({manualCollections.length})</span>
+        </button>
+      </div>
+
+      {/* Grid of Collections */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="aspect-video bg-bgColorSecondary rounded-2xl w-full"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-video bg-white/[0.05] rounded-2xl w-full border border-white/10" />
           ))}
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {collections.length === 0 ? (
-              <div className="col-span-full py-20 text-center text-secondaryTextColor font-medium">
-                No collections found matching "{searchQuery}"
-              </div>
-            ) : (
-              collections.map(col => (
-                <Link to={`/collection/${col.slug || col._id}`} key={col._id} className="group relative rounded-2xl overflow-hidden aspect-video block bg-bgColorSecondary transition-transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primaryBtn/20">
-                  <img src={col.thumbnail} alt={col.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
-                    <h2 className="text-xl md:text-2xl font-black text-white group-hover:text-primaryBtn transition-colors">{col.title}</h2>
-                    <p className="text-sm text-gray-300 font-medium">{col.items?.length || 0} Items</p>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-
-          {!isLoading && totalCount > limit && (
-            <div className="flex justify-center mt-12">
-              <Pagination
-                currentPage={currentPage}
-                total={totalCount}
-                limit={limit}
-                onPageChange={(page) => setCurrentPage(page)}
-                pagesNum={Math.ceil(totalCount / limit)}
-              />
-            </div>
+      ) : filteredCollections.length === 0 ? (
+        <div className="py-20 text-center text-zinc-400 font-medium space-y-2">
+          <p>No collections found matching "{searchQuery}".</p>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="px-4 py-1.5 rounded-lg bg-pink-500 text-white text-xs font-bold cursor-pointer"
+            >
+              Clear Search
+            </button>
           )}
-        </>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCollections.map((col) => {
+            const count = col.itemsCount || col.populated_items?.length || col.items?.length || 0;
+            const targetUrl = `/collection/${col.slug || col._id}`;
+
+            return (
+              <Link
+                to={targetUrl}
+                key={col._id || col.id}
+                className="group relative rounded-2xl overflow-hidden aspect-video block bg-[#10111a] border border-white/10 hover:border-pink-500/50 transition-all duration-300 hover:-translate-y-1 shadow-xl hover:shadow-[0_10px_30px_rgba(255,42,133,0.25)] select-none cursor-pointer"
+              >
+                <img
+                  src={col.thumbnail}
+                  alt={col.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 brightness-95"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200";
+                  }}
+                  loading="lazy"
+                />
+
+                {/* Badges Overlay */}
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                  {col.isAuto ? (
+                    <span className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-300 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                      <HiSparkles className="text-amber-400" />
+                      Auto Franchise
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-pink-500/30 text-pink-300 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                      Curated
+                    </span>
+                  )}
+
+                  <span className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/20 text-zinc-200 text-[10px] font-mono font-bold">
+                    {count} {count === 1 ? "Item" : "Items"}
+                  </span>
+                </div>
+
+                {/* Bottom Title & Description Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent flex flex-col justify-end p-5">
+                  <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-pink-400 transition-colors line-clamp-1 drop-shadow-md">
+                    {col.title}
+                  </h2>
+                  {col.description && (
+                    <p className="text-xs text-zinc-300 line-clamp-1 mt-0.5 font-normal">
+                      {col.description}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </div>
   );

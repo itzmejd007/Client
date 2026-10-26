@@ -19,7 +19,7 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 const DEFAULT_FALLBACK_SECTIONS = [
-  { _id: "default-trending", title: "Trending Now", layout: "slider", section_type: "trending", media_type: "both", limit: 14, enabled: true },
+  { _id: "default-trending", title: "Trending Now", layout: "slider", section_type: "trending", media_type: "both", limit: 10, enabled: true },
   { _id: "default-series", title: "Latest Anime Series", layout: "slider", section_type: "latest", media_type: "tv", limit: 14, enabled: true },
   { _id: "default-movies", title: "Latest Movies", layout: "slider", section_type: "latest", media_type: "movie", limit: 14, enabled: true },
 ];
@@ -50,7 +50,7 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
 
     const fallbackFetch = () => {
       if (section.section_type === "trending" || section._id === "default-trending") {
-        axios.get(`${BASE}/api/trending?page=1&page_size=${section.limit || 14}`)
+        axios.get(`${BASE}/api/trending?page=1&page_size=10`)
           .then((res) => { if (active) { setItems(res.data.results || []); setIsLoading(false); } })
           .catch(() => { if (active) setIsLoading(false); });
       } else if (section.media_type === "tv" || section._id === "default-series") {
@@ -107,6 +107,11 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
 
   if (!isLoading && items.length === 0 && section.section_type !== "loading") return null;
 
+  const isRanked =
+    section.section_type === "trending" ||
+    section._id === "default-trending" ||
+    (section.title && section.title.toLowerCase().includes("trending"));
+
   return (
     <>
       <TrendingSlider
@@ -115,6 +120,7 @@ function HomeSectionRow({ section, BASE, seeMoreLink }) {
         sectionTitle={section.title}
         sectionSeeMoreButtonLink={seeMoreLink}
         sectionId={section._id}
+        isRanked={isRanked}
       />
     </>
   );

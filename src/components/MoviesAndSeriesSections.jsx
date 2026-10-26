@@ -1,30 +1,27 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Author  : ThiruXD
-// GitHub  : https://github.com/ThiruXD
-// Portfolio: https://thiruxd.is-a.dev
-// ─────────────────────────────────────────────────────────────────────────────
-import React from "react";
+import React, { useMemo } from "react";
 import MovieCard from "./MovieCard";
 import MovieCardSkeleton, { SingleMovieCardSkeleton } from "./MovieCardSkeleton";
+import CustomDropdown from "./CustomDropdown";
+import { BiSort, BiCategory, BiCalendar, BiReset } from "react-icons/bi";
+import { FiFilter } from "react-icons/fi";
 
-/**
- * MoviesAndSeriesSections
- * ──────────────────────────────────────────────────────────────────────────────
- * Supports two rendering modes:
- *
- * 1. Classic mode (isStreaming = false):
- *    - isMovieDataLoading = true  → show full skeleton grid
- *    - isMovieDataLoading = false → show all cards
- *
- * 2. Hybrid streaming mode (isStreaming = true):
- *    - cards already arrived are rendered immediately
- *    - remaining slots show SingleMovieCardSkeleton placeholders
- *    - no full-page spinner ever blocks the view
- *
- * The SKELETON_COUNT is a reasonable estimate so that the grid doesn't
- * collapse when only a few cards have arrived yet.
- */
-const SKELETON_COUNT = 20;
+const SKELETON_COUNT = 21;
+
+// Verified release years of animes currently present in the database
+const DATABASE_CATALOG_YEARS = [
+  2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 
+  2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 
+  2006, 2005, 2004, 2003, 2002, 2001, 2000, 1999, 1998, 1995, 
+  1994, 1993, 1992, 1991, 1990, 1988, 1986
+];
+
+// Verified genres of animes currently present in the database
+const DATABASE_CATALOG_GENRES = [
+  "Action", "Action & Adventure", "Adventure", "Animation", "Comedy", 
+  "Crime", "Drama", "Family", "Fantasy", "Horror", "Kids", 
+  "Music", "Mystery", "Romance", "Sci-Fi", "Sci-Fi & Fantasy", 
+  "Science Fiction", "Supernatural", "TV Movie", "War & Politics"
+];
 
 export default function MoviesAndSeriesSections(props) {
   const { isMovieDataLoading, isStreaming, movieData = [] } = props;
@@ -35,171 +32,183 @@ export default function MoviesAndSeriesSections(props) {
       ? SKELETON_COUNT - movieData.length
       : 0;
 
+  // ── Dynamic Years: Full catalog years + any dynamically loaded items ───────
+  const dynamicYears = useMemo(() => {
+    const yearsSet = new Set(DATABASE_CATALOG_YEARS);
+    movieData.forEach((item) => {
+      if (item.release_year) {
+        const y = parseInt(item.release_year, 10);
+        if (!isNaN(y) && y >= 1970 && y <= 2030) {
+          yearsSet.add(y);
+        }
+      }
+    });
+
+    if (props.year && props.year !== "all") {
+      const activeY = parseInt(props.year, 10);
+      if (!isNaN(activeY)) yearsSet.add(activeY);
+    }
+
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [movieData, props.year]);
+
+  // ── Dynamic Genres: Full catalog genres + any dynamically loaded items ─────
+  const dynamicGenres = useMemo(() => {
+    const genresSet = new Set(DATABASE_CATALOG_GENRES);
+    movieData.forEach((item) => {
+      if (Array.isArray(item.genres)) {
+        item.genres.forEach((g) => {
+          if (g && typeof g === "string" && g.trim()) {
+            genresSet.add(g.trim());
+          }
+        });
+      }
+    });
+
+    if (props.genre && props.genre !== "all") {
+      genresSet.add(props.genre);
+    }
+
+    return Array.from(genresSet).sort((a, b) => a.localeCompare(b));
+  }, [movieData, props.genre]);
+
+  const sortOptions = [
+    { label: "Latest Added", value: "updated_on" },
+    { label: "Most Popular", value: "views" },
+    { label: "Top Rated", value: "rating" },
+    { label: "Release Year", value: "release_year" },
+  ];
+
+  const genreOptions = [
+    { label: "All Genres", value: "all" },
+    ...dynamicGenres.map((g) => ({ label: g, value: g.toLowerCase() })),
+  ];
+
+  const yearOptions = [
+    { label: "All Years", value: "all" },
+    ...dynamicYears.map((y) => ({ label: String(y), value: String(y) })),
+  ];
+
+  const hasActiveFilters =
+    (props.genre && props.genre !== "all") ||
+    (props.year && props.year !== "all") ||
+    (props.movieFilterVal && props.movieFilterVal !== "updated_on");
+
+  const handleResetFilters = () => {
+    if (props.setGenre) props.setGenre("all");
+    if (props.setYear) props.setYear("all");
+    if (props.setMovieFilterVal) props.setMovieFilterVal("updated_on");
+    if (props.setMovieFilter) props.setMovieFilter("updated_on");
+  };
+
   return (
-    <>
-      {/* ── Header: title + filters ───────────────────────────────────────── */}
-      <div className="mt-[5rem] flex items-center flex-wrap gap-5 text-primaryTextColor pb-[1.5rem]">
-        <div className="pl-[1rem] border-l-2 border-primaryBtn">
-          <p className="text-[0.8rem] uppercase font-bold sm:text-[1rem]">
-            {props.sectionTitle}
-          </p>
+    <div className="w-full space-y-6">
+      {/* ── Modern "Lite" Filter Bar (Custom Curved / Rounded Dropdowns) ───── */}
+      <div className="relative z-30 p-3 sm:p-4 rounded-2xl bg-[#0b0c14]/90 border border-white/[0.08] backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        
+        {/* Left: Section Title & Active Count */}
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-7 bg-pink-500 rounded-full shadow-[0_0_10px_rgba(255,42,133,0.8)]" />
+          <div>
+            <h1 className="text-base sm:text-xl font-black text-white tracking-tight">
+              {props.sectionTitle}
+            </h1>
+            <p className="text-[11px] text-zinc-400">
+              {movieData.length > 0 ? `${movieData.length} anime available` : "Discover anime"}
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center flex-wrap gap-6 text-secondaryTextColor w-full sm:w-auto mt-2 sm:mt-0">
-          {/* Sort Dropdown */}
-          {(props.dataType === "movies" || props.dataType === "series") && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">
-                Sort By:
-              </span>
-              <select
-                value={props.movieFilterVal}
-                onChange={(e) => {
-                  props.setMovieFilterVal(e.target.value);
-                  props.setMovieFilter(e.target.value);
-                }}
-                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{
-                  appearance: "none",
-                  backgroundImage:
-                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.7rem top 50%",
-                  backgroundSize: "0.65rem auto",
-                  paddingRight: "1.8rem",
-                }}
+        {/* Right: Custom Curved Glass Dropdowns (Sort, Genre, Year) */}
+        {(props.dataType === "movies" || props.dataType === "series") && (
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full md:w-auto">
+            
+            {/* Custom Sort Dropdown */}
+            <CustomDropdown
+              value={props.movieFilterVal}
+              onChange={(val) => {
+                props.setMovieFilterVal(val);
+                props.setMovieFilter(val);
+              }}
+              options={sortOptions}
+              icon={BiSort}
+              placeholder="Sort By"
+              isActive={props.movieFilterVal && props.movieFilterVal !== "updated_on"}
+              align="left"
+            />
+
+            {/* Custom Genre Dropdown */}
+            <CustomDropdown
+              value={props.genre}
+              onChange={(val) => props.setGenre(val)}
+              options={genreOptions}
+              icon={BiCategory}
+              placeholder="All Genres"
+              isActive={props.genre && props.genre !== "all"}
+              align="left"
+            />
+
+            {/* Custom Year Dropdown */}
+            <CustomDropdown
+              value={props.year}
+              onChange={(val) => props.setYear(val)}
+              options={yearOptions}
+              icon={BiCalendar}
+              placeholder="All Years"
+              isActive={props.year && props.year !== "all"}
+              align="right"
+            />
+
+            {/* Reset Filters Button */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30 transition-all cursor-pointer active:scale-95"
+                title="Reset all filters"
               >
-                <option value="updated_on">Latest</option>
-                <option value="views">Trending</option>
-                <option value="rating">Top Rated</option>
-                <option value="release_year">New</option>
-              </select>
-            </div>
-          )}
-
-          {/* Filter Dropdowns */}
-          {(props.dataType === "movies" || props.dataType === "series") && (
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-primaryTextColor">
-                Filters:
-              </span>
-
-              {/* Genre */}
-              <select
-                value={props.genre}
-                onChange={(e) => props.setGenre(e.target.value)}
-                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{
-                  appearance: "none",
-                  backgroundImage:
-                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.7rem top 50%",
-                  backgroundSize: "0.65rem auto",
-                  paddingRight: "1.8rem",
-                }}
-              >
-                <option value="all">All Genres</option>
-                <option value="action">Action</option>
-                <option value="adventure">Adventure</option>
-                <option value="comedy">Comedy</option>
-                <option value="drama">Drama</option>
-                <option value="fantasy">Fantasy</option>
-                <option value="horror">Horror</option>
-                <option value="mystery">Mystery</option>
-                <option value="romance">Romance</option>
-                <option value="sci-fi">Sci-Fi</option>
-                <option value="thriller">Thriller</option>
-                <option value="animation">Animation</option>
-                <option value="crime">Crime</option>
-                <option value="family">Family</option>
-              </select>
-
-              {/* Year */}
-              <select
-                value={props.year}
-                onChange={(e) => props.setYear(e.target.value)}
-                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{
-                  appearance: "none",
-                  backgroundImage:
-                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.7rem top 50%",
-                  backgroundSize: "0.65rem auto",
-                  paddingRight: "1.8rem",
-                }}
-              >
-                <option value="all">Any Year</option>
-                {Array.from(
-                  new Array(40),
-                  (_, i) => new Date().getFullYear() - i
-                ).map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-
-              {/* Audio */}
-              <select
-                value={props.audio}
-                onChange={(e) => props.setAudio(e.target.value)}
-                className="bg-btnColor text-primaryTextColor text-xs sm:text-sm py-1.5 px-3 rounded-full outline-none border border-transparent focus:border-otherColor cursor-pointer transition-colors"
-                style={{
-                  appearance: "none",
-                  backgroundImage:
-                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b1b1b1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.7rem top 50%",
-                  backgroundSize: "0.65rem auto",
-                  paddingRight: "1.8rem",
-                }}
-              >
-                <option value="all">Any Audio</option>
-                <option value="hi">Hindi</option>
-                <option value="en">English</option>
-                <option value="ta">Tamil</option>
-                <option value="te">Telugu</option>
-                <option value="ml">Malayalam</option>
-                <option value="kn">Kannada</option>
-                <option value="bn">Bengali</option>
-                <option value="mr">Marathi</option>
-                <option value="gu">Gujarati</option>
-                <option value="pa">Punjabi</option>
-                <option value="ja">Japanese</option>
-                <option value="ko">Korean</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-              </select>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Grid ─────────────────────────────────────────────────────────────── */}
-      <div>
-        {/* Full skeleton – only shown before any item has arrived */}
-        {isMovieDataLoading ? (
-          <MovieCardSkeleton />
-        ) : (
-          <div className="relative">
-            <div className="grid gap-x-2 gap-y-6 grid-cols-2 md:grid-cols-3 bsmmd:grid-cols-4 lg:grid-cols-5 blgxl:grid-cols-6 xl:grid-cols-7">
-              {/* Real cards that have already streamed in */}
-              {movieData.map((movie, index) => (
-                <MovieCard key={movie._id || index} movie={movie} />
-              ))}
-
-              {/* Skeleton placeholders for slots not yet filled by the stream */}
-              {skeletonSlots > 0 &&
-                [...Array(skeletonSlots)].map((_, i) => (
-                  <SingleMovieCardSkeleton key={`sk-${i}`} />
-                ))}
-            </div>
+                <BiReset size={16} />
+                <span>Reset</span>
+              </button>
+            )}
           </div>
         )}
       </div>
-    </>
+
+      {/* ── Anime Grid ───────────────────────────────────────────────────────── */}
+      <div className="relative z-0">
+        {isMovieDataLoading ? (
+          <MovieCardSkeleton />
+        ) : movieData.length === 0 ? (
+          <div className="py-20 text-center space-y-3">
+            <FiFilter className="text-3xl text-zinc-600 mx-auto" />
+            <p className="text-sm text-zinc-400 font-medium">
+              No anime found matching selected filters.
+            </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-4 py-2 rounded-xl bg-pink-500 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:bg-pink-400 transition-all cursor-pointer"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-x-3 gap-y-6 grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+            {movieData.map((movie, index) => (
+              <MovieCard key={movie._id || index} movie={movie} />
+            ))}
+
+            {/* Skeleton placeholders while streaming */}
+            {skeletonSlots > 0 &&
+              [...Array(skeletonSlots)].map((_, i) => (
+                <SingleMovieCardSkeleton key={`sk-${i}`} />
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

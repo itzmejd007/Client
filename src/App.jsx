@@ -90,7 +90,7 @@ function App() {
       <AdBlockDetector />
       <FloatingTelegram />
       <Nav />
-      <div className="px-3 md:px-10 pt-20 md:pt-20 pb-10">
+      <div className="w-full max-w-full overflow-x-hidden px-3 sm:px-6 md:px-10 pt-20 pb-20 md:pb-10 min-h-screen">
         <AdComponent type="adBanner" />
         <Suspense fallback={<PageLoader />}>
           <Routes>
