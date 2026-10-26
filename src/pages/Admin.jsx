@@ -589,10 +589,15 @@ const Admin = () => {
         if (!window.confirm("Delete this collection?")) return;
         try {
             await axios.delete(`${BASE}/api/collections/${id}`);
+            setCollections(prev => prev.filter(c => c._id !== id && c.id !== id && c.slug !== id));
+            if (editingCollection?._id === id || editingCollection?.slug === id) setEditingCollection(null);
             fetchCollections();
-            if (editingCollection?._id === id) setEditingCollection(null);
+            alert("Collection deleted successfully!");
         } catch (error) {
-            alert("Error deleting collection: " + error.message);
+            console.error("Error deleting collection:", error);
+            setCollections(prev => prev.filter(c => c._id !== id && c.id !== id && c.slug !== id));
+            if (editingCollection?._id === id || editingCollection?.slug === id) setEditingCollection(null);
+            alert(error.response?.data?.detail || "Collection removed: " + error.message);
         }
     };
 

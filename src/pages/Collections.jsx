@@ -56,16 +56,9 @@ export default function Collections() {
       });
   }, [BASE]);
 
-  // Combine and filter collections
+  // Combine and search collections
   const filteredCollections = useMemo(() => {
-    let list = [];
-    if (activeTab === "manual") {
-      list = manualCollections;
-    } else if (activeTab === "auto") {
-      list = autoCollections;
-    } else {
-      list = [...manualCollections, ...autoCollections];
-    }
+    const list = [...manualCollections, ...autoCollections];
 
     if (!searchQuery.trim()) return list;
 
@@ -75,13 +68,13 @@ export default function Collections() {
         (c.title && c.title.toLowerCase().includes(q)) ||
         (c.description && c.description.toLowerCase().includes(q))
     );
-  }, [manualCollections, autoCollections, activeTab, searchQuery]);
+  }, [manualCollections, autoCollections, searchQuery]);
 
   return (
     <div className="w-full space-y-8">
       <SEO
-        title={`Anime Collections & Franchises - ${SITENAME}`}
-        description={`Explore curated anime collections and auto-detected franchise universes like Naruto, Ben 10, Dragon Ball, One Piece, and more on ${SITENAME}.`}
+        title={`Anime Collections - ${SITENAME}`}
+        description={`Explore curated anime collections, movie sagas & complete universe franchises on ${SITENAME}.`}
         name={SITENAME}
         type="website"
       />
@@ -92,7 +85,7 @@ export default function Collections() {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-6 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,42,133,0.8)] inline-block" />
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Anime Collections & Franchises
+              Anime Collections
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400">
@@ -111,48 +104,6 @@ export default function Collections() {
           />
           <FiSearch className="absolute left-3 text-zinc-400 pointer-events-none" size={15} />
         </div>
-      </div>
-
-      {/* Filter Tabs: All, Manual, Auto Franchises */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button
-          type="button"
-          onClick={() => setActiveTab("all")}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
-            activeTab === "all"
-              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
-              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
-          }`}
-        >
-          <FiLayers size={14} />
-          <span>All Collections ({manualCollections.length + autoCollections.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("auto")}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
-            activeTab === "auto"
-              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
-              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
-          }`}
-        >
-          <HiSparkles size={14} className="text-amber-400" />
-          <span>Auto Franchises ({autoCollections.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("manual")}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 active:scale-95 ${
-            activeTab === "manual"
-              ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(255,42,133,0.4)]"
-              : "bg-white/[0.06] text-zinc-300 hover:text-white border border-white/10 hover:bg-white/[0.1]"
-          }`}
-        >
-          <FiCheckCircle size={14} className="text-emerald-400" />
-          <span>Curated ({manualCollections.length})</span>
-        </button>
       </div>
 
       {/* Grid of Collections */}
@@ -199,16 +150,9 @@ export default function Collections() {
 
                 {/* Badges Overlay */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
-                  {col.isAuto ? (
-                    <span className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-300 text-[10px] font-black uppercase tracking-wider shadow-sm">
-                      <HiSparkles className="text-amber-400" />
-                      Auto Franchise
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-pink-500/30 text-pink-300 text-[10px] font-black uppercase tracking-wider shadow-sm">
-                      Curated
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-pink-500/30 text-pink-300 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    Collection
+                  </span>
 
                   <span className="bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/20 text-zinc-200 text-[10px] font-mono font-bold">
                     {count} {count === 1 ? "Item" : "Items"}
