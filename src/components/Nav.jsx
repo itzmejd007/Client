@@ -11,6 +11,7 @@ import { BsTv } from "react-icons/bs";
 import { LuCalendarDays } from "react-icons/lu";
 import { PiHeartFill } from "react-icons/pi";
 import posterPlaceholder from "../assets/images/poster-placeholder.png";
+import siteLogo from "../assets/images/logo.png";
 import ThemeToggle from "./ThemeToggle";
 import ScheduleModal from "./ScheduleModal";
 
@@ -188,13 +189,13 @@ export default function Nav() {
     { icon: BiLibrary, name: "Collections", path: "/collections" },
   ];
 
-  // Mobile Bottom Navigator items (Home, Series, Movies, Schedule, Search)
+  // Mobile Bottom Navigator items (Home, Series, Movies, Schedule, Collections)
   const mobileBottomNavItems = [
     { icon: BiHomeAlt2, label: "Home", path: "/" },
     { icon: BsTv, label: "Series", path: "/series" },
     { icon: BiSolidMovie, label: "Movies", path: "/movies" },
     { icon: LuCalendarDays, label: "Schedule", isAction: true, onClick: () => setScheduleModalOpen(true) },
-    { icon: FiSearch, label: "Search", isAction: true, onClick: () => setMobileSearchOpen(prev => !prev) },
+    { icon: BiLibrary, label: "Collections", path: "/collections" },
   ];
 
   return (
@@ -203,7 +204,7 @@ export default function Nav() {
           TOP HEADER (Desktop + Mobile Compact) — AniAbyss Style
           ══════════════════════════════════════════════════════════ */}
       <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-white/[0.08] bg-black/65 backdrop-blur-2xl transition-all shadow-[0_8px_32px_0_rgba(0,0,0,0.45)]">
-        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-[1700px] mx-auto px-5 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
           
           {/* LEFT: LOGO / SITE TITLE */}
           <div className="flex items-center shrink-0">
@@ -230,9 +231,15 @@ export default function Nav() {
                   style={{ height: `${settings?.logoImageSize || 36}px` }}
                 />
               ) : (
-                <span className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent group-hover:to-pink-500 transition-all flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(255,42,133,0.8)] inline-block"></span>
-                  {settings?.siteName || SITENAME}
+                <span className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent group-hover:to-pink-500 transition-all flex items-center gap-2">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-zinc-950 border border-pink-500/50 shadow-[0_0_12px_rgba(255,42,133,0.45)] flex items-center justify-center p-0.5 shrink-0 group-hover:scale-110 transition-transform">
+                    <img
+                      src={siteLogo}
+                      alt={settings?.siteName || SITENAME}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span>{settings?.siteName || SITENAME}</span>
                 </span>
               )}
             </Link>
@@ -492,7 +499,7 @@ export default function Nav() {
               (item.label === "Home" && location.pathname === "/") ||
               (item.label === "Series" && (location.pathname.startsWith("/ser") || location.pathname.startsWith("/series"))) ||
               (item.label === "Movies" && (location.pathname.startsWith("/mov") || location.pathname.startsWith("/movies"))) ||
-              (item.label === "Search" && mobileSearchOpen);
+              (item.label === "Collections" && (location.pathname.startsWith("/collections") || location.pathname.startsWith("/collection")));
 
             if (item.isAction) {
               return (

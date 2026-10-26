@@ -119,8 +119,8 @@ const MovieCard = ({ movie, rank }) => {
         {rank !== undefined && rank !== null && (
           <div className="absolute -bottom-1 -right-0.5 sm:-bottom-1.5 sm:right-0.5 z-20 pointer-events-none select-none">
             <svg
-              viewBox="0 0 65 72"
-              className="w-12 h-14 sm:w-16 sm:h-20 md:w-20 md:h-24 overflow-visible"
+              viewBox="0 0 70 80"
+              className="w-16 h-20 sm:w-20 sm:h-24 md:w-24 md:h-28 overflow-visible"
               aria-label={`Rank ${rank}`}
             >
               <defs>
@@ -153,20 +153,20 @@ const MovieCard = ({ movie, rank }) => {
                 </linearGradient>
               </defs>
               <text
-                x="60"
-                y="64"
+                x="66"
+                y="74"
                 textAnchor="end"
                 fill={`url(#rank-grad-${rank}-${movie._id || movie.tmdb_id || 0})`}
                 stroke="#000000"
-                strokeWidth="4.5"
+                strokeWidth="5"
                 strokeLinejoin="round"
                 strokeLinecap="round"
                 style={{ paintOrder: "stroke fill" }}
-                fontSize="68"
+                fontSize="78"
                 fontStyle="italic"
                 fontWeight="900"
                 fontFamily="'Outfit', system-ui, sans-serif"
-                className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.9)]"
+                className="drop-shadow-[0_4px_6px_rgba(0,0,0,0.95)]"
               >
                 {rank}
               </text>
