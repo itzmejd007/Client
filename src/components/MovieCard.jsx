@@ -37,13 +37,13 @@ const MovieCard = ({ movie, rank }) => {
   // Styling helper for AniAbyss-style rank numbers
   const getRankGradient = (r) => {
     if (r === 1) {
-      return "from-amber-400 via-yellow-200 to-amber-500 drop-shadow-[0_4px_12px_rgba(245,158,11,0.6)]";
+      return "from-amber-300 via-yellow-400 to-amber-600";
     } else if (r === 2) {
-      return "from-zinc-100 via-pink-200 to-pink-500 drop-shadow-[0_4px_12px_rgba(255,42,133,0.6)]";
+      return "from-pink-300 via-rose-400 to-pink-600";
     } else if (r === 3) {
-      return "from-amber-500 via-orange-300 to-amber-700 drop-shadow-[0_4px_12px_rgba(249,115,22,0.5)]";
+      return "from-orange-300 via-amber-500 to-orange-600";
     }
-    return "from-white via-zinc-200 to-zinc-500 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]";
+    return "from-white via-zinc-200 to-zinc-400";
   };
 
   return (
@@ -116,24 +116,61 @@ const MovieCard = ({ movie, rank }) => {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════
-            ANIABYSS-STYLE RANKING NUMERAL (1, 2, 3...)
-            ══════════════════════════════════════════════════════════ */}
         {rank !== undefined && rank !== null && (
-          <div
-            className="absolute -bottom-2 right-1 sm:right-1.5 z-20 pointer-events-none select-none"
-            style={{ lineHeight: 0.75 }}
-          >
-            <span
-              className={`block text-6xl sm:text-7xl lg:text-8xl font-black italic bg-gradient-to-t ${getRankGradient(
-                rank
-              )} bg-clip-text text-transparent`}
-              style={{
-                WebkitTextStroke: "1.5px rgba(255, 255, 255, 0.85)",
-              }}
+          <div className="absolute -bottom-1 -right-0.5 sm:-bottom-1.5 sm:right-0.5 z-20 pointer-events-none select-none">
+            <svg
+              viewBox="0 0 65 72"
+              className="w-12 h-14 sm:w-16 sm:h-20 md:w-20 md:h-24 overflow-visible"
+              aria-label={`Rank ${rank}`}
             >
-              {rank}
-            </span>
+              <defs>
+                <linearGradient id={`rank-grad-${rank}-${movie._id || movie.tmdb_id || 0}`} x1="0%" y1="100%" x2="0%" y2="0%">
+                  {rank === 1 ? (
+                    <>
+                      <stop offset="0%" stopColor="#d97706" />
+                      <stop offset="50%" stopColor="#facc15" />
+                      <stop offset="100%" stopColor="#fef08a" />
+                    </>
+                  ) : rank === 2 ? (
+                    <>
+                      <stop offset="0%" stopColor="#be123c" />
+                      <stop offset="50%" stopColor="#fb7185" />
+                      <stop offset="100%" stopColor="#ffe4e6" />
+                    </>
+                  ) : rank === 3 ? (
+                    <>
+                      <stop offset="0%" stopColor="#c2410c" />
+                      <stop offset="50%" stopColor="#f97316" />
+                      <stop offset="100%" stopColor="#fed7aa" />
+                    </>
+                  ) : (
+                    <>
+                      <stop offset="0%" stopColor="#52525b" />
+                      <stop offset="50%" stopColor="#d4d4d8" />
+                      <stop offset="100%" stopColor="#ffffff" />
+                    </>
+                  )}
+                </linearGradient>
+              </defs>
+              <text
+                x="60"
+                y="64"
+                textAnchor="end"
+                fill={`url(#rank-grad-${rank}-${movie._id || movie.tmdb_id || 0})`}
+                stroke="#000000"
+                strokeWidth="4.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                style={{ paintOrder: "stroke fill" }}
+                fontSize="68"
+                fontStyle="italic"
+                fontWeight="900"
+                fontFamily="'Outfit', system-ui, sans-serif"
+                className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.9)]"
+              >
+                {rank}
+              </text>
+            </svg>
           </div>
         )}
 

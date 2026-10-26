@@ -337,23 +337,12 @@ export default function MoviesAndSeriesDetailsSections(props) {
                     </div>
                     
                     {/* Action Buttons Grid for Current Episode */}
-                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 text-primaryTextColor w-full">
+                    <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-2.5 text-primaryTextColor w-full">
                       {settings.showDownloadButton !== false && (
                         <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
                           <DownloadButton
                             movieData={props.movieData}
                             btnType="Download"
-                            seasonNumber={props.seasonNumber}
-                            episodeNumber={selectedEpisode?.episode_number}
-                            episodeData={selectedEpisode}
-                          />
-                        </div>
-                      )}
-
-                      {settings.showTelegramButton !== false && (
-                        <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
-                          <TelegramButton
-                            movieData={props.movieData}
                             seasonNumber={props.seasonNumber}
                             episodeNumber={selectedEpisode?.episode_number}
                             episodeData={selectedEpisode}
@@ -370,6 +359,17 @@ export default function MoviesAndSeriesDetailsSections(props) {
                           episodeData={selectedEpisode}
                         />
                       </div>
+
+                      {settings.showTelegramButton !== false && (
+                        <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
+                          <TelegramButton
+                            movieData={props.movieData}
+                            seasonNumber={props.seasonNumber}
+                            episodeNumber={selectedEpisode?.episode_number}
+                            episodeData={selectedEpisode}
+                          />
+                        </div>
+                      )}
 
                       {settings.showExternalLinks !== false && (selectedEpisode?.external_links?.length > 0 || props.movieData.external_links?.length > 0) && (
                         <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
@@ -405,7 +405,7 @@ export default function MoviesAndSeriesDetailsSections(props) {
                   </div>
                 ) : (
                   /* Movie Action Buttons Grid */
-                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 text-primaryTextColor w-full">
+                  <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-2.5 text-primaryTextColor w-full">
                     {settings.showDownloadButton !== false && (
                       <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
                         <DownloadButton
@@ -415,18 +415,18 @@ export default function MoviesAndSeriesDetailsSections(props) {
                       </div>
                     )}
 
-                    {settings.showTelegramButton !== false && (
-                      <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
-                        <TelegramButton movieData={props.movieData} />
-                      </div>
-                    )}
-
                     <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
                       <DownloadButton
                         movieData={props.movieData}
                         btnType="MX Player"
                       />
                     </div>
+
+                    {settings.showTelegramButton !== false && (
+                      <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">
+                        <TelegramButton movieData={props.movieData} />
+                      </div>
+                    )}
 
                     {settings.showExternalLinks !== false && props.movieData.external_links?.length > 0 && (
                       <div className="col-span-1 sm:flex-1 sm:min-w-[120px]">

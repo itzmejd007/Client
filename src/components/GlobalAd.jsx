@@ -85,11 +85,11 @@ const GlobalAd = ({ placement = 'header' }) => {
                 case 'playerBottom':
                     updatedAdCode = localStorage.getItem("adPlayerBottom");
                     break;
-                case 'top':
-                    updatedAdCode = localStorage.getItem("adTop");
-                    break;
                 default:
                     updatedAdCode = null;
+            }
+            if (!isContentDelivery && updatedAdCode && (updatedAdCode.includes('effectivegatecpm') || updatedAdCode.includes('profitablecpmrate') || updatedAdCode.includes('73396f53e4d0e2635a379ba01777a0aa') || placement === 'popup' || placement === 'header')) {
+                updatedAdCode = "";
             }
             setAdHtml(updatedAdCode || null);
         };

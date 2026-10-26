@@ -12,7 +12,33 @@ export default function CustomDropdown({
   align = "left",
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState(align);
   const dropdownRef = useRef(null);
+
+  // Compute safe placement (prevent clipping off left or right edge of viewport)
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const menuWidth = 220; // approximate width of dropdown
+      const screenWidth = window.innerWidth;
+
+      if (align === "right") {
+        // If not enough room to open leftwards, flip to open rightwards
+        if (rect.right - menuWidth < 12) {
+          setPlacement("left");
+        } else {
+          setPlacement("right");
+        }
+      } else {
+        // If not enough room to open rightwards, flip to open leftwards
+        if (rect.left + menuWidth > screenWidth - 12) {
+          setPlacement("right");
+        } else {
+          setPlacement("left");
+        }
+      }
+    }
+  }, [isOpen, align]);
 
   // Close when clicking outside
   useEffect(() => {
@@ -72,11 +98,12 @@ export default function CustomDropdown({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-[999] mt-2 min-w-[190px] sm:min-w-[210px] max-w-[280px] rounded-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_25px_rgba(255,42,133,0.2)] p-2 focus:outline-none animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-[999] mt-2 min-w-[190px] sm:min-w-[210px] max-w-[calc(100vw-24px)] rounded-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_25px_rgba(255,42,133,0.2)] p-2 focus:outline-none animate-in fade-in zoom-in-95 duration-150"
           style={{
             backgroundColor: "#11121d",
             opacity: 1,
-            ...(align === "right" ? { right: 0 } : { left: 0 }),
+            left: placement === "left" ? 0 : "auto",
+            right: placement === "right" ? 0 : "auto",
           }}
         >
           <div

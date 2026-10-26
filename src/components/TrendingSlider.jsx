@@ -136,9 +136,9 @@ export default function TrendingSlider({
                     )}
                 </div>
 
-                {/* Right: See All + Navigation Controls */}
+                {/* Right: See All (Only for non-trending sections) + Navigation Controls */}
                 <div className="flex items-center justify-end gap-2 shrink-0">
-                    {sectionSeeMoreButtonLink && (
+                    {!isRanked && sectionSeeMoreButtonLink && (
                         <Link
                             to={sectionSeeMoreButtonLink}
                             className="flex items-center gap-1 py-1.5 px-3 rounded-full text-[11px] sm:text-xs font-bold text-zinc-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all active:scale-95"

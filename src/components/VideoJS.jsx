@@ -273,12 +273,12 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
 
           /* ═══════════════════════════════════════
              Quality Trigger Button
-             Positioned in player controls area
+             Positioned in top-right corner
              ═══════════════════════════════════════ */
           .vjsx-quality-trigger {
             position: absolute;
             z-index: 50;
-            bottom: 3.25rem;
+            top: 0.75rem;
             right: 0.75rem;
             opacity: 0;
             pointer-events: none;
@@ -291,14 +291,14 @@ export const VideoJS = ({ options, onReady, onEnded }) => {
 
           @media (min-width: 672px) {
             .vjsx-quality-trigger {
-              bottom: 3.5rem;
-              right: 1.25rem;
+              top: 1rem;
+              right: 1rem;
             }
           }
 
           :fullscreen .vjsx-quality-trigger,
           :-webkit-full-screen .vjsx-quality-trigger {
-            bottom: 4.5rem;
+            top: 1.5rem;
             right: 1.5rem;
           }
 
