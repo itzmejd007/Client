@@ -52,7 +52,7 @@ export default function SimilarMovies() {
         name={SITENAME}
         type="website"
         keywords={`search, ${searchResult}, watch hd movies, watch full movies`}
-        link={`https://${SITENAME}.com/search/${searchResult}`}
+        link={typeof window !== "undefined" ? `${window.location.origin}/search/${encodeURIComponent(searchResult)}` : undefined}
       />
       {/* Movies Component */}
       <MoviesAndSeriesSections

@@ -97,7 +97,7 @@ export default function Series() {
         name={SITENAME}
         type="website"
         keywords="Tamil dubbed anime, anime series, watch anime online, Tamil anime episodes, Hindi dubbed anime, Telugu dubbed anime"
-        link={`https://www.animetoon.in/series`}
+        link={typeof window !== "undefined" ? `${window.location.origin}/series` : undefined}
       />
 
       {/* Slim streaming progress bar */}

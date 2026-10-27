@@ -103,7 +103,7 @@ export default function Movies() {
         name={SITENAME}
         type="website"
         keywords="watch movies online, free streaming movie, watch movies free, free hd movies, New Movie Releases, Top Movies of the Year, Watch Movies Online"
-        link={`https://${SITENAME}.com/movies`}
+        link={typeof window !== "undefined" ? `${window.location.origin}/movies` : undefined}
       />
 
       {/* Slim streaming progress bar – only shows while the NDJSON stream is open */}

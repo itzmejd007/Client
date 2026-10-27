@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/black-and-white.css";
 import { useSettings } from "../context/SettingsContext";
@@ -27,6 +27,7 @@ export default function Nav() {
   const { settings } = useSettings();
   const SITENAME = settings?.siteName || "AnimeToon";
   const BASE = import.meta.env.VITE_BASE_URL;
+  const navigate = useNavigate();
 
   // Search States
   const [query, setQuery] = useState("");
@@ -44,7 +45,33 @@ export default function Nav() {
 
   const location = useLocation();
   const searchInputRef = useRef(null);
-  const closeSearchResultsDropDown = useRef();
+  const closeSearchResultsDropDown = useRef(null);
+  const mobileSearchRef = useRef(null);
+
+  // Helper to reliably navigate to media detail page
+  const handleSelectResult = (result) => {
+    const isMovie = result.media_type === "movie";
+    const id = result.tmdb_id || result._id;
+    const slug = result.slug || slugify(result.title);
+    const targetUrl = isMovie ? `/mov/${id}/${slug}` : `/ser/${id}/${slug}`;
+
+    setQuery("");
+    setDebouncedVal("");
+    setMobileSearchOpen(false);
+    navigate(targetUrl);
+  };
+
+  // Helper to submit search query
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = (query || debouncedVal || "").trim();
+    if (trimmed) {
+      setQuery("");
+      setDebouncedVal("");
+      setMobileSearchOpen(false);
+      navigate(`/search/${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   // Listen for admin toggle visibility changes
   useEffect(() => {
@@ -102,26 +129,32 @@ export default function Nav() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedVal(query);
-    }, 400);
+    }, 350);
 
     return () => {
       clearTimeout(timer);
     };
   }, [query]);
 
-  // Click outside to close search dropdown
+  // Click / Touch outside to close search dropdown (safe for both desktop & mobile)
   useEffect(() => {
     const closeDropdownHandler = (event) => {
-      if (
+      const isInsideDesktop =
         closeSearchResultsDropDown.current &&
-        !closeSearchResultsDropDown.current.contains(event.target)
-      ) {
+        closeSearchResultsDropDown.current.contains(event.target);
+      const isInsideMobile =
+        mobileSearchRef.current &&
+        mobileSearchRef.current.contains(event.target);
+
+      if (!isInsideDesktop && !isInsideMobile) {
         setDebouncedVal("");
       }
     };
     document.addEventListener("mousedown", closeDropdownHandler);
+    document.addEventListener("touchstart", closeDropdownHandler);
     return () => {
       document.removeEventListener("mousedown", closeDropdownHandler);
+      document.removeEventListener("touchstart", closeDropdownHandler);
     };
   }, []);
 
@@ -203,7 +236,7 @@ export default function Nav() {
       {/* ══════════════════════════════════════════════════════════
           TOP HEADER (Desktop + Mobile Compact) — AniAbyss Style
           ══════════════════════════════════════════════════════════ */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-white/[0.08] bg-black/65 backdrop-blur-2xl transition-all shadow-[0_8px_32px_0_rgba(0,0,0,0.45)]">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/[0.08] bg-black/65 backdrop-blur-2xl transition-all shadow-[0_8px_32px_0_rgba(0,0,0,0.45)]">
         <div className="max-w-[1700px] mx-auto px-5 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
           
           {/* LEFT: LOGO / SITE TITLE */}
@@ -290,7 +323,7 @@ export default function Nav() {
             
             {/* Desktop Real-time Search Input */}
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSearchSubmit}
               className="relative hidden md:block w-48 lg:w-72 group"
             >
               <div className="relative flex items-center">
@@ -326,56 +359,62 @@ export default function Nav() {
                     </div>
                   ) : searcResult.length > 0 ? (
                     <>
-                      <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-400 border-b border-white/5">
-                        Found {searcResult.length} Titles
+                      <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-400 border-b border-white/5 flex justify-between items-center">
+                        <span>Found {searcResult.length} Titles</span>
+                        <span className="text-[9px] text-pink-400">Click to view</span>
                       </div>
-                      {searcResult.map((result) => (
-                        <Link
-                          key={result._id || result.id || result.tmdb_id}
-                          to={
-                            result.media_type === "movie"
-                              ? `/mov/${result.tmdb_id || result._id}/${result.slug || slugify(result.title)}`
-                              : `/ser/${result.tmdb_id || result._id}/${result.slug || slugify(result.title)}`
-                          }
-                          onClick={() => {
-                            setQuery("");
-                            setDebouncedVal("");
-                          }}
-                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.08] transition-colors group cursor-pointer"
-                        >
-                          <img
-                            src={result.poster || posterPlaceholder}
-                            alt={result.title}
-                            className="w-10 h-14 object-cover rounded-lg shrink-0 bg-zinc-900 border border-white/10"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors truncate">
-                              {result.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-400">
-                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono uppercase text-[9px]">
-                                {result.media_type === "tv" ? "TV" : "Movie"}
-                              </span>
-                              {result.release_year && <span>{result.release_year}</span>}
-                              {result.rating && (
-                                <span className="flex items-center gap-0.5 text-amber-300 font-bold">
-                                  <BiStar className="text-[10px]" />
-                                  {(parseFloat(result.rating) || 0).toFixed(1)}
+                      {searcResult.map((result) => {
+                        const isMovie = result.media_type === "movie";
+                        const id = result.tmdb_id || result._id;
+                        const slug = result.slug || slugify(result.title);
+                        const targetUrl = isMovie ? `/mov/${id}/${slug}` : `/ser/${id}/${slug}`;
+                        return (
+                          <Link
+                            key={result._id || result.id || result.tmdb_id}
+                            to={targetUrl}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleSelectResult(result);
+                            }}
+                            className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors group cursor-pointer"
+                          >
+                            <img
+                              src={result.poster || posterPlaceholder}
+                              alt={result.title}
+                              className="w-10 h-14 object-cover rounded-lg shrink-0 bg-zinc-900 border border-white/10"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors truncate">
+                                {result.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-400">
+                                <span className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono uppercase text-[9px]">
+                                  {result.media_type === "tv" ? "TV" : "Movie"}
                                 </span>
-                              )}
+                                {result.release_year && <span>{result.release_year}</span>}
+                                {result.rating && (
+                                  <span className="flex items-center gap-0.5 text-amber-300 font-bold">
+                                    <BiStar className="text-[10px]" />
+                                    {(parseFloat(result.rating) || 0).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        );
+                      })}
                       <Link
-                        to={`/search/${debouncedVal}`}
-                        onClick={() => {
+                        to={`/search/${encodeURIComponent(debouncedVal.trim())}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const val = debouncedVal.trim();
                           setQuery("");
                           setDebouncedVal("");
+                          navigate(`/search/${encodeURIComponent(val)}`);
                         }}
-                        className="block text-center py-2 text-xs font-bold text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 rounded-xl transition-all mt-1"
+                        className="block text-center py-2.5 text-xs font-bold text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 rounded-xl transition-all mt-1 cursor-pointer"
                       >
-                        View all results →
+                        View all results for "{debouncedVal}" →
                       </Link>
                     </>
                   ) : (
@@ -412,14 +451,15 @@ export default function Nav() {
         <AnimatePresence>
           {mobileSearchOpen && (
             <motion.div
+              ref={mobileSearchRef}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden border-t border-white/10 bg-black/95 px-4 py-3 shadow-2xl overflow-hidden"
+              className="md:hidden border-t border-white/10 bg-[#0a0b12]/98 backdrop-blur-2xl px-4 py-3 shadow-2xl overflow-hidden z-50"
             >
-              <div className="relative flex items-center">
-                <FiSearch className="absolute left-3 text-pink-500 text-sm pointer-events-none" />
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                <FiSearch className="absolute left-3.5 text-pink-500 text-sm pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -432,47 +472,85 @@ export default function Nav() {
                   type="button"
                   onClick={() => {
                     setQuery("");
+                    setDebouncedVal("");
                     setMobileSearchOpen(false);
                   }}
-                  className="absolute right-3 text-zinc-400 hover:text-white p-1"
+                  className="absolute right-3 text-zinc-400 hover:text-white p-1 cursor-pointer"
+                  aria-label="Close Search"
                 >
                   <FiX size={16} />
                 </button>
-              </div>
+              </form>
 
               {/* Mobile Search Results list */}
               {debouncedVal && (
-                <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-1 divide-y divide-white/5">
+                <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-1 divide-y divide-white/5 pr-1">
                   {isLoading ? (
-                    <div className="p-4 text-center text-xs text-zinc-400">Searching...</div>
+                    <div className="p-4 flex items-center justify-center gap-2 text-xs text-zinc-400">
+                      <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Searching anime...</span>
+                    </div>
                   ) : searcResult.length > 0 ? (
-                    searcResult.slice(0, 8).map((result) => (
+                    <>
+                      <div className="px-1 py-1 text-[10px] uppercase font-bold tracking-wider text-zinc-400 flex justify-between items-center">
+                        <span>Found {searcResult.length} Titles</span>
+                        <span className="text-[9px] text-pink-400 font-semibold">Tap to watch</span>
+                      </div>
+                      {searcResult.slice(0, 8).map((result) => {
+                        const isMovie = result.media_type === "movie";
+                        const id = result.tmdb_id || result._id;
+                        const slug = result.slug || slugify(result.title);
+                        const targetUrl = isMovie ? `/mov/${id}/${slug}` : `/ser/${id}/${slug}`;
+                        return (
+                          <Link
+                            key={result._id || result.id || result.tmdb_id}
+                            to={targetUrl}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleSelectResult(result);
+                            }}
+                            className="flex items-center gap-3 py-2 px-1.5 rounded-xl text-left active:bg-white/15 hover:bg-white/10 transition-colors cursor-pointer group"
+                          >
+                            <img
+                              src={result.poster || posterPlaceholder}
+                              alt={result.title}
+                              className="w-10 h-14 object-cover rounded-md shrink-0 bg-zinc-900 border border-white/10"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-white group-hover:text-pink-400 truncate">
+                                {result.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-400">
+                                <span className="px-1.5 py-0.5 rounded bg-white/10 text-zinc-300 font-mono uppercase text-[9px]">
+                                  {result.media_type === "tv" ? "TV" : "Movie"}
+                                </span>
+                                {result.release_year && <span>{result.release_year}</span>}
+                                {result.rating && (
+                                  <span className="flex items-center gap-0.5 text-amber-300 font-bold">
+                                    <BiStar className="text-[10px]" />
+                                    {(parseFloat(result.rating) || 0).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
                       <Link
-                        key={result._id || result.id || result.tmdb_id}
-                        to={
-                          result.media_type === "movie"
-                            ? `/mov/${result.tmdb_id || result._id}/${result.slug || slugify(result.title)}`
-                            : `/ser/${result.tmdb_id || result._id}/${result.slug || slugify(result.title)}`
-                        }
-                        onClick={() => {
+                        to={`/search/${encodeURIComponent(debouncedVal.trim())}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const val = debouncedVal.trim();
                           setQuery("");
+                          setDebouncedVal("");
                           setMobileSearchOpen(false);
+                          navigate(`/search/${encodeURIComponent(val)}`);
                         }}
-                        className="flex items-center gap-3 py-2 text-left"
+                        className="block text-center py-2.5 text-xs font-bold text-pink-400 hover:text-pink-300 active:bg-pink-500/20 bg-pink-500/10 rounded-xl transition-all mt-2 cursor-pointer"
                       >
-                        <img
-                          src={result.poster || posterPlaceholder}
-                          alt={result.title}
-                          className="w-9 h-12 object-cover rounded-md shrink-0 bg-zinc-900 border border-white/10"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{result.title}</p>
-                          <p className="text-[10px] text-zinc-400 mt-0.5">
-                            {result.media_type === "tv" ? "TV Series" : "Movie"} • {result.release_year || "Anime"}
-                          </p>
-                        </div>
+                        View all results for "{debouncedVal}" →
                       </Link>
-                    ))
+                    </>
                   ) : (
                     <div className="p-4 text-center text-xs text-zinc-400">
                       No results for "{debouncedVal}"
